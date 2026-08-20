@@ -8,9 +8,13 @@
     "name": "bgweb-api",
     "version": "foochu/bgweb-api:latest",
     "settings": {
-      "play": "money",
+      "play": "match",
+      "matchLengths": [1, 3, 5, 7, 9, 11, 13, 15],
       "baseUrl": "http://127.0.0.1:8080",
-      "cubefulLabels": true
+      "cubefulLabels": true,
+      "seed": 1,
+      "met": "kazaross-xg2",
+      "levels": ["noob", "beginner", "midwit", "genius", "infallible"]
     }
   }
 }

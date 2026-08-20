@@ -1,6 +1,6 @@
 # Board representation
 
-Locked by [ADR 0001](../decisions/0001-player-labels.md) and [ADR 0002](../decisions/0002-board-representations.md). Change only via a new ADR.
+Locked by [ADR 0001](../decisions/0001-player-labels.md), [ADR 0002](../decisions/0002-board-representations.md), and [ADR 0008](../decisions/0008-match-play.md). Change only via a new ADR.
 
 Three representations only:
 
@@ -30,6 +30,11 @@ Opening (p1 on roll, standard): p1 has 2 on 24, 5 on 13, 3 on 8, 5 on 6; p2 mirr
     "value": 1,
     "owner": "centered",
     "mayDouble": { "p1": true, "p2": true }
+  },
+  "match": {
+    "length": 7,
+    "score": { "p1": 0, "p2": 0 },
+    "crawford": false
   }
 }
 ```
@@ -43,7 +48,11 @@ Opening (p1 on roll, standard): p1 has 2 on 24, 5 on 13, 3 on 8, 5 on 6; p2 mirr
 | `dice` | Two ints `1`–`6`; doubles `[n, n]`. `null` if not rolled. |
 | `cube.value` | 1, 2, 4, … |
 | `cube.owner` | `"centered"`, `"p1"`, or `"p2"`. |
-| `cube.mayDouble.p1/p2` | Whether that player may offer a double (centered cube ⇒ both true in money play unless a later ADR says otherwise). |
+| `cube.mayDouble.p1/p2` | Whether that player may offer a double. Centered cube ⇒ both true unless Crawford (both false) or a later money-play ADR says otherwise. |
+| `match` | Match play ([match-play.md](match-play.md)). v1 dumps always set this. Money play later may use `null`. |
+| `match.length` | Points to win. Dumper samples from `{1, 3, 5, 7, 9, 11, 13, 15}`. |
+| `match.score.p1/p2` | Points already won. Match over at `>= length`. |
+| `match.crawford` | `true` for the Crawford game (cube dead). Post-Crawford games use `false` with a live cube. |
 
 Checker counts must sum to 15 per player (points + bar + off).
 
@@ -55,6 +64,6 @@ Convert bgweb-api `play` (and XGID, if used) at the dumper boundary only. See [g
 
 ## Forbidden
 
-- A fourth representation (CNN grid, training-only JSON, FIBS as a stored format).
+- A fourth representation (CNN grid, training-only JSON, FIBS as a stored format). GNU Backgammon SGF is a **game record** for replay, not a position encoding ([dump-format.md](dump-format.md)).
 - Encoding the JSON from the on-roll player’s view by flipping signs (that flip belongs in the **tensor** only).
 - `"O"` / `"X"` / color names as player ids.

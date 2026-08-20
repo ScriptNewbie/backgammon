@@ -10,7 +10,7 @@
 ## Decision
 
 - The teacher for dumps is **bgweb-api**, not the gnubg CLI.
-- Run it with Docker: `foochu/bgweb-api:latest` on port 8080 (override URL via env later; default `http://127.0.0.1:8080`).
+- Run it with Docker Compose from `move-dumper/` (`docker compose up -d`): image `foochu/bgweb-api:latest` on port 8080 (default `http://127.0.0.1:8080`).
 - Convert at the dumper boundary: our position JSON ↔ bgweb `board` / `player` / `play` (see [docs/domain/gnubg.md](../domain/gnubg.md)). Do not store bgweb’s `x`/`o` layout as a fourth representation.
 - Omit `max-moves` so the API returns **all** legal plays. `score-moves: true`.
 - Cubeless labels: `cubeful: false`. Cubeful equity: a second call with `cubeful: true`. `cubeAction` stays `null` until that API can emit cube decisions.

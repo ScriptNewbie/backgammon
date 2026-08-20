@@ -1,8 +1,8 @@
 # Dump format
 
-Locked by [ADR 0005](../decisions/0005-dump-file-format.md) and [ADR 0006](../decisions/0006-teacher-bgweb-api.md). Change only via a new ADR.
+Locked by [ADR 0005](../decisions/0005-dump-file-format.md), [ADR 0006](../decisions/0006-teacher-bgweb-api.md), [ADR 0007](../decisions/0007-skill-levels-and-pairing.md), [ADR 0008](../decisions/0008-match-play.md), and [ADR 0009](../decisions/0009-dump-metadata-and-sgf.md). Change only via a new ADR.
 
-On-disk output of `move-dumper`. Position and eval field shapes are not redefined here — use [board-representation.md](board-representation.md) and [evaluation.md](evaluation.md). Teacher conversion: [gnubg.md](gnubg.md).
+On-disk output of `move-dumper`. Position and eval field shapes are not redefined here — use [board-representation.md](board-representation.md) and [evaluation.md](evaluation.md). Teacher conversion: [gnubg.md](gnubg.md). Simulation: [move-dumper.md](move-dumper.md).
 
 ## Layout
 
@@ -10,10 +10,13 @@ On-disk output of `move-dumper`. Position and eval field shapes are not redefine
 move-dumper/dumps/<batch-id>/     # gitignored
   manifest.json
   records.jsonl.gz
+  replay/
+    <matchId>.sgf
 
 move-dumper/fixtures/             # git-tracked, tiny
   manifest.example.json
   records.example.jsonl
+  replay.example.sgf
 ```
 
 `<batch-id>` is UTC `YYYY-MM-DDTHHMMSSZ` plus engine name, e.g. `2026-08-20T204600Z-bgweb-api`.
@@ -35,27 +38,50 @@ Do not use a JSON array of all records, Parquet, or SQLite as the dumper’s for
     "name": "bgweb-api",
     "version": "foochu/bgweb-api:latest",
     "settings": {
-      "play": "money",
+      "play": "match",
+      "matchLengths": [1, 3, 5, 7, 9, 11, 13, 15],
       "baseUrl": "http://127.0.0.1:8080",
       "cubefulLabels": true,
-      "plies": 1
+      "plies": 1,
+      "seed": 1,
+      "met": "kazaross-xg2",
+      "levels": ["noob", "beginner", "midwit", "genius", "infallible"],
+      "pairingWeights": {
+        "midwit-midwit": 8,
+        "genius-midwit": 7,
+        "genius-infallible": 6
+      },
+      "temperatures": {
+        "beginner": 0.08,
+        "midwit": 0.025,
+        "genius": 0.008
+      }
     }
   }
 }
 ```
 
 - `engine.name` is `"bgweb-api"`. `version` is the Docker image tag (or digest if pinned).
+- `play` is `"match"` for v1 dumps. `matchLengths` is the set sampled **uniformly** per match. Each record’s `position.match.length` is that match’s length, not a batch constant.
 - Extra keys under `engine.settings` are allowed (`plies` from `evaluation.info`). Do not remove `play` / `cubefulLabels`.
 - Update `recordCount` when the batch finishes. If a run crashes, count the JSONL lines; do not trust a stale manifest.
 
 ## Record (`v: 1`)
 
-One line = one decision point.
+One line = one decision point (`checker` or `cube`). Additive fields from ADR 0009; keep `"v": 1`.
 
 ```json
 {
   "v": 1,
   "id": "01JJ...",
+  "matchId": "01JK...",
+  "gameId": "01JL...",
+  "ply": 0,
+  "decision": "checker",
+  "players": { "p1": "midwit", "p2": "genius" },
+  "chosen": {
+    "steps": [{ "from": 8, "to": 5 }, { "from": 6, "to": 5 }]
+  },
   "position": {},
   "eval": null,
   "moves": [
@@ -72,22 +98,33 @@ One line = one decision point.
 | --- | --- |
 | `v` | Schema version. Must be `1`. |
 | `id` | Unique string (ULID or UUID). Stable if a batch is merged or re-exported. |
-| `position` | Full position JSON, including cube. `dice` is `[d1, d2]` for checker-play dumps. |
-| `eval` | Eval of this checker position for STM, or **`null`**. bgweb-api scores **plays**, not the static pre-move board; leave `null` and train from `moves[]` (apply `steps` to get the resulting position). |
-| `moves` | All legal checker plays, each with `steps` (our absolute points) and `eval` of the **resulting** position (that result’s STM). `source` is `"bgweb-api"`. `cubeAction` is `null`. |
+| `matchId` / `gameId` | Ids for the simulated match and game. |
+| `ply` | Checker half-moves in this game, 0-based. Cube records use the ply they precede (or follow a drop). |
+| `decision` | `"checker"` or `"cube"`. Cubeless training **ignores** `"cube"`. |
+| `players` | Level names for `p1` and `p2` ([move-dumper.md](move-dumper.md)). |
+| `chosen` | What was played. Checker: `{ "steps": [...] }`. Cube: `{ "action": "no-double" \| "double" \| "take" \| "drop" }`. |
+| `position` | Full position JSON, including cube and `match`. Checker dumps: `dice` is `[d1, d2]`. Cube dumps: `dice` is `null`. |
+| `eval` | Eval of this checker position for STM, or **`null`**. bgweb-api scores **plays**, not the static pre-move board; leave `null` and train from `moves[]`. |
+| `moves` | Checker: all legal plays, each with `steps` and teacher `eval` of the **result** (result STM). `source` is `"bgweb-api"`. `cubeAction` is `null`. Cube: omit or `[]`. |
 | `xgid` | Optional debug string. bgweb-api does not return it — use `null`. **Training must ignore it.** |
+
+Cube records store the simulated action in `chosen` only. Do not put heuristic cube actions on `eval.cubeAction` (that field stays `null` from the teacher). Optional `cubeChoices` listing `no-double` / `double` or `take` / `drop` is allowed; it is not a teacher label (`source` would be `"heuristic"` if an eval object is attached — trainers must still ignore it for the cubeless net).
 
 Do not store full resulting boards on each move; replay `steps` if a trainer needs them.
 
+## Replay SGF
+
+GNU Backgammon match files: `FF[4]`, `GM[6]`, UTF-8. One match per `replay/<matchId>.sgf`. `PW` = p1, `PB` = p2; `W[]` = p1, `B[]` = p2. `MI` includes length. Include checker plays and cube doubles / takes / drops. Open with gnubg (`load match`). **Not a training input.** Not a fourth board representation.
+
 ## Training use
 
-- Value net: apply each move’s `steps` to `position`, then `moves[].eval.cubeless` (STM of the result).
-- Cube wrapper: `moves[].eval.cubefulEquity` when present. Do not expect `cubeAction` from this teacher.
-- Move ranking: rank by negated cubeful (or cubeless) equity of the result.
+- Value net: `decision == "checker"` only. Apply each move’s `steps` to `position`, then `moves[].eval.cubeless` (STM of the result).
+- Cube wrapper: `moves[].eval.cubefulEquity` when present (money eq from the teacher). Do not expect `cubeAction` from bgweb-api. Do not train the cubeless net on heuristic cube records.
+- Move ranking in dumps is by mover MWC ([match-play.md](match-play.md)), not money equity. The stored labels remain cubeless probs + money `cubefulEquity`.
 
 ## Forbidden
 
 - Pretty-printed multi-line records in `dumps/`.
 - Committing `move-dumper/dumps/`.
 - A second dump schema “for Python.”
-- Treating `xgid` or bgweb `x`/`o` boards as a training input.
+- Treating `xgid`, SGF, or bgweb `x`/`o` boards as a training input.

@@ -42,7 +42,7 @@ STM’s 1-point is JSON point 1 when `onRoll == "p1"`, and JSON point 24 when `o
 | 199 | 1 if owner is opponent else 0 |
 | 200 | 1 if STM `mayDouble` else 0 |
 | 201 | 1 if opponent `mayDouble` else 0 |
-| 202–205 | reserved `0` (match/Jacoby later; keep length stable) |
+| 202–205 | reserved `0` (keep length stable). Match score and Jacoby are **not** net inputs yet; MWC is derived outside the net ([match-play.md](match-play.md)). |
 
 ## Output of the net
 

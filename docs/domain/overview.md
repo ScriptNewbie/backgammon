@@ -4,9 +4,9 @@ Pipeline (not implemented yet):
 
 ```
 foochu/bgweb-api (GNU Backgammon nets over HTTP)
-        │
+        │  getmoves: legal plays + cubeless / money cubeful eq
         ▼
-  move-dumper          TypeScript — labelled JSON + evals
+  move-dumper          TypeScript — simulate matches, dump labelled JSON + SGF
         │
         ▼
   training-ground      PyTorch — cubeless net, export ONNX
@@ -16,7 +16,7 @@ foochu/bgweb-api (GNU Backgammon nets over HTTP)
                        board + dice → legal moves + cubeful evals
 ```
 
-v1 is **money play with a doubling cube**. The net predicts cubeless outcome probabilities; cubeful equity and cube action are wrapped on top ([ADR 0003](../decisions/0003-doubling-cube.md)).
+The **net** predicts cubeless outcome probabilities. Cubeful equity and cube action are wrapped on top ([ADR 0003](../decisions/0003-doubling-cube.md)). **v1 dumps are match play** ([ADR 0008](../decisions/0008-match-play.md)): the dumper tracks score, Crawford, and dead-cube MWC locally because bgweb-api does not.
 
 Canonical specs:
 
@@ -25,3 +25,5 @@ Canonical specs:
 - Evaluations: [evaluation.md](evaluation.md)
 - Dump files: [dump-format.md](dump-format.md)
 - Teacher (bgweb-api): [gnubg.md](gnubg.md)
+- Simulation: [move-dumper.md](move-dumper.md)
+- Match play / MET: [match-play.md](match-play.md)

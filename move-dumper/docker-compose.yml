@@ -1,0 +1,6 @@
+services:
+  bgweb-api:
+    image: foochu/bgweb-api:latest
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

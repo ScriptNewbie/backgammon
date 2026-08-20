@@ -2,13 +2,17 @@
 
 `move-dumper` talks to [foochu/bgweb-api](https://github.com/foochu/bgweb-api), a REST wrapper around GNU Backgammon nets. Not the gnubg CLI. Locked by [ADR 0006](../decisions/0006-teacher-bgweb-api.md).
 
-On-disk dumps: [dump-format.md](dump-format.md).
+On-disk dumps: [dump-format.md](dump-format.md). Simulation (match state, Crawford, cube offers, SGF): [move-dumper.md](move-dumper.md). The API has **no match score and no cube-action endpoint**.
 
 ## Run
 
+From `move-dumper/`:
+
 ```sh
-docker run -p 8080:8080 -d foochu/bgweb-api:latest
+docker compose up -d
 ```
+
+That starts [foochu/bgweb-api](https://github.com/foochu/bgweb-api) via [docker-compose.yml](../../move-dumper/docker-compose.yml). Stop with `docker compose down`.
 
 Default base URL: `http://127.0.0.1:8080`. Endpoint: `POST /api/v1/getmoves`. Confirm with a getmoves request (or open `/`); if the server is down, stop and tell the user.
 
@@ -49,13 +53,14 @@ bgweb `evaluation` is **for the mover** (higher `eq` is a better play). Our eval
 | `eq` with `cubeful: false` | negate → `cubeless.equity` |
 | `eq` with `cubeful: true` | negate → `cubefulEquity` |
 
-`cubeAction` is always `null` (API to-do). `source` is `"bgweb-api"`. Record-level `position.eval` is usually `null`; labels live on `moves[]`.
+`cubeAction` is always `null` (API to-do). `source` is `"bgweb-api"`. Record-level `position.eval` is usually `null`; labels live on `moves[]`. Match MWC and cube offers are computed in the dumper ([match-play.md](match-play.md)), not by this API.
 
 Store `evaluation.info.plies` (and cubeful flag) on the batch manifest settings, not as a second eval schema.
 
 ## Do not
 
-- Call the gnubg CLI, scrape gnubg UI, or parse gnubg save files.
-- Feed bgweb `x`/`o` boards or XGID into training.
-- Invent cube double/take/drop labels.
+- Call the gnubg CLI, scrape gnubg UI, or parse gnubg save files **for labels**. Writing GNU Backgammon SGF for **debug replay** is allowed ([dump-format.md](dump-format.md)).
+- Feed bgweb `x`/`o` boards, XGID, or SGF into training.
+- Put heuristic cube double/take/drop on teacher `eval.cubeAction`.
 - Truncate the move list with `max-moves` on training dumps.
+- Send match score or Crawford to getmoves — the OpenAPI has no such fields.

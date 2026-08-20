@@ -2,11 +2,12 @@
 
 ## move-dumper
 
-TypeScript (not scaffolded). Dump labelled positions from foochu/bgweb-api.
+TypeScript (not scaffolded). Simulate matches between skill levels; dump labelled positions from foochu/bgweb-api.
 
+- Loop / pairing: `docs/domain/move-dumper.md`. Match MWC: `docs/domain/match-play.md`.
 - JSON + evals: `docs/domain/board-representation.md`, `docs/domain/evaluation.md`.
-- Batches: `docs/domain/dump-format.md` under `move-dumper/dumps/` (`manifest.json` + `records.jsonl.gz`).
-- Conversion: `docs/domain/gnubg.md`. Do not call the gnubg CLI. Never commit `dumps/`. Fixtures in `move-dumper/fixtures/` may be committed.
+- Batches: `docs/domain/dump-format.md` under `move-dumper/dumps/` (`manifest.json` + `records.jsonl.gz` + `replay/*.sgf`).
+- Conversion: `docs/domain/gnubg.md`. Rank chosen plays by mover MWC. Do not call the gnubg CLI for labels. Never commit `dumps/`. Fixtures in `move-dumper/fixtures/` may be committed.
 
 ## training-ground
 
