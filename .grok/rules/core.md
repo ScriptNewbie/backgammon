@@ -1,0 +1,8 @@
+# Core
+
+- Three packages only: `move-dumper`, `training-ground`, `game-engine`. Do not add another top-level package.
+- Packages are not scaffolded. Do not add language toolchains unless the user asks.
+- Read `docs/domain/` before inventing board, move, or eval shapes.
+- Open questions: `docs/decisions/0000-open-questions.md`. Do not silently decide them; use the `record-decision` skill and write an ADR.
+- Never commit dumps, checkpoints, weights, or `.env` files.
+- Cursor and Grok Build: keep `.cursor/` and `.grok/` skills, rules, and agents in sync. Do not add `CLAUDE.md`.

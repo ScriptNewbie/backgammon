@@ -1,0 +1,16 @@
+{
+  "v": 1,
+  "batchId": "example",
+  "createdAt": "2026-08-20T00:00:00Z",
+  "recordsFile": "records.example.jsonl",
+  "recordCount": 1,
+  "engine": {
+    "name": "bgweb-api",
+    "version": "foochu/bgweb-api:latest",
+    "settings": {
+      "play": "money",
+      "baseUrl": "http://127.0.0.1:8080",
+      "cubefulLabels": true
+    }
+  }
+}

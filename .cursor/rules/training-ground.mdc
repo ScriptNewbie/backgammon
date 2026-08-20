@@ -1,0 +1,14 @@
+---
+description: Conventions for PyTorch model training
+globs: training-ground/**
+alwaysApply: false
+---
+
+# training-ground
+
+PyTorch training (not scaffolded). Consumes JSON dumps, trains the cubeless net, exports ONNX for `game-engine`.
+
+- Positions: JSON in `docs/domain/board-representation.md`. Inputs: tensor in `docs/domain/features.md`. Labels: cubeless probs in `docs/domain/evaluation.md`.
+- Implement the same 206-float featurizer as TypeScript; test against golden fixtures.
+- Checkpoints, `wandb/`, `*.pt`, and `*.onnx` are gitignored. Do not commit them.
+- Do not add `pyproject.toml` unless the user asks.

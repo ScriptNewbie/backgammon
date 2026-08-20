@@ -1,0 +1,26 @@
+# Dependencies and env
+node_modules/
+.venv/
+venv/
+.env
+.env.*
+
+# Dumps and training artifacts
+dumps/
+**/dumps/
+checkpoints/
+**/checkpoints/
+wandb/
+mlruns/
+*.pt
+*.pth
+*.onnx
+*.safetensors
+
+# Python / TS noise
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+dist/
+build/
+*.egg-info/

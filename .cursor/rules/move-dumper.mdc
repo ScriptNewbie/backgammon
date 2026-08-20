@@ -1,0 +1,14 @@
+---
+description: Conventions for the bgweb-api move dumper
+globs: move-dumper/**
+alwaysApply: false
+---
+
+# move-dumper
+
+TypeScript tool (not scaffolded yet). Dumps labelled positions and moves from [foochu/bgweb-api](https://github.com/foochu/bgweb-api).
+
+- Convert at the boundary per `docs/domain/gnubg.md`. Store our JSON + evals only.
+- On-disk batches: `docs/domain/dump-format.md` under `move-dumper/dumps/`.
+- Do not call the gnubg CLI. Never commit `dumps/`. Fixtures in `move-dumper/fixtures/` may be committed.
+- Do not add `package.json` or a TS toolchain unless the user asks.

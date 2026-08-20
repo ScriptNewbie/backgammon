@@ -1,0 +1,14 @@
+---
+description: Conventions for the move-evaluation HTTP API
+globs: game-engine/**
+alwaysApply: false
+---
+
+# game-engine
+
+TypeScript HTTP API (not scaffolded). Move gen, featurizer, cube wrap, and ONNX inference (`onnxruntime-node`) live here. Do not spawn Python per request.
+
+- Bodies: `docs/domain/board-representation.md` and `docs/domain/evaluation.md`.
+- Tensor: `docs/domain/features.md` (must match Python).
+- Legal moves only. Rank checker plays by negated cubeful equity of the resulting position.
+- HTTP framework is still an open question.

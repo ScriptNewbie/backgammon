@@ -1,0 +1,18 @@
+# Keep bulky artifacts out of codebase search. Prefer this over
+# .cursorignore so a small fixture can still be @-mentioned.
+
+**/dumps/
+**/checkpoints/
+wandb/
+mlruns/
+*.pt
+*.pth
+*.onnx
+*.safetensors
+
+node_modules/
+.venv/
+venv/
+__pycache__/
+dist/
+build/
