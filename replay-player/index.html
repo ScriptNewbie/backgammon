@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Replay player</title>
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <h1>Replay player</h1>
+        <label class="file">
+          Open SGF
+          <input id="file" type="file" accept=".sgf,application/x-go-sgf,text/plain" />
+        </label>
+      </header>
+      <p id="error" class="error" hidden></p>
+      <section id="hud" class="hud" hidden></section>
+      <section id="board" class="board" hidden></section>
+      <p id="notice" class="notice" hidden></p>
+      <p id="caption" class="caption" hidden></p>
+      <nav class="controls">
+        <button id="prev" type="button" disabled>Previous</button>
+        <span id="progress">No file</span>
+        <button id="next" type="button" disabled>Next</button>
+      </nav>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

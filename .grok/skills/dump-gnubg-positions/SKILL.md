@@ -15,6 +15,6 @@ description: Workflow for simulating backgammon matches in move-dumper and dumpi
 4. Convert our position JSON ↔ bgweb `board` / `player` / `play` at the dumper boundary (p1=`x`, p2=`o`, flip p2 points). Flip mover evals to result-STM. `xgid` stays null. Do not send match score to getmoves (API has no field).
 5. Each checker ply: `POST /api/v1/getmoves` with `score-moves: true`, **no** `max-moves`. Cubeless pass `cubeful: false`; cubeful equity pass `cubeful: true`. Dump **all** legal plays. Rank/sample the chosen play by **mover MWC**, not money equity. `cubeAction` on teacher evals is always null.
 6. Cube: dead-cube MWC heuristic with skill noise ([match-play.md](docs/domain/match-play.md)). Skip cube on the opening roll of a game. Persist `decision: "cube"` records; do not label `eval.cubeAction`.
-7. Write `manifest.json` (`engine.name`: `"bgweb-api"`, `play`: `"match"`) + `records.jsonl.gz` + `replay/<matchId>.sgf` (GNU Backgammon `GM[6]`) under `move-dumper/dumps/`. Cubeless training ignores `decision != "checker"` and ignores SGF.
+7. Write `manifest.json` (`engine.name`: `"bgweb-api"`, `play`: `"match"`) + `records.jsonl.gz` + `replay/<matchId>.sgf` (GNU Backgammon `GM[6]`) under `move-dumper/dumps/`. Cubeless training ignores `decision != "checker"` and ignores SGF. Open SGF in `replay-player` (`docker compose up`) or gnubg.
 8. Keep tiny git-tracked examples in `move-dumper/fixtures/`. Never commit `move-dumper/dumps/`.
 9. Have the `backgammon-rules` subagent check sample positions and chosen `steps` (Crawford `mayDouble`, gammon/BG).

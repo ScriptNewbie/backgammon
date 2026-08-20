@@ -1,14 +1,26 @@
 # Agent instructions
 
-This is a three-package monorepo. Do not add other top-level packages.
+This is a four-package monorepo. Do not add other top-level packages.
 
 | Package | Stack | Job |
 | --- | --- | --- |
 | `move-dumper` | TypeScript | Simulate matches; dump labelled positions/moves from bgweb-api (GNU Backgammon nets) |
 | `training-ground` | PyTorch → ONNX export | Train the cubeless eval net |
 | `game-engine` | TypeScript + `onnxruntime-node` | Board + dice → legal moves with cubeful evals |
+| `replay-player` | Vite + TypeScript | Debug web UI: load GNU SGF dumps and step through them |
 
 Packages are not scaffolded. Do not add language toolchains, `package.json`, `pyproject.toml`, or an HTTP server unless the user asks.
+
+## Node / npm
+
+`move-dumper` and `replay-player` need Node.js ≥ 20. Prefer `node` and `npm` on PATH. If either is missing, do **not** stop — run the same commands in Docker from the package directory:
+
+```sh
+docker run --rm -v "${PWD}:/app" -w /app node:22-bookworm npm install
+docker run --rm -v "${PWD}:/app" -w /app node:22-bookworm npm test
+```
+
+To start the replay UI from `replay-player/`: `docker compose up` (http://localhost:5173).
 
 ## Hard rules
 

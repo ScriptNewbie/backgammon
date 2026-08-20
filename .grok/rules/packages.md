@@ -22,3 +22,11 @@ TypeScript + `onnxruntime-node` (not scaffolded). No Python per request.
 
 - Bodies and evals: `docs/domain/board-representation.md`, `docs/domain/evaluation.md`, `docs/domain/features.md`.
 - Rank checker plays by negated cubeful equity of the resulting position. HTTP framework is still open.
+
+## replay-player
+
+Vite + vanilla TypeScript. Debug viewer for GNU Backgammon SGF dumps ([ADR 0010](../../docs/decisions/0010-replay-player.md)).
+
+- Load `move-dumper/dumps/<batch>/replay/<matchId>.sgf` via file picker. Step with Previous / Next.
+- Start with `docker compose up` in `replay-player/` (http://localhost:5173).
+- Reconstruct position JSON from SGF events. Do not parse JSONL. Do not import `move-dumper`. Training ignores SGF.

@@ -1,6 +1,6 @@
 # Domain overview
 
-Pipeline (not implemented yet):
+Pipeline:
 
 ```
 foochu/bgweb-api (GNU Backgammon nets over HTTP)
@@ -8,8 +8,11 @@ foochu/bgweb-api (GNU Backgammon nets over HTTP)
         ▼
   move-dumper          TypeScript — simulate matches, dump labelled JSON + SGF
         │
-        ▼
-  training-ground      PyTorch — cubeless net, export ONNX
+        ├──────────────────────────────┐
+        ▼                              ▼
+  training-ground                replay-player
+  PyTorch — cubeless net,        Vite — debug SGF stepper
+  export ONNX                    (not a training input)
         │
         ▼
   game-engine          TypeScript HTTP + onnxruntime-node
