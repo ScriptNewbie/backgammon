@@ -4,3 +4,14 @@ services:
     ports:
       - "8080:8080"
     restart: unless-stopped
+
+  dumper:
+    build: .
+    working_dir: /repo/move-dumper
+    volumes:
+      - ..:/repo
+    environment:
+      BGWEB_BASE_URL: http://bgweb-api:8080
+    depends_on:
+      - bgweb-api
+    profiles: ["dumper"]
