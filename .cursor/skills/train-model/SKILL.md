@@ -5,7 +5,7 @@ description: Workflow for training the backgammon evaluation model in training-g
 
 # Train model
 
-`training-ground` is not scaffolded. Follow this when implementing or running training.
+`training-ground` is not scaffolded. Follow this when implementing or running training. Docker only ([ADR 0011](docs/decisions/0011-docker-only.md)).
 
 ## Steps
 
@@ -15,6 +15,7 @@ description: Workflow for training the backgammon evaluation model in training-g
 4. Keep the Python featurizer in lockstep with TypeScript; run golden vector fixtures.
 5. Export **ONNX** for `game-engine`. Optionally keep `.pt` for Python parity checks.
 6. Data, checkpoints, `wandb/`, `*.pt`, `*.onnx` stay on ignored paths. Never commit them.
-7. If data layout is still open in [docs/decisions/0000-open-questions.md](docs/decisions/0000-open-questions.md), ask and use `record-decision`.
+7. From `training-ground/`, run tests and training with Compose: `docker compose run --rm train python -m pytest` (when tests exist); `docker compose run --rm train <command>` for training. IDE `.venv`: `docker compose --profile install-host run --rm install-host` (no-op until `pyproject.toml` or `requirements.txt` exists). Do not run host `python` or `pip`.
+8. If data layout is still open in [docs/decisions/0000-open-questions.md](docs/decisions/0000-open-questions.md), ask and use `record-decision`.
 
 Do not add a Python toolchain unless the user asks.

@@ -12,3 +12,4 @@ TypeScript HTTP API (not scaffolded). Move gen, featurizer, cube wrap, and ONNX 
 - Tensor: `docs/domain/features.md` (must match Python).
 - Legal moves only. Rank checker plays by negated cubeful equity of the resulting position.
 - HTTP framework is still an open question.
+- Docker only, from `game-engine/`: `npm run up` (http://localhost:3000), `npm run install:host`. Port 3000 is the Compose publish port, not an HTTP-framework decision. When tests exist, add `test:inner` and wrap `npm test` like the other TS packages. Do not run host `tsx`.

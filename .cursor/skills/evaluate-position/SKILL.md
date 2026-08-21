@@ -5,7 +5,7 @@ description: Workflow for the game-engine HTTP API that returns legal moves with
 
 # Evaluate a position
 
-`game-engine` is not scaffolded. TypeScript + `onnxruntime-node` ([ADR 0004](docs/decisions/0004-game-engine-typescript-onnx.md)).
+`game-engine` is not scaffolded. TypeScript + `onnxruntime-node` ([ADR 0004](docs/decisions/0004-game-engine-typescript-onnx.md)). Docker only ([ADR 0011](docs/decisions/0011-docker-only.md)).
 
 ## Contract
 
@@ -20,3 +20,4 @@ description: Workflow for the game-engine HTTP API that returns legal moves with
 3. Rank checker plays by **negated** cubeful equity of the resulting position.
 4. Do not spawn Python per request. Do not pick an HTTP framework unless the user asks (still open).
 5. Keep the TS featurizer in lockstep with Python fixtures.
+6. From `game-engine/`: `npm run up` (http://localhost:3000), `npm run install:host`. Port 3000 is the Compose publish port, not an HTTP-framework decision. When tests exist, add `test:inner` and wrap `npm test` like the other TS packages.

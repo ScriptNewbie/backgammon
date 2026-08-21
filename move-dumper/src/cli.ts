@@ -41,7 +41,7 @@ export function parseArgs(argv: string[]): CliArgs {
 }
 
 function printHelp(): void {
-  console.log(`Usage: docker compose --profile dumper run --rm dumper npm run dump -- [--matches N] [--seed N] [--base-url URL]
+  console.log(`Usage: npm run dump -- [--matches N] [--seed N] [--base-url URL] [--length N]
 
 Simulate match play and dump labelled checker plays from bgweb-api.
 
@@ -50,10 +50,12 @@ Simulate match play and dump labelled checker plays from bgweb-api.
   --base-url   bgweb-api origin (default http://127.0.0.1:8080, or BGWEB_BASE_URL)
   --length     Optional match length (1,3,5,7,9,11,13,15). Default: sample uniformly.
 
-From move-dumper/:
-  docker compose up -d
-  docker compose --profile dumper run --rm --no-deps dumper npm test
-  docker compose --profile dumper run --rm dumper npm run dump -- --matches 1 --seed 1 --length 1
+From move-dumper/ (npm wraps Docker Compose):
+  npm run up
+  npm test
+  npm run dump -- --matches 1 --seed 1 --length 1
+  npm run down
+  npm run install:host
 `);
 }
 

@@ -1,0 +1,14 @@
+services:
+  train:
+    build: .
+    working_dir: /app
+    volumes:
+      - .:/app
+
+  install-host:
+    build: .
+    working_dir: /app
+    volumes:
+      - .:/app
+    entrypoint: ["/docker-install-host.sh"]
+    profiles: ["install-host"]

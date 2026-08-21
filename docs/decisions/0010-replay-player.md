@@ -17,4 +17,4 @@
 
 ## Consequences
 
-The allowed top-level packages are `move-dumper`, `training-ground`, `game-engine`, and `replay-player`. Do not add a fifth. Do not parse SGF in `training-ground`. Spec: [dump-format.md](../domain/dump-format.md).
+The allowed top-level packages are `move-dumper`, `training-ground`, `game-engine`, and `replay-player`. Do not add a fifth. Do not parse SGF in `training-ground`. Spec: [dump-format.md](../domain/dump-format.md). Start the viewer with `npm run up` in `replay-player/` ([ADR 0011](0011-docker-only.md)).

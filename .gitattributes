@@ -1,0 +1,2 @@
+# Entrypoints must be LF inside Linux containers (Dockerfiles also strip CR).
+*.sh text eol=lf

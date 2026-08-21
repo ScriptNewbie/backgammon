@@ -190,7 +190,7 @@ export class BgwebClient {
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       throw new Error(
-        `bgweb-api is not reachable at ${this.baseUrl} (${reason}). From move-dumper/, run docker compose up -d. Do not use the gnubg CLI.`,
+        `bgweb-api is not reachable at ${this.baseUrl} (${reason}). From move-dumper/, run npm run up. Do not use the gnubg CLI.`,
       );
     }
     if (!res.ok) {

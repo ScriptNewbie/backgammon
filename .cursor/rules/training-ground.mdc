@@ -12,3 +12,4 @@ PyTorch training (not scaffolded). Consumes JSON dumps, trains the cubeless net,
 - Implement the same 206-float featurizer as TypeScript; test against golden fixtures.
 - Checkpoints, `wandb/`, `*.pt`, and `*.onnx` are gitignored. Do not commit them.
 - Do not add `pyproject.toml` unless the user asks.
+- Docker only, from `training-ground/`: `docker compose run --rm train python -m pytest` (when tests exist); training via `docker compose run --rm train <command>`. IDE `.venv`: `docker compose --profile install-host run --rm install-host` (no-op until `pyproject.toml` or `requirements.txt` exists; Linux venv is not a host interpreter). Do not run host `python` / `pip`. Data layout is still open.

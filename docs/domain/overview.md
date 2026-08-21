@@ -21,6 +21,8 @@ foochu/bgweb-api (GNU Backgammon nets over HTTP)
 
 The **net** predicts cubeless outcome probabilities. Cubeful equity and cube action are wrapped on top ([ADR 0003](../decisions/0003-doubling-cube.md)). **v1 dumps are match play** ([ADR 0008](../decisions/0008-match-play.md)): the dumper tracks score, Crawford, and dead-cube MWC locally because bgweb-api does not.
 
+Run everything with Docker Compose from the package directory ([ADR 0011](../decisions/0011-docker-only.md)). Commands: [AGENTS.md](../../AGENTS.md).
+
 Canonical specs:
 
 - Position JSON + XGID: [board-representation.md](board-representation.md)

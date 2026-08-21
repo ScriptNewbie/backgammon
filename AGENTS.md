@@ -9,18 +9,24 @@ This is a four-package monorepo. Do not add other top-level packages.
 | `game-engine` | TypeScript + `onnxruntime-node` | Board + dice → legal moves with cubeful evals |
 | `replay-player` | Vite + TypeScript | Debug web UI: load GNU SGF dumps and step through them |
 
-Packages are not scaffolded. Do not add language toolchains, `package.json`, `pyproject.toml`, or an HTTP server unless the user asks.
+`training-ground` and `game-engine` are not scaffolded. Do not add language toolchains, `package.json`, `pyproject.toml`, or an HTTP server unless the user asks.
 
-## Node / npm
+## Docker
 
-`move-dumper` and `replay-player` need Node.js ≥ 20. Prefer `node` and `npm` on PATH. If either is missing, do **not** stop — run the same commands in Docker from the package directory:
+The only supported host tool is **Docker** (Engine + Compose v2). Do not install or invoke Node, Python, or pip on the host — even if they are on PATH ([ADR 0011](docs/decisions/0011-docker-only.md)). Run Compose **from the package directory**. Runtime TypeScript `node_modules` live in a Compose volume (Linux).
 
-```sh
-docker run --rm -v "${PWD}:/app" -w /app node:22-bookworm npm install
-docker run --rm -v "${PWD}:/app" -w /app node:22-bookworm npm test
-```
+TypeScript npm scripts wrap Compose. They do not run `tsx` / Vite on the host. `*:inner` scripts are in-container only. If `npm` is missing, use the equivalent `docker compose` lines in that package’s `package.json`.
 
-To start the replay UI from `replay-player/`: `docker compose up` (http://localhost:5173).
+`install:host` writes IDE files onto the host bind-mount (TypeScript: `node_modules`; Python: `.venv` once `pyproject.toml` or `requirements.txt` exists). Do not run dumps, tests, Vite, or training against that host tree.
+
+| Package | Tests | Run | IDE deps |
+| --- | --- | --- | --- |
+| `move-dumper` | `npm test` | Teacher API: `npm run up`. Dump: `npm run dump -- --matches 1 --seed 1` | `npm run install:host` |
+| `replay-player` | `npm test` | `npm run up` (http://localhost:5173) | `npm run install:host` |
+| `training-ground` | `docker compose run --rm train python -m pytest` (when tests exist) | `docker compose run --rm train <command>` (not scaffolded; data layout still open) | `docker compose --profile install-host run --rm install-host` |
+| `game-engine` | `docker compose run --rm game-engine npm test` (when tests exist) | `npm run up` (http://localhost:3000; not scaffolded; HTTP framework still open) | `npm run install:host` |
+
+Images: `node:22-bookworm` for TypeScript packages; `python:3.12-bookworm` for `training-ground`. Do not use `docker run -v "${PWD}:/app"` as the workflow.
 
 ## Hard rules
 

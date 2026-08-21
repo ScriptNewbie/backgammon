@@ -2,7 +2,19 @@
 
 Locked by [ADR 0007](../decisions/0007-skill-levels-and-pairing.md), [ADR 0008](../decisions/0008-match-play.md), [ADR 0009](../decisions/0009-dump-metadata-and-sgf.md). Teacher: [gnubg.md](gnubg.md). Files: [dump-format.md](dump-format.md). Match math: [match-play.md](match-play.md).
 
-`move-dumper` is not scaffolded. It will simulate matches, label every checker play from bgweb-api, apply a noisy cube heuristic, and write JSONL plus GNU Backgammon SGF.
+Simulates matches, labels every checker play from bgweb-api, applies a noisy cube heuristic, and writes JSONL plus GNU Backgammon SGF.
+
+From `move-dumper/` ([ADR 0011](../decisions/0011-docker-only.md)):
+
+```sh
+npm run up
+npm test
+npm run dump -- --matches 1 --seed 1
+npm run down
+npm run install:host
+```
+
+Those scripts wrap Docker Compose (`dump:inner` / `test:inner` run inside the container). `install:host` writes `node_modules` onto the host for IDE typechecking only.
 
 ## Per match
 

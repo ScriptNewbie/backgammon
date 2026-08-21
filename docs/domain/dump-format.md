@@ -114,7 +114,7 @@ Do not store full resulting boards on each move; replay `steps` if a trainer nee
 
 ## Replay SGF
 
-GNU Backgammon match files: `FF[4]`, `GM[6]`, UTF-8. One match per `replay/<matchId>.sgf`. `PW` = p1, `PB` = p2; `W[]` = p1, `B[]` = p2. `MI` includes length. Include checker plays and cube doubles / takes / drops. Open in `replay-player` (`docker compose up` in `replay-player/` then pick the file) or gnubg (`load match`). **Not a training input.** Not a fourth board representation.
+GNU Backgammon match files: `FF[4]`, `GM[6]`, UTF-8. One match per `replay/<matchId>.sgf`. `PW` = p1, `PB` = p2; `W[]` = p1, `B[]` = p2. `MI` includes length. Include checker plays and cube doubles / takes / drops. Open in `replay-player` (`npm run up` in `replay-player/` then pick the file) or gnubg (`load match`). Replay tests: `npm test`. **Not a training input.** Not a fourth board representation.
 
 ## Training use
 

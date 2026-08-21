@@ -1,0 +1,13 @@
+{
+  "name": "game-engine",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "up": "docker compose up",
+    "down": "docker compose down",
+    "install:host": "docker compose --profile install-host run --rm install-host"
+  }
+}
