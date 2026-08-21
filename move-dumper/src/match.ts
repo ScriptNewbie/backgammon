@@ -6,6 +6,7 @@ import {
   clonePosition,
   gameResult,
   initialPhase,
+  MAX_CUBE_VALUE,
   nextPhase,
   openingPosition,
   opponent,
@@ -136,7 +137,7 @@ async function playGame(opts: {
 
   while (true) {
     if (!opening) {
-      if (pos.cube.mayDouble[pos.onRoll] && stmCubeless) {
+      if (pos.cube.mayDouble[pos.onRoll] && pos.cube.value < MAX_CUBE_VALUE && stmCubeless) {
         const ended = await maybeCube({
           pos,
           stmCubeless,

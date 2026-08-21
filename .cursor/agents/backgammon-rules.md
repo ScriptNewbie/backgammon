@@ -18,7 +18,7 @@ When invoked:
    - Bearing off only when all remaining checkers are in that player’s home board.
    - If a die cannot be used, the other may still be; if only one of two different dice can be used, the higher must be used when both are not playable as a pair.
 4. Game end: 15 off. Gammon if the loser has 0 off. Backgammon if the loser has 0 off **and** a checker on the bar or in the winner’s home (p1 home 1–6, p2 home 19–24).
-5. Cube: `value` is a power of two; `owner` is `centered`, `p1`, or `p2`; a player may offer a double only if `mayDouble` for them is true and they own the cube or it is centered. Crawford (`match.crawford` or length-1 only game): both `mayDouble` false. Post-Crawford: cube live. Do not invent Jacoby/beaver rules still listed as open.
+5. Cube: `value` is a power of two in `{1,2,4,8,16,32,64}` (never above 64). `owner` is `centered`, `p1`, or `p2`; a player may offer a double only if `mayDouble` for them is true and they own the cube or it is centered. Value 64 ⇒ both `mayDouble` false (taker still owns the cube). Crawford (`match.crawford` or length-1 only game): both `mayDouble` false. Post-Crawford: cube live. Do not invent Jacoby/beaver rules still listed as open.
 6. Illegal moves must not appear in API output or training labels.
 
 Report:

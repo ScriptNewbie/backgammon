@@ -36,7 +36,7 @@ STM’s 1-point is JSON point 1 when `onRoll == "p1"`, and JSON point 24 when `o
 
 | Index | Value |
 | --- | --- |
-| 196 | `log2(cube.value) / 6` (`value` is 1 ⇒ 0) |
+| 196 | `log2(cube.value) / 6` (`value` is 1 ⇒ 0; **64** ⇒ 1). `cube.value` never exceeds 64. |
 | 197 | 1 if owner is centered else 0 |
 | 198 | 1 if owner is STM else 0 |
 | 199 | 1 if owner is opponent else 0 |

@@ -46,6 +46,17 @@ test("applyTake doubles cube and gives it to the taker", () => {
   assert.deepEqual(taken.cube.mayDouble, { p1: false, p2: true });
 });
 
+test("take at 32 yields 64 and kills recube rights", () => {
+  const start = openingPosition(7, { p1: 0, p2: 0 }, false);
+  start.cube.value = 32;
+  start.cube.owner = "p1";
+  start.cube.mayDouble = { p1: true, p2: false };
+  const taken = applyTake(start, "p1");
+  assert.equal(taken.cube.value, 64);
+  assert.equal(taken.cube.owner, "p2");
+  assert.deepEqual(taken.cube.mayDouble, { p1: false, p2: false });
+});
+
 const SAMPLE = `(;FF[4]GM[6]CA[UTF-8]AP[move-dumper:1]
 MI[length:7][game:0][ws:0][bs:0]
 PW[p1-genius]PB[p2-midwit]

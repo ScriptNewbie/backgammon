@@ -174,3 +174,19 @@ test("applyTake gives the cube to the taker", () => {
   assert.equal(next.cube.mayDouble.p1, false);
   assert.equal(next.cube.mayDouble.p2, true);
 });
+
+test("cube stops at 64 and nobody may recube", () => {
+  let pos = opening("p1");
+  let doubler: "p1" | "p2" = "p1";
+  for (const value of [2, 4, 8, 16, 32, 64]) {
+    pos = applyTake(pos, doubler);
+    assert.equal(pos.cube.value, value);
+    doubler = doubler === "p1" ? "p2" : "p1";
+  }
+  assert.equal(pos.cube.value, 64);
+  assert.equal(pos.cube.owner, "p1");
+  assert.deepEqual(pos.cube.mayDouble, { p1: false, p2: false });
+  const stuck = applyTake(pos, "p1");
+  assert.equal(stuck.cube.value, 64);
+  assert.deepEqual(stuck.cube.mayDouble, { p1: false, p2: false });
+});

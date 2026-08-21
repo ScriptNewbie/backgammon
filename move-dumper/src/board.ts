@@ -1,5 +1,8 @@
 import type { MatchPhase, Player, Point, Position, Step } from "./types";
 
+/** Physical / GNU–XG–FIBS cube. Doubling past this is illegal. */
+export const MAX_CUBE_VALUE = 64;
+
 /** Standard opening. Index 0 = point 1. Positive = p1. */
 export const OPENING_POINTS: readonly number[] = [
   -2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2,
@@ -170,9 +173,13 @@ export function pointsAwarded(cubeValue: number, multiplier: 1 | 2 | 3, length: 
 export function applyTake(position: Position, doubler: Player): Position {
   const next = clonePosition(position);
   const taker = opponent(doubler);
-  next.cube.value *= 2;
+  const nextValue = Math.min(next.cube.value * 2, MAX_CUBE_VALUE);
+  next.cube.value = nextValue;
   next.cube.owner = taker;
-  next.cube.mayDouble = { p1: taker === "p1", p2: taker === "p2" };
+  next.cube.mayDouble =
+    nextValue >= MAX_CUBE_VALUE
+      ? { p1: false, p2: false }
+      : { p1: taker === "p1", p2: taker === "p2" };
   return next;
 }
 

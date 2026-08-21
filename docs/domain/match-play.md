@@ -60,7 +60,7 @@ Each legal play’s eval is the **result** with opponent to move. Convert that r
 
 ## Cube heuristic
 
-Decide **before the roll** when `mayDouble` is true for on-roll. Skip the **opening roll of a game**.
+Decide **before the roll** when `mayDouble` is true for on-roll. Skip the **opening roll of a game**. Skip (and leave `mayDouble` false) when `cube.value` is already **64** — doubling to 128 is illegal.
 
 Use cubeless probs of the play that created the current position (STM = player about to roll).
 
@@ -70,7 +70,7 @@ Actions:
 | --- | --- |
 | no-double | dead-cube MWC at current `C` |
 | double, opponent drops | MET after they gain `C` points (game over) |
-| double, opponent takes | dead-cube MWC at `2C` (taker owns the cube) |
+| double, opponent takes | dead-cube MWC at `2C` (taker owns the cube). `2C` is at most 64. |
 
 - **Drop** if taker’s MWC after take `<` MWC after drop (drop MWC for the taker is `1 -` dropper’s MET).
 - **Too good:** no-double MWC `>` double-and-take MWC → do not offer (play for gammon).

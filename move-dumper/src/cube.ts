@@ -1,4 +1,5 @@
 import type { Cubeless, CubeAction, Level, MatchPhase, Player, Position } from "./types";
+import { MAX_CUBE_VALUE } from "./board";
 import { matchEquity, stmAwayAfter } from "./met";
 import { deadCubeMwc } from "./mwc";
 import { logistic, temperature } from "./levels";
@@ -24,6 +25,19 @@ export function evaluateCube(
   const doubler: Player = position.onRoll;
   const C = position.cube.value;
   const noDouble = deadCubeMwc(cubeless, position, C, doubler, phase);
+  if (C >= MAX_CUBE_VALUE) {
+    return {
+      noDouble,
+      doubleTake: noDouble,
+      doubleDrop: noDouble,
+      takerTake: 1 - noDouble,
+      takerDrop: 1 - noDouble,
+      wouldDrop: false,
+      tooGood: false,
+      infallibleOffer: "no-double",
+      infallibleTake: "take",
+    };
+  }
   const doubleTake = deadCubeMwc(cubeless, position, 2 * C, doubler, phase);
   const { stmAway, oppAway } = stmAwayAfter(
     position.match.length,

@@ -81,6 +81,17 @@ test("cube too-good and drop follow the spec inequalities", () => {
   assert.equal(eval_.infallibleTake, eval_.wouldDrop ? "drop" : "take");
 });
 
+test("cube at 64 cannot be offered", () => {
+  const pos = openingPosition(7, { p1: 0, p2: 0 }, "pre");
+  pos.onRoll = "p1";
+  pos.cube.value = 64;
+  pos.cube.owner = "p1";
+  pos.cube.mayDouble = { p1: false, p2: false };
+  const eval_ = evaluateCube(even, pos, "pre");
+  assert.equal(eval_.infallibleOffer, "no-double");
+  assert.equal(eval_.doubleTake, eval_.noDouble);
+});
+
 test("infallible takes a drop when take MWC is worse", () => {
   const pos = openingPosition(7, { p1: 6, p2: 0 }, "pre");
   pos.onRoll = "p2";
