@@ -12,11 +12,12 @@ TypeScript. Simulate matches between skill levels; dump labelled positions from 
 
 ## training-ground
 
-PyTorch (not scaffolded). Train cubeless net, export ONNX.
+PyTorch. Train cubeless net, export ONNX and ExecuTorch `.pte` ([ADR 0014](../../docs/decisions/0014-export-onnx-and-pte.md)). CUDA image ([ADR 0013](../../docs/decisions/0013-training-cuda.md)).
 
 - JSON + tensor + cubeless labels: `docs/domain/board-representation.md`, `docs/domain/features.md`, `docs/domain/evaluation.md`.
-- Same 206-float featurizer as TypeScript; golden fixtures. Do not commit checkpoints / `*.pt` / `*.onnx`.
-- Docker only, from `training-ground/`: `docker compose run --rm train python -m pytest` (when tests exist); `docker compose run --rm train <command>`. IDE `.venv`: `docker compose --profile install-host run --rm install-host` (no-op until deps files exist). Do not run host `python` / `pip`. Data layout is still open.
+- Featurizer: `src/training_ground/features.py`. Golden vectors: `fixtures/features.json`. Do not commit checkpoints / `cache/` / `*.pt` / `*.onnx` / `*.pte`.
+- Data layout: [ADR 0012](../../docs/decisions/0012-training-data-layout.md). Compose mounts `../move-dumper/dumps` read-only at `/data/dumps`. Split by `matchId` sha256-mod-100 (train `0–89`, val `90–94`, test `95–99`). Do not copy dumps into `training-ground/`.
+- Docker only, from `training-ground/`: `docker compose run --rm train python -m pytest`; `docker compose run --rm train <command>` (`gpus: all` on `train`). IDE `.venv`: `docker compose --profile install-host run --rm install-host`. Do not run host `python` / `pip`. Do not list `torch` as a PyPI dependency.
 
 ## game-engine
 

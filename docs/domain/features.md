@@ -50,4 +50,4 @@ Cubeless outcome probabilities for **STM** (see [evaluation.md](evaluation.md)).
 
 ## Tests
 
-A fixture of JSON positions → expected length-206 vectors must match in Python and TypeScript within `1e-6`.
+Golden vectors live in [`training-ground/fixtures/features.json`](../../training-ground/fixtures/features.json). Python and TypeScript must match those `{ "id", "position", "vector" }` cases within `1e-6`. Do not generate the fixture from the code under test.

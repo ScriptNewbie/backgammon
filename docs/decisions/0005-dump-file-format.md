@@ -13,7 +13,7 @@
 - `manifest.json` for engine version and settings; `records.jsonl.gz` for data (gzip JSONL, one record per line).
 - Record schema `v: 1` as specified in [docs/domain/dump-format.md](../domain/dump-format.md).
 - Tiny uncompressed fixtures live in `move-dumper/fixtures/` and **are** git-tracked.
-- Training may later convert JSONL to Parquet/memmap; that is `training-ground` layout (still open), not a second dump contract.
+- Training may later convert JSONL to a derived cache; that is `training-ground` layout ([ADR 0012](0012-training-data-layout.md)), not a second dump contract.
 
 Teacher engine (CLI vs HTTP) is **not** in this ADR; see [0006](0006-teacher-bgweb-api.md).
 

@@ -1,7 +1,7 @@
 # Core
 
 - Four packages only: `move-dumper`, `training-ground`, `game-engine`, `replay-player`. Do not add another top-level package.
-- `training-ground` and `game-engine` are not scaffolded. Do not add language toolchains unless the user asks.
+- `game-engine` is not scaffolded. Do not add language toolchains, `package.json`, or an HTTP server unless the user asks.
 - Docker (Engine + Compose v2) is the only supported runtime ([ADR 0011](docs/decisions/0011-docker-only.md)). Do not install or invoke host Node, npm, Python, or pip. Commands: `AGENTS.md`.
 - Read `docs/domain/` before inventing board, move, or eval shapes.
 - Open questions: `docs/decisions/0000-open-questions.md`. Do not silently decide them; use the `record-decision` skill and write an ADR.

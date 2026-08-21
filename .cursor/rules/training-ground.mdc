@@ -6,10 +6,11 @@ alwaysApply: false
 
 # training-ground
 
-PyTorch training (not scaffolded). Consumes JSON dumps, trains the cubeless net, exports ONNX for `game-engine`.
+PyTorch training. Consumes JSON dumps, trains the cubeless net, exports ONNX (game-engine) and ExecuTorch `.pte` ([ADR 0014](docs/decisions/0014-export-onnx-and-pte.md)). CUDA image ([ADR 0013](docs/decisions/0013-training-cuda.md)).
 
 - Positions: JSON in `docs/domain/board-representation.md`. Inputs: tensor in `docs/domain/features.md`. Labels: cubeless probs in `docs/domain/evaluation.md`.
-- Implement the same 206-float featurizer as TypeScript; test against golden fixtures.
-- Checkpoints, `wandb/`, `*.pt`, and `*.onnx` are gitignored. Do not commit them.
-- Do not add `pyproject.toml` unless the user asks.
-- Docker only, from `training-ground/`: `docker compose run --rm train python -m pytest` (when tests exist); training via `docker compose run --rm train <command>`. IDE `.venv`: `docker compose --profile install-host run --rm install-host` (no-op until `pyproject.toml` or `requirements.txt` exists; Linux venv is not a host interpreter). Do not run host `python` / `pip`. Data layout is still open.
+- Featurizer: `src/training_ground/features.py` (length 206 STM). Golden vectors: `fixtures/features.json`. Keep in lockstep with TypeScript.
+- Checkpoints, `cache/`, `wandb/`, `*.pt`, `*.onnx`, and `*.pte` are gitignored. Do not commit them.
+- Do not list `torch` in `pyproject.toml` (PyPI wheel is CPU). Install from the cu130 index; install `onnx` / `executorch` after that pin. Do not copy dumps into `training-ground/`.
+- Data layout: [ADR 0012](docs/decisions/0012-training-data-layout.md). Compose mounts `../move-dumper/dumps` read-only at `/data/dumps`. Split by `matchId` sha256-mod-100 (train `0–89`, val `90–94`, test `95–99`). Optional cache later: `training-ground/cache/`.
+- Docker only, from `training-ground/`: `docker compose run --rm train python -m pytest`; training via `docker compose run --rm train <command>` (`gpus: all` on `train`). IDE `.venv`: `docker compose --profile install-host run --rm install-host` (Linux venv is not a host interpreter). Do not run host `python` / `pip`.

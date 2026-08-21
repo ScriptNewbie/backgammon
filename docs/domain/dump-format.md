@@ -1,6 +1,6 @@
 # Dump format
 
-Locked by [ADR 0005](../decisions/0005-dump-file-format.md), [ADR 0006](../decisions/0006-teacher-bgweb-api.md), [ADR 0007](../decisions/0007-skill-levels-and-pairing.md), [ADR 0008](../decisions/0008-match-play.md), and [ADR 0009](../decisions/0009-dump-metadata-and-sgf.md). Change only via a new ADR.
+Locked by [ADR 0005](../decisions/0005-dump-file-format.md), [ADR 0006](../decisions/0006-teacher-bgweb-api.md), [ADR 0007](../decisions/0007-skill-levels-and-pairing.md), [ADR 0008](../decisions/0008-match-play.md), [ADR 0009](../decisions/0009-dump-metadata-and-sgf.md), and [ADR 0012](../decisions/0012-training-data-layout.md). Change only via a new ADR.
 
 On-disk output of `move-dumper`. Position and eval field shapes are not redefined here — use [board-representation.md](board-representation.md) and [evaluation.md](evaluation.md). Teacher conversion: [gnubg.md](gnubg.md). Simulation: [move-dumper.md](move-dumper.md).
 
@@ -121,6 +121,20 @@ GNU Backgammon match files: `FF[4]`, `GM[6]`, UTF-8. One match per `replay/<matc
 - Value net: `decision == "checker"` only. Apply each move’s `steps` to `position`, then `moves[].eval.cubeless` (STM of the result).
 - Cube wrapper: `moves[].eval.cubefulEquity` when present (money eq from the teacher). Do not expect `cubeAction` from bgweb-api. Do not train the cubeless net on heuristic cube records.
 - Move ranking in dumps is by mover MWC ([match-play.md](match-play.md)), not money equity. The stored labels remain cubeless probs + money `cubefulEquity`.
+
+## Training layout
+
+Locked by [ADR 0012](../decisions/0012-training-data-layout.md). Do not copy dumps into `training-ground/`.
+
+From `training-ground/`, Compose mounts `../move-dumper/dumps` read-only at `/data/dumps`. Package source stays at `/app`. Split by `matchId` (not record, not batch):
+
+`int.from_bytes(sha256(matchId.encode("utf-8")).digest()[:8], "big") % 100`
+
+- `0–89` train (90%)
+- `90–94` val (5%)
+- `95–99` test (5%)
+
+Cubeless training still ignores `decision == "cube"` at sample time; those rows stay in the same split as their match. Optional featurized cache later: gitignored `training-ground/cache/`. Checkpoints: `training-ground/checkpoints/`.
 
 ## Forbidden
 

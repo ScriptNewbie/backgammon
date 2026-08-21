@@ -2,13 +2,24 @@ services:
   train:
     build: .
     working_dir: /app
+    gpus: all
+    environment:
+      PIP_CACHE_DIR: /root/.cache/pip
     volumes:
       - .:/app
+      - ../move-dumper/dumps:/data/dumps:ro
+      - pip_cache:/root/.cache/pip
 
   install-host:
     build: .
     working_dir: /app
+    environment:
+      PIP_CACHE_DIR: /root/.cache/pip
     volumes:
       - .:/app
+      - pip_cache:/root/.cache/pip
     entrypoint: ["/docker-install-host.sh"]
     profiles: ["install-host"]
+
+volumes:
+  pip_cache:

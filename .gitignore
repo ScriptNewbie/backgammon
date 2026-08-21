@@ -10,11 +10,13 @@ dumps/
 **/dumps/
 checkpoints/
 **/checkpoints/
+training-ground/cache/
 wandb/
 mlruns/
 *.pt
 *.pth
 *.onnx
+*.pte
 *.safetensors
 
 # Python / TS noise

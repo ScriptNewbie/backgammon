@@ -10,7 +10,7 @@
 ## Decision
 
 - `game-engine` is TypeScript: HTTP API, move generation, JSON ↔ tensor featurizer, cube wrap, response assembly.
-- `training-ground` trains in PyTorch and **exports ONNX** (plus optional `.pt` for Python parity tests).
+- `training-ground` trains in PyTorch and **exports ONNX** (plus optional `.pt` for Python parity tests). It also exports ExecuTorch `.pte` ([ADR 0014](0014-export-onnx-and-pte.md)); the engine still loads ONNX.
 - Request-time inference in `game-engine` uses **`onnxruntime-node`**. Do not spawn Python per request.
 - HTTP framework (Hono / Fastify / etc.) is still open.
 

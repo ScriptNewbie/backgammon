@@ -4,9 +4,11 @@ __pycache__
 .pytest_cache
 .mypy_cache
 checkpoints
+cache
 wandb
 mlruns
 *.egg-info
 *.pt
 *.pth
 *.onnx
+*.pte

@@ -5,7 +5,7 @@ A backgammon engine split into four packages. **Docker** (Engine + Compose v2) i
 | Package | Role | Tests | Run | IDE deps |
 | --- | --- | --- | --- | --- |
 | `move-dumper` | TypeScript tool that simulates matches and dumps positions and move evaluations from [bgweb-api](https://github.com/foochu/bgweb-api) (GNU Backgammon nets over HTTP) | `npm test` | Teacher: `npm run up`. Dump: `npm run dump -- --matches 1 --seed 1` | `npm run install:host` |
-| `training-ground` | PyTorch training; exports ONNX (not scaffolded) | `docker compose run --rm train python -m pytest` | `docker compose run --rm train <command>` | `docker compose --profile install-host run --rm install-host` |
+| `training-ground` | PyTorch training; exports ONNX and ExecuTorch `.pte` ([ADR 0014](docs/decisions/0014-export-onnx-and-pte.md)). CUDA image ([ADR 0013](docs/decisions/0013-training-cuda.md)). Reads `move-dumper/dumps` at `/data/dumps`; split by `matchId` ([ADR 0012](docs/decisions/0012-training-data-layout.md)) | `docker compose run --rm train python -m pytest` | `docker compose run --rm train <command>` | `docker compose --profile install-host run --rm install-host` |
 | `game-engine` | TypeScript HTTP API: board + dice → legal moves with evaluations; infers the net via ONNX Runtime (not scaffolded) | `docker compose run --rm game-engine npm test` | `npm run up` (http://localhost:3000) | `npm run install:host` |
 | `replay-player` | Vite web app that steps through GNU Backgammon SGF dumps | `npm test` | `npm run up` (http://localhost:5173) | `npm run install:host` |
 

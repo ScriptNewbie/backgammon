@@ -18,4 +18,4 @@ TypeScript packages need Node.js ≥ 20; `training-ground` needs Python and PyTo
 
 ## Consequences
 
-`AGENTS.md`, README, domain run sections, and Cursor/Grok harness files describe Compose only — no `docker run -v "${PWD}:/app"` fallback and no host `tsx`. `training-ground` and `game-engine` are not scaffolded yet; their Compose files are the run path once they are. GPU/CUDA training images are not decided here. Pinning `foochu/bgweb-api` to a digest remains open.
+`AGENTS.md`, README, domain run sections, and Cursor/Grok harness files describe Compose only — no `docker run -v "${PWD}:/app"` fallback and no host `tsx`. `game-engine` is not scaffolded yet; its Compose file is the run path once it is. GPU/CUDA for `training-ground` is [ADR 0013](0013-training-cuda.md). Pinning `foochu/bgweb-api` to a digest remains open.
