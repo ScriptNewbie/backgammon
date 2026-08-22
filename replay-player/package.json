@@ -6,7 +6,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "up": "docker compose up",
+    "up": "docker compose up --build",
     "down": "docker compose down",
     "dev": "vite",
     "build": "tsc && vite build",

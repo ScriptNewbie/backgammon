@@ -1,4 +1,12 @@
-import { applySteps, applyTake, clonePosition, openingPosition, opponent, stepsKey } from "ts-core";
+import {
+  afterPlay,
+  applySteps,
+  applyTake,
+  clonePosition,
+  openingPosition,
+  opponent,
+  stepsKey,
+} from "ts-core";
 import type { Frame, Player, Position, ReplayEvent, SgfEvent, SgfGame } from "./types";
 
 function playerName(player: Player): string {
@@ -94,13 +102,6 @@ function applyRoll(position: Position, player: Player, dice: [number, number]): 
   return next;
 }
 
-function afterMove(position: Position, mover: Player): Position {
-  const next = clonePosition(position);
-  next.onRoll = opponent(mover);
-  next.dice = null;
-  return next;
-}
-
 function pushFrame(
   frames: Frame[],
   game: SgfGame,
@@ -160,7 +161,7 @@ export function buildFrames(games: readonly SgfGame[]): Frame[] {
         pushFrame(frames, game, pos, one, eventIndex, formatMove(event.player, event.dice, one.steps), [...used]);
         eventIndex += 1;
       }
-      pos = afterMove(pos, event.player);
+      pos = afterPlay(pos, []);
     }
   }
   return frames;

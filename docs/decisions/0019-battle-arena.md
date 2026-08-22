@@ -15,7 +15,7 @@
 - v1 plays **engine vs teacher** for `--matches N`. Both sides are **max strength**: argmax mover MWC for checkers (engine results re-ranked; teacher also uses `teacherDiff` then `stepsKey`); infallible cube from `evaluateCube`. No skill levels, temperatures, or pairing. Cube is the shared dead-cube heuristic (teacher has no cube API). Skip cube on the opening roll of a game; skip at cube 64.
 - Alternate seats each match. CLI: `--matches`, `--seed`, `--length` (odd 1–15, default 7).
 - Write GNU Backgammon SGF (`FF[4]` `GM[6]`) per match under gitignored `battle-arena/replays/`. Open in `replay-player` or gnubg. No training JSONL from the arena. Training-ground must not read that directory.
-- Move shared simulation into `ts-core`: Node exports `./sim` (RNG, opening roll, `playMatch` / `MatchPlayer`), `./bgweb` (teacher client + board conversion), `./sgf` (writer only; `p1`/`p2` labels are strings; parameterized `AP`). Replay-player keeps the SGF **parser**. Dump CLI, gzip JSONL, skill sampling, and Vite stay out of `ts-core`. `move-dumper` uses the shared sim and still samples skill levels for dumps.
+- Move shared simulation into `ts-core`: Node exports `./sim` (RNG, opening roll, `playMatch` / `MatchPlayer`), `./bgweb` (teacher client + board conversion), `./sgf` (writer only; `p1`/`p2` labels are strings; parameterized `AP`). GNU checker-move encode/decode is isomorphic. Replay-player keeps the SGF **file** parser. Dump CLI, gzip JSONL, skill sampling, and Vite stay out of `ts-core`. `move-dumper` uses the shared sim and still samples skill levels for dumps.
 
 ## Consequences
 

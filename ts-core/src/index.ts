@@ -20,6 +20,13 @@ export type { GameResult, GameResultKind } from "./board";
 export { cubelessEquity, cubelessFromVector, flipStmCubeless, makeCubeless, terminalCubeless } from "./eval";
 export { FEATURE_SIZE, featurize } from "./features";
 export { generateLegalPlays } from "./moves";
+export {
+  decodePoint,
+  encodeCheckerMove,
+  encodePoint,
+  parseCheckerMove,
+} from "./sgf-codec";
+export type { SgfEvent, SgfGame } from "./sgf-codec";
 export type {
   Cube,
   CubeActionFlag,

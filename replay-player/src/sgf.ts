@@ -1,4 +1,4 @@
-import type { Player, SgfEvent, SgfGame, Step } from "./types";
+import { parseCheckerMove, type Player, type SgfEvent, type SgfGame } from "ts-core";
 
 function propValues(tree: string, name: string): string[] {
   const re = new RegExp(`${name}((?:\\[[^\\]]*\\])+)`, "m");
@@ -30,33 +30,6 @@ function phaseFromRu(ru: string | undefined, length: number, score: { p1: number
   if (ru?.includes("CrawfordGame") || length === 1) return "crawford";
   if (score.p1 === length - 1 || score.p2 === length - 1) return "post";
   return "pre";
-}
-
-export function decodePoint(ch: string): number | "bar" | "off" {
-  if (ch === "y") return "bar";
-  if (ch === "z") return "off";
-  if (ch.length !== 1) throw new Error(`SGF point ${ch}`);
-  const n = ch.charCodeAt(0) - "a".charCodeAt(0) + 1;
-  if (n < 1 || n > 24) throw new Error(`SGF point ${ch}`);
-  return n;
-}
-
-export function parseCheckerMove(raw: string): { dice: [number, number]; steps: Step[] } {
-  if (!/^[1-6][1-6]/.test(raw)) {
-    throw new Error(`SGF checker move ${raw}`);
-  }
-  const dice: [number, number] = [Number(raw[0]), Number(raw[1])];
-  const body = raw.slice(2);
-  if (body.length % 2 !== 0) throw new Error(`SGF checker body ${raw}`);
-  const steps: Step[] = [];
-  for (let i = 0; i < body.length; i += 2) {
-    const from = decodePoint(body[i]!);
-    const to = decodePoint(body[i + 1]!);
-    if (from === "off") throw new Error(`SGF from off in ${raw}`);
-    if (to === "bar") throw new Error(`SGF to bar in ${raw}`);
-    steps.push({ from, to });
-  }
-  return { dice, steps };
 }
 
 function parseResult(raw: string | undefined): SgfGame["result"] {

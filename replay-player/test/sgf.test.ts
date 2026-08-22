@@ -3,28 +3,7 @@ import { test } from "node:test";
 import { applySteps, applyTake, openingPosition } from "ts-core";
 import { actionNotice, dimFlags } from "../src/render.ts";
 import { buildFrames } from "../src/replay.ts";
-import { decodePoint, parseCheckerMove, parseMatchSgf } from "../src/sgf.ts";
-
-test("opening 31 8/5 6/5 encodes as 31hefe", () => {
-  assert.deepEqual(parseCheckerMove("31hefe"), {
-    dice: [3, 1],
-    steps: [
-      { from: 8, to: 5 },
-      { from: 6, to: 5 },
-    ],
-  });
-});
-
-test("bar and off are y and z", () => {
-  assert.equal(decodePoint("y"), "bar");
-  assert.equal(decodePoint("z"), "off");
-  assert.deepEqual(parseCheckerMove("61yr"), { dice: [6, 1], steps: [{ from: "bar", to: 18 }] });
-  assert.deepEqual(parseCheckerMove("21az"), { dice: [2, 1], steps: [{ from: 1, to: "off" }] });
-});
-
-test("empty play is dice with no steps", () => {
-  assert.deepEqual(parseCheckerMove("66"), { dice: [6, 6], steps: [] });
-});
+import { parseMatchSgf } from "../src/sgf.ts";
 
 test("apply 31hefe from opening", () => {
   const start = openingPosition(1, { p1: 0, p2: 0 }, "crawford");

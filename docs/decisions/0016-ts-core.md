@@ -12,7 +12,7 @@
 
 - Add top-level package `ts-core`: shared TypeScript (source, no emit). Docker test + `install:host` like the other TS packages.
 - Consumers depend on `"ts-core": "file:../ts-core"`. Compose mounts the repo root so `file:` resolves.
-- **Isomorphic** export (`.`, safe in the browser): board types, apply/opening/`gameResult`, legal moves, featurizer.
+- **Isomorphic** export (`.`, safe in the browser): board types, apply/opening/`gameResult`, legal moves, featurizer, GNU checker-move encode/decode.
 - **Node** export (`./match`): MET, dead-cube MWC, cube-action formula (`node:fs`). Replay-player must not import this.
 - Do not share dump CLI, skill sampling, Vite UI, or the SGF **parser**. Replay-player imports `ts-core`, not `move-dumper`. Training still ignores SGF.
 - Node exports `./sim`, `./bgweb`, and `./sgf` (writer) are [ADR 0019](0019-battle-arena.md).

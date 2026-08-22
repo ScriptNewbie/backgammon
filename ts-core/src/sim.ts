@@ -14,7 +14,7 @@ import {
 import { evaluateCube, type CubeEval } from "./cube";
 import { flipStmCubeless } from "./eval";
 import { Rng } from "./rng";
-import type { SgfEvent, SgfGame } from "./sgf";
+import type { SgfEvent, SgfGame } from "./sgf-codec";
 import type { Cubeless, MatchPhase, Player, Position, Step } from "./types";
 
 export { Rng } from "./rng";

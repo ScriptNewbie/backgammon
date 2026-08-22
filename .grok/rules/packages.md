@@ -2,11 +2,11 @@
 
 ## ts-core
 
-Shared TypeScript ([ADR 0016](../../docs/decisions/0016-ts-core.md), [ADR 0019](../../docs/decisions/0019-battle-arena.md)). Board types, apply-steps, legal moves, featurizer (isomorphic). Node: `ts-core/match`, `ts-core/sim`, `ts-core/bgweb`, `ts-core/sgf` (writer).
+Shared TypeScript ([ADR 0016](../../docs/decisions/0016-ts-core.md), [ADR 0019](../../docs/decisions/0019-battle-arena.md)). Board types, apply-steps, legal moves, featurizer, GNU checker-move encode/decode (isomorphic). Node: `ts-core/match`, `ts-core/sim`, `ts-core/bgweb`, `ts-core/sgf` (writer).
 
 - Specs: `docs/domain/board-representation.md`, `docs/domain/features.md`, `docs/domain/match-play.md`.
 - Golden vectors: `training-ground/fixtures/features.json`.
-- Do not add dump CLI, skill sampling, Vite UI, or the SGF parser here.
+- Do not add dump CLI, skill sampling, Vite UI, or the SGF **file** parser here.
 - Docker only, from `ts-core/`: `npm test`, `npm run install:host`. Do not run `test:inner` on the host.
 
 ## move-dumper

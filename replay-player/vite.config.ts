@@ -16,4 +16,7 @@ export default defineConfig({
       "ts-core": path.resolve(here, "../ts-core/src/index.ts"),
     },
   },
+  optimizeDeps: {
+    exclude: ["ts-core"],
+  },
 });

@@ -1,31 +1,13 @@
-import type { MatchPhase, Player, Step } from "./types";
+import type { MatchPhase, Player } from "./types";
+import { encodeCheckerMove, type SgfEvent, type SgfGame } from "./sgf-codec";
 
-export type SgfEvent =
-  | { kind: "move"; player: Player; dice: [number, number]; steps: Step[] }
-  | { kind: "cube"; player: Player; action: "double" | "take" | "drop" };
-
-export type SgfGame = {
-  length: number;
-  gameIndex: number;
-  ws: number;
-  bs: number;
-  p1: string;
-  p2: string;
-  phase: MatchPhase;
-  events: SgfEvent[];
-  result: { winner: Player; points: number };
-};
-
-function pointLetter(point: number | "bar" | "off"): string {
-  if (point === "bar") return "y";
-  if (point === "off") return "z";
-  return String.fromCharCode("a".charCodeAt(0) + point - 1);
-}
-
-export function encodeCheckerMove(dice: [number, number], steps: readonly Step[]): string {
-  const body = steps.map((s) => pointLetter(s.from) + pointLetter(s.to)).join("");
-  return `${dice[0]}${dice[1]}${body}`;
-}
+export {
+  decodePoint,
+  encodeCheckerMove,
+  encodePoint,
+  parseCheckerMove,
+} from "./sgf-codec";
+export type { SgfEvent, SgfGame } from "./sgf-codec";
 
 function color(player: Player): "W" | "B" {
   return player === "p1" ? "W" : "B";
@@ -36,9 +18,14 @@ function ru(phase: MatchPhase, length: number): string {
   return "RU[Crawford]";
 }
 
+function resultProp(result: SgfGame["result"]): string {
+  if (!result) return "RE[0]";
+  const winner = result.winner === "p1" ? "W" : "B";
+  return `RE[${winner}+${result.points}]`;
+}
+
 function gameTree(game: SgfGame, app: string): string {
-  const reWinner = game.result.winner === "p1" ? "W" : "B";
-  const nodes = game.events.map((ev) => {
+  const nodes = game.events.map((ev: SgfEvent) => {
     if (ev.kind === "cube") return `;${color(ev.player)}[${ev.action}]`;
     return `;${color(ev.player)}[${encodeCheckerMove(ev.dice, ev.steps)}]`;
   });
@@ -47,7 +34,7 @@ function gameTree(game: SgfGame, app: string): string {
     `MI[length:${game.length}][game:${game.gameIndex}][ws:${game.ws}][bs:${game.bs}]`,
     `PW[p1-${game.p1}]PB[p2-${game.p2}]`,
     ru(game.phase, game.length),
-    `RE[${reWinner}+${game.result.points}]`,
+    resultProp(game.result),
     ...nodes,
     `)`,
   ].join("\n");
