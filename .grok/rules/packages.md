@@ -1,5 +1,14 @@
 # Packages
 
+## ts-core
+
+Shared TypeScript ([ADR 0016](../../docs/decisions/0016-ts-core.md)). Board types, apply-steps, legal moves, featurizer (isomorphic). MET / MWC / cube formula via `ts-core/match` (Node).
+
+- Specs: `docs/domain/board-representation.md`, `docs/domain/features.md`, `docs/domain/match-play.md`.
+- Golden vectors: `training-ground/fixtures/features.json`.
+- Do not add SGF, bgweb-api, dump CLI, or HTTP here.
+- Docker only, from `ts-core/`: `npm test`, `npm run install:host`. Do not run `test:inner` on the host.
+
 ## move-dumper
 
 TypeScript. Simulate matches between skill levels; dump labelled positions from foochu/bgweb-api.
@@ -21,11 +30,11 @@ PyTorch. Train cubeless net, export ONNX and ExecuTorch `.pte` ([ADR 0014](../..
 
 ## game-engine
 
-TypeScript + `onnxruntime-node` (not scaffolded). No Python per request.
+TypeScript + Hono + `onnxruntime-node` ([ADR 0017](../../docs/decisions/0017-hono.md)). No Python per request.
 
-- Bodies and evals: `docs/domain/board-representation.md`, `docs/domain/evaluation.md`, `docs/domain/features.md`.
-- Rank checker plays by negated cubeful equity of the resulting position. HTTP framework is still open.
-- Docker only, from `game-engine/`: `npm run up` (http://localhost:3000), `npm run install:host`. Port 3000 is the Compose publish port only.
+- Bodies and evals: `docs/domain/game-engine.md`, `docs/domain/board-representation.md`, `docs/domain/evaluation.md`, `docs/domain/features.md`.
+- Rank checker plays by negated cubeful equity of the resulting position. Cube wrap: [ADR 0018](../../docs/decisions/0018-cube-wrap-formula.md).
+- Docker only, from `game-engine/`: `npm run up` (http://localhost:3000), `npm test`, `npm run install:host`. Port 3000 is the Compose publish port only.
 
 ## replay-player
 
@@ -33,4 +42,4 @@ Vite + vanilla TypeScript. Debug viewer for GNU Backgammon SGF dumps ([ADR 0010]
 
 - Load `move-dumper/dumps/<batch>/replay/<matchId>.sgf` via file picker. Step with Previous / Next.
 - From `replay-player/`: `npm run up` (http://localhost:5173), `npm test`, `npm run install:host`. Do not run `test:inner` / `dev` on the host.
-- Reconstruct position JSON from SGF events. Do not parse JSONL. Do not import `move-dumper`. Training ignores SGF.
+- Reconstruct position JSON from SGF events. Do not parse JSONL. Import `ts-core`, not `move-dumper`. Training ignores SGF.

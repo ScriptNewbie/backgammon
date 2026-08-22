@@ -1,0 +1,21 @@
+services:
+  test:
+    build: .
+    working_dir: /repo/ts-core
+    volumes:
+      - ..:/repo
+      - ts_core_node_modules:/repo/ts-core/node_modules
+    command: ["npm", "run", "test:inner"]
+    profiles: ["test"]
+
+  install-host:
+    build: .
+    working_dir: /repo/ts-core
+    volumes:
+      - ..:/repo
+    entrypoint: ["npm"]
+    command: ["install"]
+    profiles: ["install-host"]
+
+volumes:
+  ts_core_node_modules:

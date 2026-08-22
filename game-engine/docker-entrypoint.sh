@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-cd /app
+cd /repo/game-engine
 if [[ -f package.json && ! -d node_modules/.bin ]]; then
   npm install
 fi

@@ -12,7 +12,10 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "allowImportingTsExtensions": true,
-    "types": ["vite/client", "node"]
+    "types": ["vite/client", "node"],
+    "paths": {
+      "ts-core": ["../ts-core/src/index.ts"]
+    }
   },
   "include": ["src/**/*.ts", "test/**/*.ts", "vite.config.ts"]
 }

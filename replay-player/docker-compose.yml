@@ -1,18 +1,27 @@
 services:
   replay-player:
     build: .
-    working_dir: /app
+    working_dir: /repo/replay-player
     volumes:
-      - .:/app
-      - replay_player_node_modules:/app/node_modules
+      - ..:/repo
+      - replay_player_node_modules:/repo/replay-player/node_modules
     ports:
       - "5173:5173"
 
+  test:
+    build: .
+    working_dir: /repo/replay-player
+    volumes:
+      - ..:/repo
+      - replay_player_node_modules:/repo/replay-player/node_modules
+    command: ["npm", "run", "test:inner"]
+    profiles: ["test"]
+
   install-host:
     build: .
-    working_dir: /app
+    working_dir: /repo/replay-player
     volumes:
-      - .:/app
+      - ..:/repo
     entrypoint: ["npm"]
     command: ["install"]
     profiles: ["install-host"]

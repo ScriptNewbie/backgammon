@@ -7,7 +7,7 @@ import {
   toBgwebBoard,
   toRequest,
 } from "../src/bgweb.ts";
-import { openingPosition } from "../src/board.ts";
+import { openingPosition } from "ts-core";
 
 test("opening board is each side's own 1–24", () => {
   const pos = openingPosition(7, { p1: 0, p2: 0 }, "pre");

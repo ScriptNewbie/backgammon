@@ -78,4 +78,4 @@ Actions:
 
 Infallible takes that action. Other levels: logistic on ΔMWC with the same τ as checker play (`P(double) = 1 / (1 + exp(-Δ / τ))`, and the same for take vs drop). Noob: offer with probability 0.10 when allowed; take/drop with probability 0.50.
 
-Teacher `eval.cubeAction` stays `null`. Persist the simulated action on dump records with `decision: "cube"` ([dump-format.md](dump-format.md)).
+Teacher `eval.cubeAction` stays `null`. Persist the simulated action on dump records with `decision: "cube"` ([dump-format.md](dump-format.md)). `game-engine` maps the infallible side of this heuristic onto `eval.cubeAction` ([ADR 0018](../decisions/0018-cube-wrap-formula.md)).

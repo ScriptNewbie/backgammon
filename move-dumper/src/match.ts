@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import type { Cubeless, DumpRecord, LegalPlay, Level, MatchPhase, Player, Position } from "./types";
 import {
   applySteps,
   applyTake,
@@ -12,13 +11,18 @@ import {
   opponent,
   pointsAwarded,
   stepsKey,
-} from "./board";
+  type Cubeless,
+  type MatchPhase,
+  type Player,
+  type Position,
+} from "ts-core";
+import { evaluateCube, moverMwc } from "ts-core/match";
 import { flipStmCubeless, type BgwebClient } from "./bgweb";
-import { evaluateCube, sampleOffer, sampleTake } from "./cube";
+import { sampleOffer, sampleTake } from "./cube";
 import { DumpWriter } from "./dump";
 import { sampleCheckerIndex, sampleLevelPair, sampleMatchLength } from "./levels";
-import { moverMwc } from "./mwc";
 import type { Rng } from "./rng";
+import type { DumpRecord, LegalPlay, Level } from "./types";
 import { renderMatchSgf, type SgfEvent, type SgfGame } from "./sgf";
 
 function dumpMoves(plays: readonly LegalPlay[]): DumpRecord["moves"] {

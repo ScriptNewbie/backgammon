@@ -1,18 +1,33 @@
 services:
   game-engine:
     build: .
-    working_dir: /app
+    working_dir: /repo/game-engine
+    environment:
+      MODEL_PATH: /models/cubeless.onnx
     volumes:
-      - .:/app
-      - game_engine_node_modules:/app/node_modules
+      - ..:/repo
+      - game_engine_node_modules:/repo/game-engine/node_modules
+      - ../training-ground/checkpoints:/models:ro
     ports:
       - "3000:3000"
 
+  test:
+    build: .
+    working_dir: /repo/game-engine
+    environment:
+      MODEL_PATH: /models/cubeless.onnx
+    volumes:
+      - ..:/repo
+      - game_engine_node_modules:/repo/game-engine/node_modules
+      - ../training-ground/checkpoints:/models:ro
+    command: ["npm", "run", "test:inner"]
+    profiles: ["test"]
+
   install-host:
     build: .
-    working_dir: /app
+    working_dir: /repo/game-engine
     volumes:
-      - .:/app
+      - ..:/repo
     entrypoint: ["npm"]
     command: ["install"]
     profiles: ["install-host"]

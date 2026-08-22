@@ -1,6 +1,6 @@
 # Feature tensor
 
-Locked by [ADR 0002](../decisions/0002-board-representations.md). This is the only training/inference input layout. Implement identically in Python (`training-ground`) and TypeScript (`game-engine`). Keep golden vectors in a git-tracked fixture.
+Locked by [ADR 0002](../decisions/0002-board-representations.md). This is the only training/inference input layout. Implement identically in Python (`training-ground`) and TypeScript (`ts-core`). Keep golden vectors in a git-tracked fixture.
 
 The net sees **side-to-move (STM)**. Build the tensor from position JSON by treating `onRoll` as STM and the other player as opponent. Do not feed XGID to the net.
 

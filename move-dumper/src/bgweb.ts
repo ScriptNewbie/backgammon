@@ -1,5 +1,14 @@
-import type { Cubeless, Eval, LegalPlay, Player, Position, Step } from "./types";
-import { parsePoint, stepsKey } from "./board";
+import { stepsKey, type Cubeless, type Eval, type Player, type Point, type Position, type Step } from "ts-core";
+import type { LegalPlay } from "./types";
+
+function parsePoint(raw: string): Point {
+  if (raw === "bar" || raw === "off") return raw;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1 || n > 24) {
+    throw new Error(`invalid bgweb point ${raw}`);
+  }
+  return n;
+}
 
 export type BgwebLayout = Record<string, number>;
 

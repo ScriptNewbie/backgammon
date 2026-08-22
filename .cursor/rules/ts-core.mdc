@@ -1,0 +1,14 @@
+---
+description: Shared TypeScript board, moves, and match math
+globs: ts-core/**
+alwaysApply: false
+---
+
+# ts-core
+
+Shared TypeScript library ([ADR 0016](docs/decisions/0016-ts-core.md)). Isomorphic export: types, board, legal moves, featurizer. Node export `ts-core/match`: MET, MWC, cube formula.
+
+- Specs: `docs/domain/board-representation.md`, `docs/domain/features.md`, `docs/domain/match-play.md`.
+- Golden feature vectors: `training-ground/fixtures/features.json`.
+- Do not add SGF, bgweb-api, dump CLI, or HTTP here.
+- Docker only, from `ts-core/`: `npm test`, `npm run install:host`. Do not run `test:inner` on the host.

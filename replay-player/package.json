@@ -11,9 +11,12 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "docker compose run --rm replay-player npm run test:inner",
+    "test": "docker compose --profile test run --rm test",
     "test:inner": "tsx --test test/*.test.ts",
     "install:host": "docker compose --profile install-host run --rm install-host"
+  },
+  "dependencies": {
+    "ts-core": "file:../ts-core"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

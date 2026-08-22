@@ -6,10 +6,9 @@ alwaysApply: false
 
 # game-engine
 
-TypeScript HTTP API (not scaffolded). Move gen, featurizer, cube wrap, and ONNX inference (`onnxruntime-node`) live here. Do not spawn Python per request.
+TypeScript HTTP API (Hono, [ADR 0017](docs/decisions/0017-hono.md)). Cube wrap is a formula ([ADR 0018](docs/decisions/0018-cube-wrap-formula.md)). ONNX inference (`onnxruntime-node`) lives here. Board, legal moves, and featurizer come from `ts-core`. Do not spawn Python per request.
 
-- Bodies: `docs/domain/board-representation.md` and `docs/domain/evaluation.md`.
-- Tensor: `docs/domain/features.md` (must match Python).
+- Bodies: `docs/domain/game-engine.md`, `docs/domain/board-representation.md`, `docs/domain/evaluation.md`.
+- Tensor: `docs/domain/features.md` (must match Python; implemented in `ts-core`).
 - Legal moves only. Rank checker plays by negated cubeful equity of the resulting position.
-- HTTP framework is still an open question.
-- Docker only, from `game-engine/`: `npm run up` (http://localhost:3000), `npm run install:host`. Port 3000 is the Compose publish port, not an HTTP-framework decision. When tests exist, add `test:inner` and wrap `npm test` like the other TS packages. Do not run host `tsx`.
+- Docker only, from `game-engine/`: `npm run up` (http://localhost:3000), `npm test`, `npm run install:host`. Port 3000 is the Compose publish port, not an HTTP-framework decision. Do not run host `tsx`.

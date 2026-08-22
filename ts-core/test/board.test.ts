@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   OPENING_POINTS,
+  afterPlay,
   applySteps,
   applyTake,
   assertFifteen,
@@ -189,4 +190,13 @@ test("cube stops at 64 and nobody may recube", () => {
   const stuck = applyTake(pos, "p1");
   assert.equal(stuck.cube.value, 64);
   assert.deepEqual(stuck.cube.mayDouble, { p1: false, p2: false });
+});
+
+test("afterPlay flips onRoll and clears dice", () => {
+  const next = afterPlay(opening("p1"), [
+    { from: 8, to: 5 },
+    { from: 6, to: 5 },
+  ]);
+  assert.equal(next.onRoll, "p2");
+  assert.equal(next.dice, null);
 });

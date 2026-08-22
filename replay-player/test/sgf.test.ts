@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { applySteps, applyTake, openingPosition } from "../src/board.ts";
+import { applySteps, applyTake, openingPosition } from "ts-core";
 import { actionNotice, dimFlags } from "../src/render.ts";
 import { buildFrames } from "../src/replay.ts";
 import { decodePoint, parseCheckerMove, parseMatchSgf } from "../src/sgf.ts";
@@ -27,7 +27,7 @@ test("empty play is dice with no steps", () => {
 });
 
 test("apply 31hefe from opening", () => {
-  const start = openingPosition(1, { p1: 0, p2: 0 }, true);
+  const start = openingPosition(1, { p1: 0, p2: 0 }, "crawford");
   start.onRoll = "p1";
   const next = applySteps(start, [
     { from: 8, to: 5 },
@@ -39,7 +39,7 @@ test("apply 31hefe from opening", () => {
 });
 
 test("applyTake doubles cube and gives it to the taker", () => {
-  const start = openingPosition(7, { p1: 0, p2: 0 }, false);
+  const start = openingPosition(7, { p1: 0, p2: 0 }, "pre");
   const taken = applyTake(start, "p1");
   assert.equal(taken.cube.value, 2);
   assert.equal(taken.cube.owner, "p2");
@@ -47,7 +47,7 @@ test("applyTake doubles cube and gives it to the taker", () => {
 });
 
 test("take at 32 yields 64 and kills recube rights", () => {
-  const start = openingPosition(7, { p1: 0, p2: 0 }, false);
+  const start = openingPosition(7, { p1: 0, p2: 0 }, "pre");
   start.cube.value = 32;
   start.cube.owner = "p1";
   start.cube.mayDouble = { p1: true, p2: false };

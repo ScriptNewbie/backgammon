@@ -9,7 +9,7 @@ alwaysApply: false
 PyTorch training. Consumes JSON dumps, trains the cubeless net, exports ONNX (game-engine) and ExecuTorch `.pte` ([ADR 0014](docs/decisions/0014-export-onnx-and-pte.md)). CUDA image ([ADR 0013](docs/decisions/0013-training-cuda.md)).
 
 - Positions: JSON in `docs/domain/board-representation.md`. Inputs: tensor in `docs/domain/features.md`. Labels: cubeless probs in `docs/domain/evaluation.md`.
-- Teacher: `CubelessNet` (default 206→512→512→512→5, MSE; [ADR 0015](docs/decisions/0015-teacher-cubeless-mlp.md)). Featurizer: `src/training_ground/features.py` (length 206 STM). Golden vectors: `fixtures/features.json`. Keep in lockstep with TypeScript.
+- Teacher: `CubelessNet` (default 206→512→512→512→5, MSE; [ADR 0015](docs/decisions/0015-teacher-cubeless-mlp.md)). Featurizer: `src/training_ground/features.py` (length 206 STM). Golden vectors: `fixtures/features.json`. Keep in lockstep with TypeScript in `ts-core`.
 - Checkpoints, `cache/`, `wandb/`, `*.pt`, `*.onnx`, and `*.pte` are gitignored. Do not commit them.
 - Do not list `torch` in `pyproject.toml` (PyPI wheel is CPU). Install from the cu130 index; install `onnx` / `executorch` after that pin. Do not copy dumps into `training-ground/`.
 - Data layout: [ADR 0012](docs/decisions/0012-training-data-layout.md). Compose mounts `../move-dumper/dumps` read-only at `/data/dumps`. Split by `matchId` sha256-mod-100 (train `0–89`, val `90–94`, test `95–99`). Optional cache later: `training-ground/cache/`.

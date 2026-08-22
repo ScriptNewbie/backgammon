@@ -1,4 +1,4 @@
-import { applySteps, applyTake, clonePosition, openingPosition, opponent, stepsKey } from "./board";
+import { applySteps, applyTake, clonePosition, openingPosition, opponent, stepsKey } from "ts-core";
 import type { Frame, Player, Position, ReplayEvent, SgfEvent, SgfGame } from "./types";
 
 function playerName(player: Player): string {
@@ -126,7 +126,7 @@ function pushFrame(
 export function buildFrames(games: readonly SgfGame[]): Frame[] {
   const frames: Frame[] = [];
   for (const game of games) {
-    let pos = openingPosition(game.length, { p1: game.ws, p2: game.bs }, game.phase === "crawford");
+    let pos = openingPosition(game.length, { p1: game.ws, p2: game.bs }, game.phase);
     frames.push(openingFrame(game, clonePosition(pos)));
     let eventIndex = 0;
     for (const event of game.events) {

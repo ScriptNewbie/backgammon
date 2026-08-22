@@ -1,9 +1,9 @@
-import type { Player, Position, Step } from "./types";
+import type { MatchPhase, Player, Position, Step } from "./types";
 
 /** Physical / GNU–XG–FIBS cube. Doubling past this is illegal. */
 export const MAX_CUBE_VALUE = 64;
 
-/** Standard opening. Index 0 = point 1. Positive = p1. Same as move-dumper / board-representation.md. */
+/** Standard opening. Index 0 = point 1. Positive = p1. */
 export const OPENING_POINTS: readonly number[] = [
   -2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2,
 ];
@@ -19,8 +19,9 @@ export function clonePosition(position: Position): Position {
 export function openingPosition(
   length: number,
   score: { p1: number; p2: number },
-  crawford: boolean,
+  phase: MatchPhase,
 ): Position {
+  const crawford = phase === "crawford";
   return {
     points: [...OPENING_POINTS],
     bar: { p1: 0, p2: 0 },
@@ -30,7 +31,9 @@ export function openingPosition(
     cube: {
       value: 1,
       owner: "centered",
-      mayDouble: crawford ? { p1: false, p2: false } : { p1: true, p2: true },
+      mayDouble: crawford
+        ? { p1: false, p2: false }
+        : { p1: true, p2: true },
     },
     match: {
       length,
@@ -55,6 +58,10 @@ export function assertFifteen(position: Position): void {
   if (p1 !== 15 || p2 !== 15) {
     throw new Error(`checker counts must be 15 (p1=${p1} p2=${p2})`);
   }
+}
+
+export function stepsKey(steps: readonly Step[]): string {
+  return steps.map((s) => `${s.from}/${s.to}`).join(" ");
 }
 
 function pointIndex(point: number): number {
@@ -106,7 +113,7 @@ function placeChecker(position: Position, player: Player, to: Step["to"]): void 
   }
 }
 
-/** Apply checker steps in order. Hits are implied. Returns a clone. */
+/** Apply checker steps in order. Hits are implied. Returns a clone. Does not flip onRoll. */
 export function applySteps(position: Position, steps: readonly Step[]): Position {
   const next = clonePosition(position);
   const player = next.onRoll;
@@ -116,6 +123,57 @@ export function applySteps(position: Position, steps: readonly Step[]): Position
   }
   assertFifteen(next);
   return next;
+}
+
+/** Apply a play and end the turn: flip onRoll, clear dice. */
+export function afterPlay(position: Position, steps: readonly Step[]): Position {
+  const next = steps.length > 0 ? applySteps(position, steps) : clonePosition(position);
+  next.onRoll = opponent(next.onRoll);
+  next.dice = null;
+  return next;
+}
+
+export type GameResultKind = "single" | "gammon" | "backgammon";
+
+export type GameResult = {
+  winner: Player;
+  kind: GameResultKind;
+  multiplier: 1 | 2 | 3;
+};
+
+function loserInWinnerHome(position: Position, winner: Player, loser: Player): boolean {
+  if (winner === "p1") {
+    for (let i = 0; i < 6; i++) {
+      if (position.points[i]! < 0) return true;
+    }
+  } else {
+    for (let i = 18; i < 24; i++) {
+      if (position.points[i]! > 0) return true;
+    }
+  }
+  return position.bar[loser] > 0;
+}
+
+/** 15 off ends the game. Null if still in play. */
+export function gameResult(position: Position): GameResult | null {
+  const p1Off = position.off.p1 >= 15;
+  const p2Off = position.off.p2 >= 15;
+  if (!p1Off && !p2Off) return null;
+  const winner: Player = p1Off ? "p1" : "p2";
+  const loser = opponent(winner);
+  if (position.off[loser] > 0) {
+    return { winner, kind: "single", multiplier: 1 };
+  }
+  if (loserInWinnerHome(position, winner, loser)) {
+    return { winner, kind: "backgammon", multiplier: 3 };
+  }
+  return { winner, kind: "gammon", multiplier: 2 };
+}
+
+export function pointsAwarded(cubeValue: number, multiplier: 1 | 2 | 3, length: number, winnerScore: number): number {
+  const raw = cubeValue * multiplier;
+  const room = Math.max(0, length - winnerScore);
+  return Math.min(raw, room);
 }
 
 export function applyTake(position: Position, doubler: Player): Position {
@@ -131,6 +189,25 @@ export function applyTake(position: Position, doubler: Player): Position {
   return next;
 }
 
-export function stepsKey(steps: readonly Step[]): string {
-  return steps.map((s) => `${s.from}/${s.to}`).join(" ");
+export function nextPhase(
+  phase: MatchPhase,
+  score: { p1: number; p2: number },
+  length: number,
+): MatchPhase {
+  if (score.p1 >= length || score.p2 >= length) return phase;
+  if (phase === "crawford") return "post";
+  if (phase === "post") return "post";
+  if (score.p1 === length - 1 || score.p2 === length - 1) return "crawford";
+  return "pre";
+}
+
+export function initialPhase(length: number): MatchPhase {
+  return length === 1 ? "crawford" : "pre";
+}
+
+export function matchPhase(position: Position): MatchPhase {
+  if (position.match.crawford) return "crawford";
+  const { length, score } = position.match;
+  if (score.p1 === length - 1 || score.p2 === length - 1) return "post";
+  return "pre";
 }
