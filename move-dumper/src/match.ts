@@ -303,6 +303,9 @@ export async function dumpMatches(
   for (let i = 0; i < matchCount; i++) {
     const players = sampleLevelPair(rng);
     const length = lengthOverride ?? sampleMatchLength(rng);
-    await playMatch(client, rng, writer, players, length);
+    const { matchId, games } = await playMatch(client, rng, writer, players, length);
+    console.log(
+      `match ${i + 1}/${matchCount} length=${length} games=${games} id=${matchId} records=${writer.recordCount}`,
+    );
   }
 }
