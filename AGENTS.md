@@ -23,7 +23,7 @@ TypeScript npm scripts wrap Compose. They do not run `tsx` / Vite on the host. `
 | --- | --- | --- | --- |
 | `move-dumper` | `npm test` | Teacher API: `npm run up`. Dump: `npm run dump -- --matches 1 --seed 1` | `npm run install:host` |
 | `replay-player` | `npm test` | `npm run up` (http://localhost:5173) | `npm run install:host` |
-| `training-ground` | `docker compose run --rm train python -m pytest` | `docker compose run --rm train <command>` (CUDA image, `gpus: all`; dumps at `/data/dumps`, [ADR 0012](docs/decisions/0012-training-data-layout.md), [ADR 0013](docs/decisions/0013-training-cuda.md)) | `docker compose --profile install-host run --rm install-host` |
+| `training-ground` | `docker compose run --rm train python -m pytest` | `docker compose run --rm train python -m training_ground.train --dumps /data/dumps --epochs 20 --batch-size 1024 --checkpoint-dir checkpoints` (CUDA image, `gpus: all`; dumps at `/data/dumps`, [ADR 0012](docs/decisions/0012-training-data-layout.md), [ADR 0013](docs/decisions/0013-training-cuda.md), [ADR 0015](docs/decisions/0015-teacher-cubeless-mlp.md)) | `docker compose --profile install-host run --rm install-host` |
 | `game-engine` | `docker compose run --rm game-engine npm test` (when tests exist) | `npm run up` (http://localhost:3000; not scaffolded; HTTP framework still open) | `npm run install:host` |
 
 Images: `node:22-bookworm` for TypeScript packages; `python:3.12-bookworm` plus a cu130 PyTorch wheel for `training-ground` ([ADR 0013](docs/decisions/0013-training-cuda.md)). Do not use `docker run -v "${PWD}:/app"` as the workflow.

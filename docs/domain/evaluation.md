@@ -25,7 +25,7 @@ All in `[0, 1]`. gnubg-style split (win includes gammons and backgammons):
 
 `equity = (win + gammon + backgammon) - ((1 - win) + loseGammon + loseBackgammon)`
 
-Store the probabilities **and** `equity`; do not store equity alone.
+Store the probabilities **and** `equity`; do not store equity alone. The trained net emits the five probabilities in that table order (not equity); see [features.md](features.md) and [ADR 0015](../decisions/0015-teacher-cubeless-mlp.md).
 
 ## Shared eval object
 

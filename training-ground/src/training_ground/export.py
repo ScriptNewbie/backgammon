@@ -5,9 +5,10 @@ from pathlib import Path
 import torch
 from torch.export import export as torch_export
 
+from training_ground.cubeless import CUBELESS_OUTPUT_SIZE
 from training_ground.features import FEATURE_SIZE
 
-CUBELESS_OUTPUT_SIZE = 5
+__all__ = ["CUBELESS_OUTPUT_SIZE", "export_onnx_and_pte"]
 
 
 def export_onnx_and_pte(

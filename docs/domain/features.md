@@ -46,7 +46,17 @@ STM’s 1-point is JSON point 1 when `onRoll == "p1"`, and JSON point 24 when `o
 
 ## Output of the net
 
-Cubeless outcome probabilities for **STM** (see [evaluation.md](evaluation.md)). Cube equity is not a net output; it is wrapped from these probs + cube features.
+Cubeless outcome probabilities for **STM** (see [evaluation.md](evaluation.md)), as a length-**5** `float32` vector. ONNX output name is `cubeless` ([ADR 0015](../decisions/0015-teacher-cubeless-mlp.md)):
+
+| Index | Field |
+| --- | --- |
+| 0 | `win` |
+| 1 | `gammon` |
+| 2 | `backgammon` |
+| 3 | `loseGammon` |
+| 4 | `loseBackgammon` |
+
+Do not emit `equity` as a sixth head; derive it from the five probs. Cube equity is not a net output; it is wrapped from these probs + cube features.
 
 ## Tests
 
