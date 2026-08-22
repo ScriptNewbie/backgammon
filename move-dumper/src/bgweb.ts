@@ -151,6 +151,54 @@ export function mergePlays(
   return { plays, plies };
 }
 
+export const FETCH_TIMEOUT_MS = 60_000;
+export const RETRY_MAX_DELAY_MS = 30_000;
+
+export async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function retryableStatus(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
+/** Retry transient teacher failures indefinitely (multi-day dumps). 4xx is fatal. */
+export async function fetchWithRetry(
+  url: string,
+  init: RequestInit,
+  deps: {
+    fetch?: typeof fetch;
+    sleep?: (ms: number) => Promise<void>;
+    log?: (msg: string) => void;
+  } = {},
+): Promise<Response> {
+  const doFetch = deps.fetch ?? fetch;
+  const doSleep = deps.sleep ?? sleep;
+  const log = deps.log ?? ((msg) => console.error(msg));
+  let delay = 1000;
+  for (;;) {
+    let res: Response;
+    try {
+      res = await doFetch(url, { ...init, signal: init.signal ?? AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      log(`bgweb-api unreachable (${reason}); retry in ${delay}ms. Keep npm run up. Do not use the gnubg CLI.`);
+      await doSleep(delay);
+      delay = Math.min(delay * 2, RETRY_MAX_DELAY_MS);
+      continue;
+    }
+    if (res.ok) return res;
+    const text = await res.text();
+    if (retryableStatus(res.status)) {
+      log(`getmoves ${res.status}; retry in ${delay}ms: ${text.slice(0, 200)}`);
+      await doSleep(delay);
+      delay = Math.min(delay * 2, RETRY_MAX_DELAY_MS);
+      continue;
+    }
+    throw new Error(`getmoves ${res.status}: ${text.slice(0, 500)}`);
+  }
+}
+
 export class BgwebClient {
   constructor(readonly baseUrl: string) {}
 
@@ -180,23 +228,11 @@ export class BgwebClient {
     const url = `${this.baseUrl.replace(/\/$/, "")}/api/v1/getmoves`;
     const payload: GetMovesArgs & { "max-moves"?: number } = { ...body };
     if (limitMoves) payload["max-moves"] = 1;
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        method: "POST",
-        headers: { accept: "application/json", "content-type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-    } catch (err) {
-      const reason = err instanceof Error ? err.message : String(err);
-      throw new Error(
-        `bgweb-api is not reachable at ${this.baseUrl} (${reason}). From move-dumper/, run npm run up. Do not use the gnubg CLI.`,
-      );
-    }
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`getmoves ${res.status}: ${text.slice(0, 500)}`);
-    }
+    const res = await fetchWithRetry(url, {
+      method: "POST",
+      headers: { accept: "application/json", "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
     return (await res.json()) as BgwebMove[];
   }
 }

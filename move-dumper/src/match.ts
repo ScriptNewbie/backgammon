@@ -100,6 +100,7 @@ export async function playMatch(
     gameIndex += 1;
   }
 
+  await writer.commitMatch();
   await writer.writeSgf(matchId, renderMatchSgf(sgfGames));
   return { matchId, games: sgfGames.length };
 }
@@ -299,8 +300,13 @@ export async function dumpMatches(
   writer: DumpWriter,
   matchCount: number,
   lengthOverride?: number,
+  shouldStop?: () => boolean,
 ): Promise<void> {
   for (let i = 0; i < matchCount; i++) {
+    if (shouldStop?.()) {
+      console.log(`stop after ${i} match(es); committed records=${writer.recordCount}`);
+      return;
+    }
     const players = sampleLevelPair(rng);
     const length = lengthOverride ?? sampleMatchLength(rng);
     const { matchId, games } = await playMatch(client, rng, writer, players, length);

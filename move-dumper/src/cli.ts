@@ -78,10 +78,23 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     seed: args.seed,
     baseUrl: args.baseUrl,
   });
+  let stop = false;
+  const requestStop = (): void => {
+    if (stop) return;
+    stop = true;
+    console.error("stop requested; finishing after the current match");
+  };
+  process.once("SIGINT", requestStop);
+  process.once("SIGTERM", requestStop);
   const rng = new Rng(args.seed);
-  await dumpMatches(client, rng, writer, args.matches, args.length);
-  const { dir, recordCount } = await writer.finish();
-  console.log(`Wrote ${recordCount} records to ${dir}`);
+  try {
+    await dumpMatches(client, rng, writer, args.matches, args.length, () => stop);
+  } finally {
+    process.off("SIGINT", requestStop);
+    process.off("SIGTERM", requestStop);
+    const { dir, recordCount } = await writer.finish();
+    console.log(`Wrote ${recordCount} records to ${dir}`);
+  }
 }
 
 const thisFile = fileURLToPath(import.meta.url);

@@ -21,7 +21,9 @@ Those scripts wrap Docker Compose (`dump:inner` / `test:inner` run inside the co
 1. Sample an unordered level pair from the weights below; randomly assign `p1` / `p2`.
 2. Sample length uniformly from `{1, 3, 5, 7, 9, 11, 13, 15}`.
 3. Play games until a player’s score `>= length`. Same pair and length for the whole match.
-4. Write `replay/<matchId>.sgf`.
+4. Write `replay/<matchId>.sgf`. Records for that match are committed to `records.jsonl.gz` first (one gzip member per match) so a crash keeps finished matches readable.
+
+Teacher `getmoves` retries on disconnect / 5xx until the API returns. SIGINT/SIGTERM finish after the current match (`gzip.end` + manifest). Do not kill `-9` if you want the last member closed.
 
 Seed the RNG; store `seed` on the batch manifest.
 

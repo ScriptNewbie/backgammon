@@ -64,7 +64,7 @@ Do not use a JSON array of all records, Parquet, or SQLite as the dumper’s for
 - `engine.name` is `"bgweb-api"`. `version` is the Docker image tag (or digest if pinned).
 - `play` is `"match"` for v1 dumps. `matchLengths` is the set sampled **uniformly** per match. Each record’s `position.match.length` is that match’s length, not a batch constant.
 - Extra keys under `engine.settings` are allowed (`plies` from `evaluation.info`). Do not remove `play` / `cubefulLabels`.
-- Update `recordCount` when the batch finishes. If a run crashes, count the JSONL lines; do not trust a stale manifest.
+- Update `recordCount` after **each committed match** (and again when the batch finishes) so a crash still has a usable count. If a run dies mid-match, count the JSONL lines; do not trust a stale manifest. Gzip is concatenated members, one per finished match — `gunzip` still yields one JSONL stream.
 
 ## Record (`v: 1`)
 
