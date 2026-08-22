@@ -6,7 +6,7 @@ import {
   mergePlays,
   toBgwebBoard,
   toRequest,
-} from "../src/bgweb.ts";
+} from "ts-core/bgweb";
 import { openingPosition } from "ts-core";
 
 test("opening board is each side's own 1–24", () => {

@@ -1,4 +1,5 @@
 import type { Eval, Position, Step } from "ts-core";
+import type { LegalPlay } from "ts-core/bgweb";
 
 export type {
   Cube,
@@ -12,13 +13,9 @@ export type {
   Step,
 } from "ts-core";
 
-export type Level = "noob" | "beginner" | "midwit" | "genius" | "infallible";
+export type { LegalPlay };
 
-export type LegalPlay = {
-  steps: Step[];
-  eval: Eval;
-  teacherDiff: number;
-};
+export type Level = "noob" | "beginner" | "midwit" | "genius" | "infallible";
 
 export type CubeAction = "no-double" | "double" | "take" | "drop";
 

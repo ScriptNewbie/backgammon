@@ -1,5 +1,6 @@
-import { stepsKey, type Cubeless, type Eval, type Player, type Point, type Position, type Step } from "ts-core";
-import type { LegalPlay } from "./types";
+import { stepsKey } from "./board";
+import type { Cubeless, Eval, Player, Point, Position, Step } from "./types";
+import { flipStmCubeless } from "./eval";
 
 function parsePoint(raw: string): Point {
   if (raw === "bar" || raw === "off") return raw;
@@ -9,6 +10,12 @@ function parsePoint(raw: string): Point {
   }
   return n;
 }
+
+export type LegalPlay = {
+  steps: Step[];
+  eval: Eval;
+  teacherDiff: number;
+};
 
 export type BgwebLayout = Record<string, number>;
 
@@ -90,16 +97,7 @@ export function flipCubeless(moverEq: number, probability: BgwebProbability): Cu
   };
 }
 
-export function flipStmCubeless(cubeless: Cubeless): Cubeless {
-  return {
-    equity: -cubeless.equity,
-    win: 1 - cubeless.win,
-    gammon: cubeless.loseGammon,
-    backgammon: cubeless.loseBackgammon,
-    loseGammon: cubeless.gammon,
-    loseBackgammon: cubeless.backgammon,
-  };
-}
+export { flipStmCubeless };
 
 export function toRequest(position: Position, cubeful: boolean): GetMovesArgs {
   if (!position.dice) throw new Error("getmoves requires dice");

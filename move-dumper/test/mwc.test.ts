@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { PAIRING_WEIGHTS, sampleCheckerIndex, sampleLevelPair } from "../src/levels.ts";
-import { Rng } from "../src/rng.ts";
+import { Rng } from "ts-core/sim";
 
 test("default pairing never samples noob-noob", () => {
   assert.equal(PAIRING_WEIGHTS["noob-noob"], 0);

@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { parseArgs } from "../src/cli.ts";
 import { batchStamp, buildManifest } from "../src/dump.ts";
-import { encodeCheckerMove, renderMatchSgf } from "../src/sgf.ts";
 import { rollOpening } from "../src/match.ts";
-import { Rng } from "../src/rng.ts";
+import { encodeCheckerMove, renderMatchSgf } from "ts-core/sgf";
+import { Rng } from "ts-core/sim";
 
 test("opening 31 8/5 6/5 encodes as 31hefe", () => {
   assert.equal(

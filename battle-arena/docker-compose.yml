@@ -1,0 +1,54 @@
+services:
+  bgweb-api:
+    image: foochu/bgweb-api:latest
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  game-engine:
+    build: ../game-engine
+    working_dir: /repo/game-engine
+    environment:
+      MODEL_PATH: /models/cubeless.onnx
+    volumes:
+      - ..:/repo
+      - game_engine_node_modules:/repo/game-engine/node_modules
+      - ../training-ground/checkpoints:/models:ro
+    ports:
+      - "3000:3000"
+
+  arena:
+    build: .
+    working_dir: /repo/battle-arena
+    volumes:
+      - ..:/repo
+      - battle_arena_node_modules:/repo/battle-arena/node_modules
+    environment:
+      BGWEB_BASE_URL: http://bgweb-api:8080
+      ENGINE_BASE_URL: http://game-engine:3000
+    depends_on:
+      - bgweb-api
+      - game-engine
+    profiles: ["arena"]
+
+  test:
+    build: .
+    working_dir: /repo/battle-arena
+    volumes:
+      - ..:/repo
+      - battle_arena_node_modules:/repo/battle-arena/node_modules
+    command: ["npm", "run", "test:inner"]
+    profiles: ["test"]
+
+  install-host:
+    build: .
+    working_dir: /repo/battle-arena
+    volumes:
+      - ..:/repo
+    entrypoint: ["npm"]
+    command: ["install"]
+    profiles: ["install-host"]
+
+volumes:
+  battle_arena_node_modules:
+  game_engine_node_modules:

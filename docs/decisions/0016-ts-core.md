@@ -14,9 +14,9 @@
 - Consumers depend on `"ts-core": "file:../ts-core"`. Compose mounts the repo root so `file:` resolves.
 - **Isomorphic** export (`.`, safe in the browser): board types, apply/opening/`gameResult`, legal moves, featurizer.
 - **Node** export (`./match`): MET, dead-cube MWC, cube-action formula (`node:fs`). Replay-player must not import this.
-- Do not share SGF (writer vs parser), bgweb-api, dump CLI, skill sampling, or Vite UI.
-- Replay-player imports `ts-core`, not `move-dumper`. Training still ignores SGF.
+- Do not share dump CLI, skill sampling, Vite UI, or the SGF **parser**. Replay-player imports `ts-core`, not `move-dumper`. Training still ignores SGF.
+- Node exports `./sim`, `./bgweb`, and `./sgf` (writer) are [ADR 0019](0019-battle-arena.md).
 
 ## Consequences
 
-Allowed top-level packages: `ts-core`, `move-dumper`, `training-ground`, `game-engine`, `replay-player`. Do not add a sixth. Spec: [board-representation.md](../domain/board-representation.md), [features.md](../domain/features.md). Run tests from `ts-core/` with `npm test` ([ADR 0011](0011-docker-only.md)).
+Package list: [ADR 0019](0019-battle-arena.md). Spec: [board-representation.md](../domain/board-representation.md), [features.md](../domain/features.md). Run tests from `ts-core/` with `npm test` ([ADR 0011](0011-docker-only.md)).

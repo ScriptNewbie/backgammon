@@ -1,4 +1,4 @@
-import type { Level, MatchPhase, Player, Step } from "./types";
+import type { MatchPhase, Player, Step } from "./types";
 
 export type SgfEvent =
   | { kind: "move"; player: Player; dice: [number, number]; steps: Step[] }
@@ -9,8 +9,8 @@ export type SgfGame = {
   gameIndex: number;
   ws: number;
   bs: number;
-  p1: Level;
-  p2: Level;
+  p1: string;
+  p2: string;
   phase: MatchPhase;
   events: SgfEvent[];
   result: { winner: Player; points: number };
@@ -36,14 +36,14 @@ function ru(phase: MatchPhase, length: number): string {
   return "RU[Crawford]";
 }
 
-function gameTree(game: SgfGame): string {
+function gameTree(game: SgfGame, app: string): string {
   const reWinner = game.result.winner === "p1" ? "W" : "B";
   const nodes = game.events.map((ev) => {
     if (ev.kind === "cube") return `;${color(ev.player)}[${ev.action}]`;
     return `;${color(ev.player)}[${encodeCheckerMove(ev.dice, ev.steps)}]`;
   });
   return [
-    `(;FF[4]GM[6]CA[UTF-8]AP[move-dumper:1]`,
+    `(;FF[4]GM[6]CA[UTF-8]AP[${app}]`,
     `MI[length:${game.length}][game:${game.gameIndex}][ws:${game.ws}][bs:${game.bs}]`,
     `PW[p1-${game.p1}]PB[p2-${game.p2}]`,
     ru(game.phase, game.length),
@@ -53,6 +53,7 @@ function gameTree(game: SgfGame): string {
   ].join("\n");
 }
 
-export function renderMatchSgf(games: readonly SgfGame[]): string {
-  return games.map(gameTree).join("\n") + "\n";
+export function renderMatchSgf(games: readonly SgfGame[], opts: { app?: string } = {}): string {
+  const app = opts.app ?? "move-dumper:1";
+  return games.map((game) => gameTree(game, app)).join("\n") + "\n";
 }

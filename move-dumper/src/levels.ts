@@ -1,5 +1,5 @@
 import type { Level } from "./types";
-import type { Rng } from "./rng";
+import { pickBestPlayIndex, type RankedPlay, type Rng } from "ts-core/sim";
 
 export const LEVELS: readonly Level[] = [
   "noob",
@@ -84,22 +84,12 @@ export function softmaxSample(weights: readonly number[], rng: Rng): number {
   return exps.length - 1;
 }
 
-export type RankedPlay = {
-  moverMwc: number;
-  teacherDiff: number;
-  stepsKey: string;
-};
+export type { RankedPlay };
 
 export function sampleCheckerIndex(level: Level, plays: readonly RankedPlay[], rng: Rng): number {
   if (plays.length === 0) return -1;
   if (level === "noob") return rng.int(plays.length);
-  if (level === "infallible") {
-    let best = 0;
-    for (let i = 1; i < plays.length; i++) {
-      if (betterInfallible(plays[i]!, plays[best]!)) best = i;
-    }
-    return best;
-  }
+  if (level === "infallible") return pickBestPlayIndex(plays);
   const tau = temperature(level);
   if (tau === null) return sampleCheckerIndex("infallible", plays, rng);
   const max = Math.max(...plays.map((p) => p.moverMwc));
@@ -107,12 +97,6 @@ export function sampleCheckerIndex(level: Level, plays: readonly RankedPlay[], r
     plays.map((p) => (p.moverMwc - max) / tau),
     rng,
   );
-}
-
-function betterInfallible(a: RankedPlay, b: RankedPlay): boolean {
-  if (a.moverMwc !== b.moverMwc) return a.moverMwc > b.moverMwc;
-  if (a.teacherDiff !== b.teacherDiff) return a.teacherDiff > b.teacherDiff;
-  return a.stepsKey < b.stepsKey;
 }
 
 export function logistic(delta: number, tau: number): number {

@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { gunzipSync } from "node:zlib";
 import { test } from "node:test";
-import { fetchWithRetry } from "../src/bgweb.ts";
+import { fetchWithRetry } from "ts-core/bgweb";
 import { DumpWriter } from "../src/dump.ts";
 import type { DumpRecord } from "../src/types.ts";
 

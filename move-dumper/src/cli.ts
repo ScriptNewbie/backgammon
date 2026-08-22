@@ -1,9 +1,9 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { BgwebClient } from "./bgweb";
+import { BgwebClient } from "ts-core/bgweb";
+import { Rng } from "ts-core/sim";
 import { DumpWriter } from "./dump";
 import { dumpMatches } from "./match";
-import { Rng } from "./rng";
 
 export type CliArgs = {
   matches: number;

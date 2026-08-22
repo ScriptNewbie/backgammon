@@ -2,18 +2,18 @@
 
 ## ts-core
 
-Shared TypeScript ([ADR 0016](../../docs/decisions/0016-ts-core.md)). Board types, apply-steps, legal moves, featurizer (isomorphic). MET / MWC / cube formula via `ts-core/match` (Node).
+Shared TypeScript ([ADR 0016](../../docs/decisions/0016-ts-core.md), [ADR 0019](../../docs/decisions/0019-battle-arena.md)). Board types, apply-steps, legal moves, featurizer (isomorphic). Node: `ts-core/match`, `ts-core/sim`, `ts-core/bgweb`, `ts-core/sgf` (writer).
 
 - Specs: `docs/domain/board-representation.md`, `docs/domain/features.md`, `docs/domain/match-play.md`.
 - Golden vectors: `training-ground/fixtures/features.json`.
-- Do not add SGF, bgweb-api, dump CLI, or HTTP here.
+- Do not add dump CLI, skill sampling, Vite UI, or the SGF parser here.
 - Docker only, from `ts-core/`: `npm test`, `npm run install:host`. Do not run `test:inner` on the host.
 
 ## move-dumper
 
 TypeScript. Simulate matches between skill levels; dump labelled positions from foochu/bgweb-api.
 
-- Loop / pairing: `docs/domain/move-dumper.md`. Match MWC: `docs/domain/match-play.md`.
+- Loop / pairing: `docs/domain/move-dumper.md`. Match loop from `ts-core/sim`. Match MWC: `docs/domain/match-play.md`.
 - JSON + evals: `docs/domain/board-representation.md`, `docs/domain/evaluation.md`.
 - Batches: `docs/domain/dump-format.md` under `move-dumper/dumps/` (`manifest.json` + `records.jsonl.gz` + `replay/*.sgf`).
 - Conversion: `docs/domain/gnubg.md`. Rank chosen plays by mover MWC. Do not call the gnubg CLI for labels. Never commit `dumps/`. Fixtures in `move-dumper/fixtures/` may be committed.
@@ -40,6 +40,14 @@ TypeScript + Hono + `onnxruntime-node` ([ADR 0017](../../docs/decisions/0017-hon
 
 Vite + vanilla TypeScript. Debug viewer for GNU Backgammon SGF dumps ([ADR 0010](../../docs/decisions/0010-replay-player.md)).
 
-- Load `move-dumper/dumps/<batch>/replay/<matchId>.sgf` via file picker. Step with Previous / Next.
+- Load GNU SGF via file picker from `move-dumper/dumps/<batch>/replay/` or `battle-arena/replays/`. Step with Previous / Next.
 - From `replay-player/`: `npm run up` (http://localhost:5173), `npm test`, `npm run install:host`. Do not run `test:inner` / `dev` on the host.
 - Reconstruct position JSON from SGF events. Do not parse JSONL. Import `ts-core`, not `move-dumper`. Training ignores SGF.
+
+## battle-arena
+
+TypeScript. Play our game-engine against the bgweb-api teacher at max strength ([ADR 0019](../../docs/decisions/0019-battle-arena.md)).
+
+- Loop: `ts-core/sim`. Drivers: `POST /evaluate` and teacher `getmoves`. Rank checkers by mover MWC. Shared infallible cube heuristic.
+- SGF under gitignored `battle-arena/replays/`. No training JSONL. Open in replay-player or gnubg.
+- Docker only, from `battle-arena/`: `npm run up`, `npm test`, `npm run battle -- --matches 1 --seed 1`, `npm run down`, `npm run install:host`. Do not run `battle:inner` / `test:inner` on the host. Requires `training-ground/checkpoints/cubeless.onnx`.

@@ -1,7 +1,7 @@
 import type { CubeEval } from "ts-core/match";
 import type { CubeAction, Level } from "./types";
 import { logistic, temperature } from "./levels";
-import type { Rng } from "./rng";
+import type { Rng } from "ts-core/sim";
 
 export type { CubeEval };
 

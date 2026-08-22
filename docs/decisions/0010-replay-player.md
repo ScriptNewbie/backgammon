@@ -10,7 +10,7 @@
 ## Decision
 
 - Add top-level package `replay-player`: Vite + vanilla TypeScript in the browser.
-- Input is GNU Backgammon SGF only (`FF[4]`, `GM[6]`), the files under `move-dumper/dumps/<batch>/replay/`. Not JSONL, not XGID, not a fourth board encoding ([ADR 0002](0002-board-representations.md)).
+- Input is GNU Backgammon SGF only (`FF[4]`, `GM[6]`): `move-dumper/dumps/<batch>/replay/` or `battle-arena/replays/`. Not JSONL, not XGID, not a fourth board encoding ([ADR 0002](0002-board-representations.md)).
 - Reconstruct position JSON by applying SGF events (checker steps and cube double / take / drop) from the standard opening. Same geometry as [board-representation.md](../domain/board-representation.md).
 - Step with Previous / Next buttons. No backend, no React.
 - Do not import `move-dumper` from the browser. Training still ignores SGF.

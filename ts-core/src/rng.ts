@@ -1,4 +1,4 @@
-/** Seeded mulberry32. Dice, pairing, and skill noise all go through this. */
+/** Seeded mulberry32. Dice and any sampling go through this. */
 export class Rng {
   private state: number;
 

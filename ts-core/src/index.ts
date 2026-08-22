@@ -17,7 +17,7 @@ export {
   stepsKey,
 } from "./board";
 export type { GameResult, GameResultKind } from "./board";
-export { cubelessEquity, cubelessFromVector, makeCubeless, terminalCubeless } from "./eval";
+export { cubelessEquity, cubelessFromVector, flipStmCubeless, makeCubeless, terminalCubeless } from "./eval";
 export { FEATURE_SIZE, featurize } from "./features";
 export { generateLegalPlays } from "./moves";
 export type {

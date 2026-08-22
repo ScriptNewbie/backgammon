@@ -2,7 +2,7 @@
 
 Locked by [ADR 0007](../decisions/0007-skill-levels-and-pairing.md), [ADR 0008](../decisions/0008-match-play.md), [ADR 0009](../decisions/0009-dump-metadata-and-sgf.md). Teacher: [gnubg.md](gnubg.md). Files: [dump-format.md](dump-format.md). Match math: [match-play.md](match-play.md).
 
-Simulates matches, labels every checker play from bgweb-api, applies a noisy cube heuristic, and writes JSONL plus GNU Backgammon SGF.
+Simulates matches, labels every checker play from bgweb-api, applies a noisy cube heuristic, and writes JSONL plus GNU Backgammon SGF. The match loop lives in `ts-core/sim`; this package adds skill sampling and dump I/O.
 
 From `move-dumper/` ([ADR 0011](../decisions/0011-docker-only.md)):
 

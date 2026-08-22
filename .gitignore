@@ -8,6 +8,8 @@ venv/
 # Dumps and training artifacts
 dumps/
 **/dumps/
+replays/
+**/replays/
 checkpoints/
 **/checkpoints/
 training-ground/cache/

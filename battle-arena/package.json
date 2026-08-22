@@ -1,0 +1,25 @@
+{
+  "name": "battle-arena",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "up": "docker compose up -d",
+    "down": "docker compose down",
+    "test": "docker compose --profile test run --rm test",
+    "test:inner": "tsx --test test/*.test.ts",
+    "battle": "docker compose up -d && docker compose --profile arena run --rm arena npm run battle:inner --",
+    "battle:inner": "tsx src/cli.ts",
+    "install:host": "docker compose --profile install-host run --rm install-host"
+  },
+  "dependencies": {
+    "ts-core": "file:../ts-core"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

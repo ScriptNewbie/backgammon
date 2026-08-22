@@ -14,6 +14,18 @@ export function makeCubeless(probs: Omit<Cubeless, "equity">): Cubeless {
   return { ...probs, equity: cubelessEquity(probs) };
 }
 
+/** Flip cubeless probs/equity to the opponent as STM. */
+export function flipStmCubeless(cubeless: Cubeless): Cubeless {
+  return {
+    equity: -cubeless.equity,
+    win: 1 - cubeless.win,
+    gammon: cubeless.loseGammon,
+    backgammon: cubeless.loseBackgammon,
+    loseGammon: cubeless.gammon,
+    loseBackgammon: cubeless.backgammon,
+  };
+}
+
 export function cubelessFromVector(vec: ArrayLike<number>): Cubeless {
   return makeCubeless({
     win: vec[0]!,

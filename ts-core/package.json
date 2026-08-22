@@ -7,7 +7,10 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./match": "./src/match.ts"
+    "./match": "./src/match.ts",
+    "./sim": "./src/sim.ts",
+    "./bgweb": "./src/bgweb.ts",
+    "./sgf": "./src/sgf.ts"
   },
   "files": ["src"],
   "scripts": {
