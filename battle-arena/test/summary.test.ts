@@ -37,4 +37,5 @@ test("summarize counts wins by seat", () => {
   assert.match(text, /engine vs teacher/);
   assert.match(text, /game-engine: 1 wins/);
   assert.match(text, /teacher: 1 wins/);
+  assert.match(text, /cube: on/);
 });

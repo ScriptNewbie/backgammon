@@ -15,12 +15,18 @@ test("CLI defaults", () => {
     assert.equal(args.length, 7);
     assert.equal(args.teacherUrl, "http://127.0.0.1:8080");
     assert.equal(args.engineUrl, "http://127.0.0.1:3000");
+    assert.equal(args.allowCube, true);
   } finally {
     if (prevT === undefined) delete process.env.BGWEB_BASE_URL;
     else process.env.BGWEB_BASE_URL = prevT;
     if (prevE === undefined) delete process.env.ENGINE_BASE_URL;
     else process.env.ENGINE_BASE_URL = prevE;
   }
+});
+
+test("CLI --no-cube disables cube", () => {
+  const args = parseArgs(["--no-cube"]);
+  assert.equal(args.allowCube, false);
 });
 
 test("CLI rejects even match length", () => {

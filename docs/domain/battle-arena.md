@@ -10,6 +10,7 @@ From `battle-arena/` ([ADR 0011](../decisions/0011-docker-only.md)):
 npm run up
 npm test
 npm run battle -- --matches 1 --seed 1 --length 7
+npm run battle -- --matches 1 --seed 1 --no-cube
 npm run down
 npm run install:host
 ```
@@ -20,7 +21,7 @@ Those scripts wrap Docker Compose (`battle:inner` / `test:inner` run inside the 
 
 1. Assign seats: even index engine=`p1` / teacher=`p2`; odd index swapped.
 2. Play games until a player’s score `>= length` (CLI `--length`, default 7; allowed `{1,3,5,7,9,11,13,15}`).
-3. Both sides always pick the best checker play by **mover MWC** (tie-break: teacher `diff` when present, then stable `stepsKey`). Cube: infallible dead-cube action from `evaluateCube`. Skip cube on the opening roll of a game; skip at cube 64.
+3. Both sides always pick the best checker play by **mover MWC** (tie-break: teacher `diff` when present, then stable `stepsKey`). Cube (default): infallible dead-cube action from `evaluateCube`. Skip cube on the opening roll of a game; skip at cube 64. **`--no-cube`:** never offer, take, or drop; `mayDouble` is false and the cube stays 1 (games play to bear-off / gammon / backgammon).
 4. Write `battle-arena/replays/<batch-id>/<matchId>.sgf`. Print a summary of match wins (overall and by seat), games, and points when the batch finishes.
 
 No skill levels. No training JSONL. Never commit `replays/`.

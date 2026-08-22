@@ -104,6 +104,8 @@ export async function playMatch(opts: {
   labels: { p1: string; p2: string };
   observer?: MatchObserver;
   matchId?: string;
+  /** When false, never offer/take/drop; cube stays 1. Default true. */
+  allowCube?: boolean;
 }): Promise<{
   matchId: string;
   games: SgfGame[];
@@ -126,6 +128,7 @@ export async function playMatch(opts: {
       score: { ...score },
       phase,
       gameIndex,
+      allowCube: opts.allowCube,
     });
     const awarded = pointsAwarded(
       game.cubeValue,
@@ -163,6 +166,7 @@ export async function playGame(opts: {
   gameIndex: number;
   observer?: MatchObserver;
   start?: { position: Position; stmCubeless: Cubeless | null; opening: boolean };
+  allowCube?: boolean;
 }): Promise<{
   result: { winner: Player; multiplier: 1 | 2 | 3 };
   cubeValue: number;
@@ -171,10 +175,15 @@ export async function playGame(opts: {
   events: SgfEvent[];
 }> {
   const { rng, players, matchId, length, score, phase, observer } = opts;
+  const allowCube = opts.allowCube !== false;
   const gameId = randomUUID();
   const startWs = score.p1;
   const startBs = score.p2;
   let pos = opts.start?.position ?? openingPosition(length, score, phase);
+  if (!allowCube) {
+    pos = clonePosition(pos);
+    pos.cube.mayDouble = { p1: false, p2: false };
+  }
   const events: SgfEvent[] = [];
   let ply = 0;
   let opening = opts.start?.opening ?? true;
@@ -189,7 +198,7 @@ export async function playGame(opts: {
 
   while (true) {
     if (!opening) {
-      if (pos.cube.mayDouble[pos.onRoll] && pos.cube.value < MAX_CUBE_VALUE && stmCubeless) {
+      if (allowCube && pos.cube.mayDouble[pos.onRoll] && pos.cube.value < MAX_CUBE_VALUE && stmCubeless) {
         const ended = await maybeCube({
           pos,
           stmCubeless,

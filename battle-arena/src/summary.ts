@@ -11,6 +11,7 @@ export type BattleSummary = {
   matches: number;
   length: number;
   seed: number;
+  allowCube: boolean;
   wins: { "game-engine": number; teacher: number };
   winsAsP1: { "game-engine": number; teacher: number };
   winsAsP2: { "game-engine": number; teacher: number };
@@ -23,11 +24,15 @@ export function engineAtSeat(engineSeat: "p1" | "p2", seat: "p1" | "p2"): Engine
   return "teacher";
 }
 
-export function summarize(rows: readonly MatchSummaryRow[], opts: { length: number; seed: number }): BattleSummary {
+export function summarize(
+  rows: readonly MatchSummaryRow[],
+  opts: { length: number; seed: number; allowCube?: boolean },
+): BattleSummary {
   const summary: BattleSummary = {
     matches: rows.length,
     length: opts.length,
     seed: opts.seed,
+    allowCube: opts.allowCube !== false,
     wins: { "game-engine": 0, teacher: 0 },
     winsAsP1: { "game-engine": 0, teacher: 0 },
     winsAsP2: { "game-engine": 0, teacher: 0 },
@@ -49,7 +54,7 @@ export function summarize(rows: readonly MatchSummaryRow[], opts: { length: numb
 export function formatSummary(summary: BattleSummary): string {
   const lines = [
     `engine vs teacher`,
-    `matches: ${summary.matches}  length: ${summary.length}  seed: ${summary.seed}`,
+    `matches: ${summary.matches}  length: ${summary.length}  seed: ${summary.seed}  cube: ${summary.allowCube ? "on" : "off"}`,
     `game-engine: ${summary.wins["game-engine"]} wins (as p1: ${summary.winsAsP1["game-engine"]}, as p2: ${summary.winsAsP2["game-engine"]})  points: ${summary.points["game-engine"]}`,
     `teacher: ${summary.wins.teacher} wins (as p1: ${summary.winsAsP1.teacher}, as p2: ${summary.winsAsP2.teacher})  points: ${summary.points.teacher}`,
   ];

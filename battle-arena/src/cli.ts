@@ -21,6 +21,7 @@ export type CliArgs = {
   length: number;
   teacherUrl: string;
   engineUrl: string;
+  allowCube: boolean;
 };
 
 export function parseArgs(argv: string[]): CliArgs {
@@ -29,6 +30,7 @@ export function parseArgs(argv: string[]): CliArgs {
   let length = 7;
   let teacherUrl = process.env.BGWEB_BASE_URL ?? "http://127.0.0.1:8080";
   let engineUrl = process.env.ENGINE_BASE_URL ?? "http://127.0.0.1:3000";
+  let allowCube = true;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!;
     if (arg === "--matches") matches = Number(argv[++i]);
@@ -36,6 +38,7 @@ export function parseArgs(argv: string[]): CliArgs {
     else if (arg === "--length") length = Number(argv[++i]);
     else if (arg === "--teacher-url") teacherUrl = argv[++i]!;
     else if (arg === "--engine-url") engineUrl = argv[++i]!;
+    else if (arg === "--no-cube") allowCube = false;
     else if (arg === "--help" || arg === "-h") {
       printHelp();
       process.exit(0);
@@ -50,17 +53,18 @@ export function parseArgs(argv: string[]): CliArgs {
   if (!(MATCH_LENGTHS as readonly number[]).includes(length)) {
     throw new Error(`--length must be one of ${MATCH_LENGTHS.join(",")} (got ${length})`);
   }
-  return { matches, seed, length, teacherUrl, engineUrl };
+  return { matches, seed, length, teacherUrl, engineUrl, allowCube };
 }
 
 function printHelp(): void {
-  console.log(`Usage: npm run battle -- [--matches N] [--seed N] [--length N] [--teacher-url URL] [--engine-url URL]
+  console.log(`Usage: npm run battle -- [--matches N] [--seed N] [--length N] [--no-cube] [--teacher-url URL] [--engine-url URL]
 
 Play our game-engine against the bgweb-api teacher at max strength.
 
   --matches       Number of matches (default 1)
   --seed          RNG seed (default 1)
   --length        Match length 1,3,5,7,9,11,13,15 (default 7)
+  --no-cube       Checker-only: never offer, take, or drop
   --teacher-url   bgweb-api origin (default http://127.0.0.1:8080, or BGWEB_BASE_URL)
   --engine-url    game-engine origin (default http://127.0.0.1:3000, or ENGINE_BASE_URL)
 
@@ -68,6 +72,7 @@ From battle-arena/ (npm wraps Docker Compose):
   npm run up
   npm test
   npm run battle -- --matches 1 --seed 1 --length 7
+  npm run battle -- --matches 1 --seed 1 --no-cube
   npm run down
   npm run install:host
 
@@ -139,6 +144,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         length: args.length,
         players: playersForSeats(engineSeat, engine, teacher),
         labels,
+        allowCube: args.allowCube,
       });
       const sgf = renderMatchSgf(result.games, { app: "battle-arena:1" });
       const file = await writeMatchSgf({
@@ -167,7 +173,9 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     process.off("SIGTERM", requestStop);
   }
 
-  console.log(formatSummary(summarize(rows, { length: args.length, seed: args.seed })));
+  console.log(
+    formatSummary(summarize(rows, { length: args.length, seed: args.seed, allowCube: args.allowCube })),
+  );
 }
 
 const thisFile = fileURLToPath(import.meta.url);

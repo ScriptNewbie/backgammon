@@ -73,6 +73,34 @@ test("opening ply skips the cube", async () => {
   assert.ok(kinds.includes("cube"));
 });
 
+test("allowCube false never offers the cube", async () => {
+  const kinds: string[] = [];
+  const observer: MatchObserver = {
+    onChecker() {
+      kinds.push("checker");
+    },
+    onCube() {
+      kinds.push("cube");
+    },
+  };
+  const player = dropper();
+  const game = await playGame({
+    rng: new Rng(1),
+    players: { p1: player, p2: player },
+    matchId: "m",
+    length: 3,
+    score: { p1: 0, p2: 0 },
+    phase: "pre",
+    gameIndex: 0,
+    observer,
+    allowCube: false,
+  });
+  assert.ok(kinds.includes("checker"));
+  assert.equal(kinds.includes("cube"), false);
+  assert.ok(!game.events.some((e) => e.kind === "cube"));
+  assert.equal(game.cubeValue, 1);
+});
+
 test("cube drop ends the game as a single", async () => {
   const player = dropper();
   const game = await playGame({
