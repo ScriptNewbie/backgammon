@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { parseArgs } from "../src/cli.ts";
 import { batchStamp, buildManifest } from "../src/dump.ts";
-import { rollOpening } from "../src/match.ts";
+import { rollOpening } from "../src/games.ts";
 import { encodeCheckerMove, renderMatchSgf } from "ts-core/sgf";
 import { Rng } from "ts-core/sim";
 
@@ -58,7 +58,7 @@ test("batch stamp matches dump-format compact UTC", () => {
   assert.equal(batchId, "2026-08-20T204600Z-bgweb-api");
 });
 
-test("manifest engine is bgweb-api match play", () => {
+test("manifest engine is bgweb-api game play", () => {
   const manifest = buildManifest({
     batchId: "example",
     createdAt: "2026-08-20T20:46:00Z",
@@ -68,10 +68,15 @@ test("manifest engine is bgweb-api match play", () => {
     plies: 1,
   });
   assert.equal(manifest.engine.name, "bgweb-api");
-  assert.equal(manifest.engine.settings.play, "match");
+  assert.equal(manifest.engine.settings.play, "game");
   assert.equal(manifest.engine.settings.cubefulLabels, true);
-  assert.equal(manifest.engine.settings.met, "kazaross-xg2");
-  assert.deepEqual(manifest.engine.settings.matchLengths, [1, 3, 5, 7, 9, 11, 13, 15]);
+  assert.equal("met" in manifest.engine.settings, false);
+  assert.equal("matchLengths" in manifest.engine.settings, false);
+});
+
+test("CLI rejects match flags", () => {
+  assert.throws(() => parseArgs(["--matches", "1"]), /--games/);
+  assert.throws(() => parseArgs(["--length", "7"]), /--games/);
 });
 
 test("CLI defaults", () => {
@@ -79,7 +84,7 @@ test("CLI defaults", () => {
   delete process.env.BGWEB_BASE_URL;
   try {
     const args = parseArgs([]);
-    assert.equal(args.matches, 1);
+    assert.equal(args.games, 1);
     assert.equal(args.seed, 1);
     assert.equal(args.baseUrl, "http://127.0.0.1:8080");
   } finally {

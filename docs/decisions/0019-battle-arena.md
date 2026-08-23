@@ -6,7 +6,7 @@
 
 ## Context
 
-[ADR 0016](0016-ts-core.md) locked five top-level packages and kept the match loop, teacher HTTP client, and GNU SGF writer in `move-dumper`. We need a place to play our ONNX game-engine against other engines (starting with the bgweb-api teacher) at full strength, print who won, and keep debug replays. That is not dumping, training, or the HTTP eval API. The dumper’s match loop is the same simulation.
+[ADR 0016](0016-ts-core.md) locked five top-level packages and kept the match loop, teacher HTTP client, and GNU SGF writer in `move-dumper`. We need a place to play our ONNX game-engine against other engines (starting with the bgweb-api teacher) at full strength, print who won, and keep debug replays. That is not dumping, training, or the HTTP eval API. Shared simulation now lives in `ts-core/sim`: the arena plays matches; the dumper plays cubeless games ([0020](0020-dumper-games-no-cube.md)).
 
 ## Decision
 

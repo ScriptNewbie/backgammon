@@ -55,15 +55,26 @@ export function parseEvaluateBody(body: unknown): Position {
     throw new Error("cube.mayDouble.p1/p2 must be boolean");
   }
 
-  if (!raw.match || typeof raw.match !== "object") throw new Error("match required");
-  const matchRaw = raw.match as Record<string, unknown>;
-  if (!isInt(matchRaw.length, 1, 15)) throw new Error("match.length must be a positive integer");
-  if (!matchRaw.score || typeof matchRaw.score !== "object") throw new Error("match.score required");
-  const scoreRaw = matchRaw.score as Record<string, unknown>;
-  if (!isInt(scoreRaw.p1, 0, matchRaw.length) || !isInt(scoreRaw.p2, 0, matchRaw.length)) {
-    throw new Error("match.score.p1/p2 must be integers");
+  let match: Position["match"];
+  if (raw.match === null) {
+    match = null;
+  } else if (!raw.match || typeof raw.match !== "object") {
+    throw new Error("match must be an object or null");
+  } else {
+    const matchRaw = raw.match as Record<string, unknown>;
+    if (!isInt(matchRaw.length, 1, 15)) throw new Error("match.length must be a positive integer");
+    if (!matchRaw.score || typeof matchRaw.score !== "object") throw new Error("match.score required");
+    const scoreRaw = matchRaw.score as Record<string, unknown>;
+    if (!isInt(scoreRaw.p1, 0, matchRaw.length) || !isInt(scoreRaw.p2, 0, matchRaw.length)) {
+      throw new Error("match.score.p1/p2 must be integers");
+    }
+    if (typeof matchRaw.crawford !== "boolean") throw new Error("match.crawford must be boolean");
+    match = {
+      length: matchRaw.length,
+      score: { p1: scoreRaw.p1, p2: scoreRaw.p2 },
+      crawford: matchRaw.crawford,
+    };
   }
-  if (typeof matchRaw.crawford !== "boolean") throw new Error("match.crawford must be boolean");
 
   const position: Position = {
     points,
@@ -76,11 +87,7 @@ export function parseEvaluateBody(body: unknown): Position {
       owner: cubeRaw.owner,
       mayDouble: { p1: may.p1, p2: may.p2 },
     },
-    match: {
-      length: matchRaw.length,
-      score: { p1: scoreRaw.p1, p2: scoreRaw.p2 },
-      crawford: matchRaw.crawford,
-    },
+    match,
   };
   assertFifteen(position);
   return position;

@@ -7,6 +7,7 @@ import {
   initialPhase,
   MAX_CUBE_VALUE,
   nextPhase,
+  openingMoneyPosition,
   openingPosition,
   opponent,
   pointsAwarded,
@@ -55,7 +56,8 @@ export type MatchObserver = {
 };
 
 export type RankedPlay = {
-  moverMwc: number;
+  /** Higher is better. Arena: mover MWC. Dumper: negated result cubeless equity. */
+  rankScore: number;
   teacherDiff: number;
   stepsKey: string;
 };
@@ -70,7 +72,7 @@ export function pickBestPlayIndex(plays: readonly RankedPlay[]): number {
 }
 
 function betterInfallible(a: RankedPlay, b: RankedPlay): boolean {
-  if (a.moverMwc !== b.moverMwc) return a.moverMwc > b.moverMwc;
+  if (a.rankScore !== b.rankScore) return a.rankScore > b.rankScore;
   if (a.teacherDiff !== b.teacherDiff) return a.teacherDiff > b.teacherDiff;
   return a.stepsKey < b.stepsKey;
 }
@@ -167,19 +169,25 @@ export async function playGame(opts: {
   observer?: MatchObserver;
   start?: { position: Position; stmCubeless: Cubeless | null; opening: boolean };
   allowCube?: boolean;
+  /** Money game: opening `match` is null. SGF still uses `length` / `score` / `phase` as file headers. */
+  money?: boolean;
+  gameId?: string;
 }): Promise<{
   result: { winner: Player; multiplier: 1 | 2 | 3 };
   cubeValue: number;
   startWs: number;
   startBs: number;
   events: SgfEvent[];
+  gameId: string;
 }> {
   const { rng, players, matchId, length, score, phase, observer } = opts;
   const allowCube = opts.allowCube !== false;
-  const gameId = randomUUID();
+  const gameId = opts.gameId ?? randomUUID();
   const startWs = score.p1;
   const startBs = score.p2;
-  let pos = opts.start?.position ?? openingPosition(length, score, phase);
+  let pos =
+    opts.start?.position ??
+    (opts.money ? openingMoneyPosition() : openingPosition(length, score, phase));
   if (!allowCube) {
     pos = clonePosition(pos);
     pos.cube.mayDouble = { p1: false, p2: false };
@@ -198,7 +206,13 @@ export async function playGame(opts: {
 
   while (true) {
     if (!opening) {
-      if (allowCube && pos.cube.mayDouble[pos.onRoll] && pos.cube.value < MAX_CUBE_VALUE && stmCubeless) {
+      if (
+        allowCube &&
+        pos.match &&
+        pos.cube.mayDouble[pos.onRoll] &&
+        pos.cube.value < MAX_CUBE_VALUE &&
+        stmCubeless
+      ) {
         const ended = await maybeCube({
           pos,
           stmCubeless,
@@ -216,6 +230,7 @@ export async function playGame(opts: {
             startWs,
             startBs,
             events,
+            gameId,
           };
         }
       }
@@ -255,6 +270,7 @@ export async function playGame(opts: {
         startWs,
         startBs,
         events,
+        gameId,
       };
     }
 

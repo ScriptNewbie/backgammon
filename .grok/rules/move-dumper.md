@@ -1,12 +1,6 @@
----
-description: Conventions for the bgweb-api move dumper
-globs: move-dumper/**
-alwaysApply: false
----
-
 # move-dumper
 
-TypeScript tool. Simulates money games (no cube) between skill levels and dumps labelled checker positions from [foochu/bgweb-api](https://github.com/foochu/bgweb-api) ([ADR 0020](docs/decisions/0020-dumper-games-no-cube.md)).
+TypeScript tool. Simulates money games (no cube) between skill levels and dumps labelled checker positions from [foochu/bgweb-api](https://github.com/foochu/bgweb-api) ([ADR 0020](../../docs/decisions/0020-dumper-games-no-cube.md)).
 
 - Loop, pairing, levels: `docs/domain/move-dumper.md`. Game loop from `ts-core/sim` `playGame({ allowCube: false })`. Board helpers come from `ts-core`.
 - Convert at the boundary per `docs/domain/gnubg.md`. Store our JSON + evals only. Rank chosen checker plays by negated result cubeless equity (`RankedPlay.rankScore`, not `moverMwc`). Loop lives in `src/games.ts`.

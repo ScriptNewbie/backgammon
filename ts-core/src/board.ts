@@ -43,6 +43,23 @@ export function openingPosition(
   };
 }
 
+/** Money opening: no match. Cube is live and centered; callers that forbid cube (dumper) clear `mayDouble`. */
+export function openingMoneyPosition(): Position {
+  return {
+    points: [...OPENING_POINTS],
+    bar: { p1: 0, p2: 0 },
+    off: { p1: 0, p2: 0 },
+    onRoll: "p1",
+    dice: null,
+    cube: {
+      value: 1,
+      owner: "centered",
+      mayDouble: { p1: true, p2: true },
+    },
+    match: null,
+  };
+}
+
 export function checkerCount(position: Position, player: Player): number {
   let n = position.bar[player] + position.off[player];
   for (const v of position.points) {
@@ -206,6 +223,7 @@ export function initialPhase(length: number): MatchPhase {
 }
 
 export function matchPhase(position: Position): MatchPhase {
+  if (!position.match) throw new Error("matchPhase requires position.match");
   if (position.match.crawford) return "crawford";
   const { length, score } = position.match;
   if (score.p1 === length - 1 || score.p2 === length - 1) return "post";

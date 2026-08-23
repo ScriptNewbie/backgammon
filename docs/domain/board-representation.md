@@ -1,6 +1,6 @@
 # Board representation
 
-Locked by [ADR 0001](../decisions/0001-player-labels.md), [ADR 0002](../decisions/0002-board-representations.md), and [ADR 0008](../decisions/0008-match-play.md). Change only via a new ADR.
+Locked by [ADR 0001](../decisions/0001-player-labels.md), [ADR 0002](../decisions/0002-board-representations.md), [ADR 0008](../decisions/0008-match-play.md), and [ADR 0020](../decisions/0020-dumper-games-no-cube.md). Change only via a new ADR.
 
 Three representations only:
 
@@ -49,10 +49,10 @@ Opening (p1 on roll, standard): p1 has 2 on 24, 5 on 13, 3 on 8, 5 on 6; p2 mirr
 | `cube.value` | 1, 2, 4, 8, 16, 32, or **64**. Never above 64 (physical cube / GNU–XG–FIBS). |
 | `cube.owner` | `"centered"`, `"p1"`, or `"p2"`. |
 | `cube.mayDouble.p1/p2` | Whether that player may offer a double. Centered cube ⇒ both true unless Crawford (both false) or a later money-play ADR says otherwise. Value **64** ⇒ both false (nobody may recube; owner stays the taker). |
-| `match` | Match play ([match-play.md](match-play.md)). v1 dumps always set this. Money play later may use `null`. |
-| `match.length` | Points to win. Dumper samples from `{1, 3, 5, 7, 9, 11, 13, 15}`. |
-| `match.score.p1/p2` | Points already won. Match over at `>= length`. |
-| `match.crawford` | `true` for the Crawford game (cube dead). Post-Crawford games use `false` with a live cube. |
+| `match` | `MatchInfo` or **`null`** ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)). Arena/engine always set live match state ([match-play.md](match-play.md)). Dumper / money JSON uses `null`. The key is required. |
+| `match.length` | Points to win. Present only when `match` is an object. |
+| `match.score.p1/p2` | Points already won. Match over at `>= length`. Present only when `match` is an object. |
+| `match.crawford` | `true` for the Crawford game (cube dead). Present only when `match` is an object. |
 
 Checker counts must sum to 15 per player (points + bar + off).
 

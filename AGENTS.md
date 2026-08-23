@@ -5,7 +5,7 @@ This is a six-package monorepo. Do not add other top-level packages.
 | Package | Stack | Job |
 | --- | --- | --- |
 | `ts-core` | TypeScript | Shared board types, apply-steps, legal moves, featurizer; Node match/MWC/cube formula, sim, teacher client, SGF writer |
-| `move-dumper` | TypeScript | Simulate matches; dump labelled positions/moves from bgweb-api (GNU Backgammon nets) |
+| `move-dumper` | TypeScript | Simulate games (no cube); dump labelled checker positions/moves from bgweb-api (GNU Backgammon nets) |
 | `training-ground` | PyTorch → ONNX + ExecuTorch `.pte` | Train the cubeless eval net |
 | `game-engine` | TypeScript + Hono + `onnxruntime-node` | Board + dice → legal moves with cubeful evals |
 | `replay-player` | Vite + TypeScript | Debug web UI: load GNU SGF dumps and step through them |
@@ -22,7 +22,7 @@ TypeScript npm scripts wrap Compose. They do not run `tsx` / Vite on the host. `
 | Package | Tests | Run | IDE deps |
 | --- | --- | --- | --- |
 | `ts-core` | `npm test` | (library; no HTTP) | `npm run install:host` |
-| `move-dumper` | `npm test` | Teacher API: `npm run up`. Dump: `npm run dump -- --matches 1 --seed 1` | `npm run install:host` |
+| `move-dumper` | `npm test` | Teacher API: `npm run up`. Dump: `npm run dump -- --games 1 --seed 1` | `npm run install:host` |
 | `replay-player` | `npm test` | `npm run up` (http://localhost:5173) | `npm run install:host` |
 | `training-ground` | `docker compose run --rm train python -m pytest` | `docker compose run --rm train python -m training_ground.train --dumps /data/dumps --epochs 20 --batch-size 1024 --checkpoint-dir checkpoints` (CUDA image, `gpus: all`; dumps at `/data/dumps`, [ADR 0012](docs/decisions/0012-training-data-layout.md), [ADR 0013](docs/decisions/0013-training-cuda.md), [ADR 0015](docs/decisions/0015-teacher-cubeless-mlp.md)) | `docker compose --profile install-host run --rm install-host` |
 | `game-engine` | `npm test` | `npm run up` (http://localhost:3000) | `npm run install:host` |

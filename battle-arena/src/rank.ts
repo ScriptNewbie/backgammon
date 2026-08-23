@@ -15,7 +15,7 @@ export function pickBestPlay(
 ): ScoredPlay | null {
   if (plays.length === 0) return null;
   const ranked: RankedPlay[] = plays.map((play) => ({
-    moverMwc: moverMwc(play.eval.cubeless, position, phase),
+    rankScore: moverMwc(play.eval.cubeless, position, phase),
     teacherDiff: play.teacherDiff ?? 0,
     stepsKey: stepsKey(play.steps),
   }));

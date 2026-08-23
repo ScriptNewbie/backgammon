@@ -19,3 +19,5 @@ Do not leave architecture or domain decisions only in chat.
 8. If you also changed a skill, rule, or subagent, update **both** `.cursor/` and `.grok/` copies.
 
 Do not implement code unless the user also asked for implementation.
+
+Unpublished dump internals (record fields, `match: null`, dead cube, per-game SGF headers) amend [0020](docs/decisions/0020-dumper-games-no-cube.md) and `docs/domain/`. Do not mint a new ADR for those.

@@ -8,24 +8,29 @@ import { fetchWithRetry } from "ts-core/bgweb";
 import { DumpWriter } from "../src/dump.ts";
 import type { DumpRecord } from "../src/types.ts";
 
-function cubeRecord(id: string): DumpRecord {
+function checkerRecord(id: string): DumpRecord {
   return {
     v: 1,
     id,
-    matchId: "m",
+    matchId: "g",
     gameId: "g",
     ply: 0,
-    decision: "cube",
+    decision: "checker",
     players: { p1: "midwit", p2: "midwit" },
-    chosen: { action: "no-double" },
+    chosen: {
+      steps: [
+        { from: 8, to: 5 },
+        { from: 6, to: 5 },
+      ],
+    },
     position: {
       points: [-2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2],
       bar: { p1: 0, p2: 0 },
       off: { p1: 0, p2: 0 },
       onRoll: "p1",
-      dice: null,
-      cube: { value: 1, owner: "centered", mayDouble: { p1: true, p2: true } },
-      match: { length: 7, score: { p1: 0, p2: 0 }, crawford: false },
+      dice: [3, 1],
+      cube: { value: 1, owner: "centered", mayDouble: { p1: false, p2: false } },
+      match: null,
     },
     eval: null,
     moves: [],
@@ -33,7 +38,7 @@ function cubeRecord(id: string): DumpRecord {
   };
 }
 
-test("commitMatch leaves a gunzippable file before finish", async () => {
+test("commitGame leaves a gunzippable file before finish", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "dump-"));
   try {
     const writer = await DumpWriter.create({
@@ -42,9 +47,9 @@ test("commitMatch leaves a gunzippable file before finish", async () => {
       baseUrl: "http://127.0.0.1:8080",
       now: new Date("2026-08-22T12:00:00Z"),
     });
-    await writer.writeRecord(cubeRecord("a"));
-    await writer.writeRecord(cubeRecord("b"));
-    await writer.commitMatch();
+    await writer.writeRecord(checkerRecord("a"));
+    await writer.writeRecord(checkerRecord("b"));
+    await writer.commitGame();
     const gz = await readFile(path.join(writer.dir, "records.jsonl.gz"));
     const text = gunzipSync(gz).toString("utf8");
     const lines = text.trim().split("\n");
@@ -52,6 +57,7 @@ test("commitMatch leaves a gunzippable file before finish", async () => {
     assert.equal(JSON.parse(lines[0]!).id, "a");
     const manifest = JSON.parse(await readFile(path.join(writer.dir, "manifest.json"), "utf8"));
     assert.equal(manifest.recordCount, 2);
+    assert.equal(manifest.engine.settings.play, "game");
     await writer.finish();
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -67,13 +73,16 @@ test("two commits concatenate as one gzip JSONL", async () => {
       baseUrl: "http://127.0.0.1:8080",
       now: new Date("2026-08-22T12:00:01Z"),
     });
-    await writer.writeRecord(cubeRecord("a"));
-    await writer.commitMatch();
-    await writer.writeRecord(cubeRecord("b"));
-    await writer.commitMatch();
+    await writer.writeRecord(checkerRecord("a"));
+    await writer.commitGame();
+    await writer.writeRecord(checkerRecord("b"));
+    await writer.commitGame();
     const gz = await readFile(path.join(writer.dir, "records.jsonl.gz"));
     const lines = gunzipSync(gz).toString("utf8").trim().split("\n");
-    assert.deepEqual(lines.map((l) => JSON.parse(l).id), ["a", "b"]);
+    assert.deepEqual(
+      lines.map((l) => JSON.parse(l).id),
+      ["a", "b"],
+    );
     await writer.finish();
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -101,6 +110,22 @@ test("fetchWithRetry succeeds after transient failures", async () => {
   assert.equal(await res.text(), "[]");
   assert.equal(n, 3);
   assert.equal(logs.length, 2);
+});
+
+test("fixture record is a checker game with matchId equal to gameId", async () => {
+  const line = (
+    await readFile(path.join(import.meta.dirname, "../fixtures/records.example.jsonl"), "utf8")
+  )
+    .trim()
+    .split("\n")[0]!;
+  const rec = JSON.parse(line) as DumpRecord;
+  assert.equal(rec.decision, "checker");
+  assert.equal(rec.matchId, rec.gameId);
+  assert.equal(rec.position.cube.value, 1);
+  assert.equal(rec.position.cube.owner, "centered");
+  assert.equal(rec.position.cube.mayDouble.p1, false);
+  assert.equal(rec.position.cube.mayDouble.p2, false);
+  assert.equal(rec.position.match, null);
 });
 
 test("fetchWithRetry does not retry 4xx", async () => {

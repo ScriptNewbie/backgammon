@@ -1,8 +1,8 @@
 # Match play
 
-Locked by [ADR 0008](../decisions/0008-match-play.md). Cube skill noise: [ADR 0007](../decisions/0007-skill-levels-and-pairing.md). Simulation loop: [move-dumper.md](move-dumper.md).
+Locked by [ADR 0008](../decisions/0008-match-play.md) for **battle-arena** and the engine cube wrap. [ADR 0020](../decisions/0020-dumper-games-no-cube.md) removed match play and cube policy from `move-dumper` and made `Position.match` `MatchInfo | null`; this file applies when `match` is set. Cube skill noise for arena: [ADR 0007](../decisions/0007-skill-levels-and-pairing.md) names; arena itself is infallible ([ADR 0019](../decisions/0019-battle-arena.md)).
 
-v1 dumps are **match play**. Jacoby, beavers, and raccoons are money-play variants and stay unused.
+This file is **not** dumper policy. Jacoby, beavers, and raccoons are money-play variants and stay unused.
 
 ## Length and score
 
@@ -56,7 +56,7 @@ Each legal play’s eval is the **result** with opponent to move. Convert that r
 
 `moverMwc = 1 - opponentMwc`
 
-(after applying the play, cube unchanged). Sample or argmax on `moverMwc` per [move-dumper.md](move-dumper.md).
+(after applying the play, cube unchanged). **Battle-arena / engine** argmax on `moverMwc` (stored as `RankedPlay.rankScore`). The **dumper** does not rank by MWC; it uses negated result cubeless equity ([move-dumper.md](move-dumper.md), [ADR 0020](../decisions/0020-dumper-games-no-cube.md)).
 
 ## Cube heuristic
 
@@ -78,4 +78,4 @@ Actions:
 
 Infallible takes that action. Other levels: logistic on ΔMWC with the same τ as checker play (`P(double) = 1 / (1 + exp(-Δ / τ))`, and the same for take vs drop). Noob: offer with probability 0.10 when allowed; take/drop with probability 0.50.
 
-Teacher `eval.cubeAction` stays `null`. Persist the simulated action on dump records with `decision: "cube"` ([dump-format.md](dump-format.md)). `game-engine` maps the infallible side of this heuristic onto `eval.cubeAction` ([ADR 0018](../decisions/0018-cube-wrap-formula.md)).
+Teacher `eval.cubeAction` stays `null`. The dumper does not persist cube actions ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)). `game-engine` maps the infallible side of this heuristic onto `eval.cubeAction` ([ADR 0018](../decisions/0018-cube-wrap-formula.md)).

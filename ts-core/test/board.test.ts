@@ -11,6 +11,7 @@ import {
   gameResult,
   initialPhase,
   nextPhase,
+  openingMoneyPosition,
   openingPosition,
 } from "../src/board.ts";
 import type { Position } from "../src/types.ts";
@@ -33,11 +34,21 @@ test("opening has 15 checkers per side", () => {
 
 test("length-1 opening is Crawford with a dead cube", () => {
   const pos = openingPosition(1, { p1: 0, p2: 0 }, initialPhase(1));
+  assert.ok(pos.match);
   assert.equal(pos.match.crawford, true);
   assert.equal(pos.cube.mayDouble.p1, false);
   assert.equal(pos.cube.mayDouble.p2, false);
   assert.equal(pos.cube.value, 1);
   assert.equal(pos.cube.owner, "centered");
+});
+
+test("money opening has null match and a live centered cube", () => {
+  const pos = openingMoneyPosition();
+  assert.equal(pos.match, null);
+  assert.equal(pos.cube.value, 1);
+  assert.equal(pos.cube.owner, "centered");
+  assert.equal(pos.cube.mayDouble.p1, true);
+  assert.equal(pos.cube.mayDouble.p2, true);
 });
 
 test("p1 opening 31 8/5 6/5", () => {

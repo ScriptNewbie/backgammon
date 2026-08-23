@@ -6,7 +6,7 @@ import { finished } from "node:stream/promises";
 import { createGzip, type Gzip } from "node:zlib";
 import { once } from "node:events";
 import type { DumpRecord, Manifest } from "./types";
-import { LEVELS, MATCH_LENGTHS, PAIRING_WEIGHTS, TEMPERATURES } from "./levels";
+import { LEVELS, PAIRING_WEIGHTS, TEMPERATURES } from "./levels";
 
 const fsync = promisify(fsyncCb);
 
@@ -25,12 +25,10 @@ export function buildManifest(opts: {
   plies?: number;
 }): Manifest {
   const settings: Manifest["engine"]["settings"] = {
-    play: "match",
-    matchLengths: [...MATCH_LENGTHS],
+    play: "game",
     baseUrl: opts.baseUrl,
     cubefulLabels: true,
     seed: opts.seed,
-    met: "kazaross-xg2",
     levels: [...LEVELS],
     pairingWeights: { ...PAIRING_WEIGHTS },
     temperatures: { ...TEMPERATURES },
@@ -87,8 +85,8 @@ export class DumpWriter {
     this.pending.push(`${JSON.stringify(record)}\n`);
   }
 
-  /** Close a gzip member so finished matches stay readable if the process dies. */
-  async commitMatch(): Promise<void> {
+  /** Close a gzip member so finished games stay readable if the process dies. */
+  async commitGame(): Promise<void> {
     if (this.pending.length === 0) return;
     const gzip = createGzip();
     gzip.pipe(this.file, { end: false });
@@ -106,8 +104,8 @@ export class DumpWriter {
     if (typeof this.file.fd === "number") await fsync(this.file.fd);
   }
 
-  async writeSgf(matchId: string, sgf: string): Promise<void> {
-    await writeFile(path.join(this.dir, "replay", `${matchId}.sgf`), sgf, "utf8");
+  async writeSgf(gameId: string, sgf: string): Promise<void> {
+    await writeFile(path.join(this.dir, "replay", `${gameId}.sgf`), sgf, "utf8");
   }
 
   get recordCount(): number {
@@ -133,7 +131,7 @@ export class DumpWriter {
   async finish(): Promise<{ dir: string; recordCount: number }> {
     if (this.closed) return { dir: this.dir, recordCount: this.committed };
     this.closed = true;
-    await this.commitMatch();
+    await this.commitGame();
     this.file.end();
     await finished(this.file);
     await this.writeManifest(this.committed);

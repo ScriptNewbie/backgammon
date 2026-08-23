@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { openingPosition } from "../src/board.ts";
+import { openingMoneyPosition, openingPosition } from "../src/board.ts";
 import { evaluateCube, wrapModelEval } from "../src/cube.ts";
 import { matchEquity } from "../src/met.ts";
 import { deadCubeMwc, moverMwc } from "../src/mwc.ts";
@@ -103,4 +103,12 @@ test("cubefulEquity is cubeless equity times cube value", () => {
   assert.equal(wrapped.cubefulEquity, 2);
   assert.equal(wrapped.source, "model");
   assert.ok(wrapped.cubeAction === null || typeof wrapped.cubeAction.double === "boolean");
+});
+
+test("wrapModelEval with match null leaves cubeAction null", () => {
+  const pos = openingMoneyPosition();
+  pos.cube.mayDouble = { p1: true, p2: true };
+  const wrapped = wrapModelEval(even, pos);
+  assert.equal(wrapped.cubeAction, null);
+  assert.equal(wrapped.cubefulEquity, 0);
 });

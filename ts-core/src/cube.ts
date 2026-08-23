@@ -20,6 +20,7 @@ export function evaluateCube(
   position: Position,
   phase: MatchPhase,
 ): CubeEval {
+  if (!position.match) throw new Error("evaluateCube requires position.match");
   const doubler: Player = position.onRoll;
   const C = position.cube.value;
   const noDouble = deadCubeMwc(cubeless, position, C, doubler, phase);
@@ -74,6 +75,7 @@ export function cubefulEquity(cubeless: Cubeless, cubeValue: number): number {
 }
 
 export function cubeActionFor(position: Position, cubeless: Cubeless): CubeActionFlag | null {
+  if (!position.match) return null;
   if (!position.cube.mayDouble[position.onRoll] || position.cube.value >= MAX_CUBE_VALUE) {
     return null;
   }

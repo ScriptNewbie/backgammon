@@ -21,7 +21,7 @@ Copying batches into `training-ground/data/` would duplicate dumps and let the t
   - `90–94` val (5%)
   - `95–99` test (5%)
 
-- **Cubeless net** ignores `decision == "cube"` at sample time. Cube rows stay in the same split as their match.
+- **Cubeless net** ignores `decision == "cube"` at sample time (legacy match dumps). [ADR 0020](0020-dumper-games-no-cube.md) dumps are checker-only games; `matchId` equals `gameId`.
 - **Optional cache later** (not required to start training): gitignored `training-ground/cache/` for featurized tensors. Training may read gzip JSONL or a derived cache. The cache is not a new dump contract.
 - **Artifacts:** checkpoints under `training-ground/checkpoints/` (gitignored). Do not commit `*.pt`, `*.onnx`, `*.pte`, or `wandb/`.
 

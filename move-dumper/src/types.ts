@@ -17,17 +17,15 @@ export type { LegalPlay };
 
 export type Level = "noob" | "beginner" | "midwit" | "genius" | "infallible";
 
-export type CubeAction = "no-double" | "double" | "take" | "drop";
-
 export type DumpRecord = {
   v: 1;
   id: string;
   matchId: string;
   gameId: string;
   ply: number;
-  decision: "checker" | "cube";
+  decision: "checker";
   players: { p1: Level; p2: Level };
-  chosen: { steps: Step[] } | { action: CubeAction };
+  chosen: { steps: Step[] };
   position: Position;
   eval: null;
   moves: { steps: Step[]; eval: Eval }[];
@@ -44,13 +42,11 @@ export type Manifest = {
     name: "bgweb-api";
     version: string;
     settings: {
-      play: "match";
-      matchLengths: number[];
+      play: "game";
       baseUrl: string;
       cubefulLabels: true;
       plies?: number;
       seed: number;
-      met: "kazaross-xg2";
       levels: Level[];
       pairingWeights: Record<string, number>;
       temperatures: Record<string, number>;

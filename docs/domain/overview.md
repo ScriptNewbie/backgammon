@@ -6,7 +6,7 @@ Pipeline:
 foochu/bgweb-api (GNU Backgammon nets over HTTP)
         │  getmoves: legal plays + cubeless / money cubeful eq
         ▼
-  move-dumper          TypeScript — simulate matches, dump labelled JSON + SGF
+  move-dumper          TypeScript — simulate games (no cube), dump labelled JSON + SGF
         │
         ├──────────────────────────────┐
         ▼                              ▼
@@ -25,7 +25,7 @@ foochu/bgweb-api (GNU Backgammon nets over HTTP)
                        shared match loop: ts-core/sim
 ```
 
-The **net** predicts cubeless outcome probabilities. Cubeful equity and cube action are wrapped on top ([ADR 0003](../decisions/0003-doubling-cube.md)). **v1 dumps are match play** ([ADR 0008](../decisions/0008-match-play.md)): the dumper tracks score, Crawford, and dead-cube MWC locally because bgweb-api does not.
+The **net** predicts cubeless outcome probabilities. Cubeful equity and cube action are wrapped on top ([ADR 0003](../decisions/0003-doubling-cube.md)). **Dumper dumps are money games without a cube** ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)). Battle-arena still plays matches ([ADR 0019](../decisions/0019-battle-arena.md)).
 
 Run everything with Docker Compose from the package directory ([ADR 0011](../decisions/0011-docker-only.md)). Commands: [AGENTS.md](../../AGENTS.md).
 

@@ -29,7 +29,7 @@ def opening_position() -> dict[str, Any]:
             "owner": "centered",
             "mayDouble": {"p1": False, "p2": False},
         },
-        "match": {"length": 1, "score": {"p1": 0, "p2": 0}, "crawford": True},
+        "match": None,
     }
 
 

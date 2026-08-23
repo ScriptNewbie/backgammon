@@ -9,8 +9,6 @@ export const LEVELS: readonly Level[] = [
   "infallible",
 ];
 
-export const MATCH_LENGTHS = [1, 3, 5, 7, 9, 11, 13, 15] as const;
-
 export const TEMPERATURES: Record<"beginner" | "midwit" | "genius", number> = {
   beginner: 0.08,
   midwit: 0.025,
@@ -57,10 +55,6 @@ export function sampleLevelPair(rng: Rng): { p1: Level; p2: Level } {
   return { p1: b, p2: a };
 }
 
-export function sampleMatchLength(rng: Rng): number {
-  return MATCH_LENGTHS[rng.int(MATCH_LENGTHS.length)]!;
-}
-
 export function temperature(level: Level): number | null {
   if (level === "beginner" || level === "midwit" || level === "genius") {
     return TEMPERATURES[level];
@@ -92,9 +86,9 @@ export function sampleCheckerIndex(level: Level, plays: readonly RankedPlay[], r
   if (level === "infallible") return pickBestPlayIndex(plays);
   const tau = temperature(level);
   if (tau === null) return sampleCheckerIndex("infallible", plays, rng);
-  const max = Math.max(...plays.map((p) => p.moverMwc));
+  const max = Math.max(...plays.map((p) => p.rankScore));
   return softmaxSample(
-    plays.map((p) => (p.moverMwc - max) / tau),
+    plays.map((p) => (p.rankScore - max) / tau),
     rng,
   );
 }

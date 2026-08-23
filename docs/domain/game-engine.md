@@ -37,5 +37,5 @@ Request body is a position JSON. `dice` must be two integers `1`–`6`. `points`
 
 - `moves` are legal checker plays only, sorted best-first for the **mover** (negated `cubefulEquity` of the result). Empty if the player dances.
 - Each `eval` is for the **resulting** position (opponent is STM). Terminal 15-off positions skip the net and use exact outcome probabilities.
-- `cubefulEquity = cubeless.equity * cube.value`. `cubeAction` from the match MWC formula; `null` when STM cannot double.
+- `cubefulEquity = cubeless.equity * cube.value`. `cubeAction` from the match MWC formula; `null` when STM cannot double or `match` is `null`.
 - `400` on invalid JSON / position / dice. Do not spawn Python per request.

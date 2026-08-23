@@ -14,6 +14,7 @@ export function deadCubeMwc(
   stm: Player,
   phase: MatchPhase,
 ): number {
+  if (!position.match) throw new Error("deadCubeMwc requires position.match");
   const { length, score } = position.match;
   const C = cubeValue;
   const pWinSingle = clamp01(cubeless.win - cubeless.gammon);

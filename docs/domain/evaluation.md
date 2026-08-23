@@ -1,6 +1,6 @@
 # Evaluation semantics
 
-Dump labels, training targets, and `game-engine` outputs share this schema. Cube support: [ADR 0003](../decisions/0003-doubling-cube.md). Match play: [ADR 0008](../decisions/0008-match-play.md), [match-play.md](match-play.md).
+Dump labels, training targets, and `game-engine` outputs share this schema. Cube support: [ADR 0003](../decisions/0003-doubling-cube.md). Dumper games: [ADR 0020](../decisions/0020-dumper-games-no-cube.md), [move-dumper.md](move-dumper.md). Arena/engine match play: [ADR 0008](../decisions/0008-match-play.md), [match-play.md](match-play.md).
 
 ## Two layers
 
@@ -50,11 +50,11 @@ Store the probabilities **and** `equity`; do not store equity alone. The trained
 
 - `source`: `"bgweb-api"` | `"model"` | `"heuristic"` | `"unknown"`.
 - `cubefulEquity`: expected **money** points per game **for STM**, with the cube in its current state. Teacher dumps match bgweb-api `eq` after the mover→STM flip in [gnubg.md](gnubg.md). The engine uses dead-cube money `cubeless.equity * cube.value` ([ADR 0018](../decisions/0018-cube-wrap-formula.md)). This is **not** match-winning chance.
-- `cubeAction`: STM’s double decision and opponent’s take/drop if STM doubled. Use `null` when unknown or not applicable. **bgweb-api does not emit cube actions** — teacher evals leave this `null`. The engine fills this from the dumper MWC heuristic when STM may double. Dumper cube *policy* for simulation is still metadata (`decision: "cube"`), not this field.
+- `cubeAction`: STM’s double decision and opponent’s take/drop if STM doubled. Use `null` when unknown or not applicable. **bgweb-api does not emit cube actions** — teacher evals leave this `null`. The engine fills this from the dead-cube MWC heuristic when `position.match` is set and STM may double ([ADR 0018](../decisions/0018-cube-wrap-formula.md)). `null` when `match` is null ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)). The dumper does not simulate cube actions.
 
 Dumps store cubeless probabilities (and cubeful `eq` when requested). Training the net uses `cubeless.*`. The cube wrapper uses `cubefulEquity` for ranking and the MWC formula for `cubeAction`; it cannot use teacher `cubeAction`.
 
-Do not store MWC on the shared eval object. Derive it from cubeless probs + `position.match` + the MET when ranking simulated plays.
+Do not store MWC on the shared eval object. Arena/engine derive it from cubeless probs + `position.match` + the MET when `match` is set. The dumper ranks by negated result cubeless equity.
 
 ## API
 
@@ -62,7 +62,7 @@ The eval object is always for **STM of the position being scored**.
 
 `game-engine` HTTP: [game-engine.md](game-engine.md). It returns legal **checker moves**, each with the eval of the **resulting** position (opponent is STM there). To rank plays for the mover in **money** play, use **negated** `cubefulEquity` of that result (higher is better for the mover). Also return cubeless probs.
 
-The **dumper** ranks simulated checker plays by **mover MWC**, not money equity ([match-play.md](match-play.md)).
+The **dumper** ranks simulated checker plays by **negated result cubeless equity**, not MWC ([move-dumper.md](move-dumper.md)).
 
 Cube decisions (double / no-double, take / drop) use the same eval object, not a second encoding. Teacher dumps still have `cubeAction: null`. Engine evals set `source` to `"model"`.
 

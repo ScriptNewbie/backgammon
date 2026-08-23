@@ -1,6 +1,6 @@
 # 0009 Dump metadata and GNU Backgammon SGF replay
 
-- Status: accepted
+- Status: accepted (`play` / cube rows updated by [0020](0020-dumper-games-no-cube.md))
 - Date: 2026-08-20
 
 ## Context
@@ -17,4 +17,4 @@ ADR 0005 locked `manifest.json` + gzip JSONL for training. Simulated matches als
 
 ## Consequences
 
-Do not store SGF as a training representation or parse it in `training-ground`. Do not bump dump `v` for these additive fields. Trainers that only read `position` + `moves[].eval.cubeless` keep working if they skip `decision != "checker"`. Spec: [dump-format.md](../domain/dump-format.md).
+Do not store SGF as a training representation or parse it in `training-ground`. Do not bump dump `v` for these additive fields. Trainers that only read `position` + `moves[].eval.cubeless` keep working if they skip `decision != "checker"`. [ADR 0020](0020-dumper-games-no-cube.md) sets manifest `play` to `"game"`, writes checker-only rows, and one SGF per `gameId`. Spec: [dump-format.md](../domain/dump-format.md).

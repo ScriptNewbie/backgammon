@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { openingPosition } from "ts-core";
+import { openingMoneyPosition, openingPosition } from "ts-core";
 import { createApp } from "../src/app.ts";
 import { evaluatePosition, type Infer } from "../src/evaluate.ts";
 
@@ -67,4 +67,22 @@ test("evaluatePosition ranks by negated cubeful equity", async () => {
     assert.ok(moves[i - 1]!.eval.cubefulEquity <= moves[i]!.eval.cubefulEquity);
   }
   assert.equal(moves[0]!.eval.source, "model");
+});
+
+test("POST /evaluate with match null returns cubeAction null", async () => {
+  const app = createApp(even);
+  const pos = openingMoneyPosition();
+  pos.onRoll = "p1";
+  pos.dice = [3, 1];
+  const res = await app.request("/evaluate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(pos),
+  });
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as { moves: { eval: { cubeAction: unknown } }[] };
+  assert.ok(body.moves.length > 0);
+  for (const m of body.moves) {
+    assert.equal(m.eval.cubeAction, null);
+  }
 });

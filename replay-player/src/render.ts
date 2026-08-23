@@ -152,7 +152,7 @@ export function renderHud(frame: Frame, index: number, total: number): string {
   const result = frame.result ? `${frame.result.winner} +${frame.result.points}` : "—";
   const cubeOwner = p.cube.owner === "centered" ? "centered" : p.cube.owner;
   return `<dl>
-    <div><dt>Match</dt><dd>${p.match.score.p1}–${p.match.score.p2} / ${p.match.length}${p.match.crawford ? " Crawford" : ""}</dd></div>
+    <div><dt>Match</dt><dd>${p.match ? `${p.match.score.p1}–${p.match.score.p2} / ${p.match.length}${p.match.crawford ? " Crawford" : ""}` : "money"}</dd></div>
     <div><dt>Players</dt><dd>p1 ${frame.players.p1} · p2 ${frame.players.p2}</dd></div>
     <div><dt>Game</dt><dd>${frame.gameIndex} · ply ${frame.eventIndex + 1}</dd></div>
     <div><dt>Cube</dt><dd>${p.cube.value} (${cubeOwner})</dd></div>

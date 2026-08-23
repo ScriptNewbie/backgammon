@@ -28,7 +28,7 @@ export type Position = {
   onRoll: Player;
   dice: [number, number] | null;
   cube: Cube;
-  match: MatchInfo;
+  match: MatchInfo | null;
 };
 
 export type Cubeless = {

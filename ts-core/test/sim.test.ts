@@ -158,25 +158,25 @@ test("bear-off from a one-checker board ends the game", async () => {
   assert.equal(game.result.multiplier, 2);
 });
 
-test("pickBestPlayIndex uses MWC then teacherDiff then stepsKey", () => {
+test("pickBestPlayIndex uses rankScore then teacherDiff then stepsKey", () => {
   assert.equal(
     pickBestPlayIndex([
-      { moverMwc: 0.4, teacherDiff: 1, stepsKey: "a" },
-      { moverMwc: 0.5, teacherDiff: 0, stepsKey: "b" },
+      { rankScore: 0.4, teacherDiff: 1, stepsKey: "a" },
+      { rankScore: 0.5, teacherDiff: 0, stepsKey: "b" },
     ]),
     1,
   );
   assert.equal(
     pickBestPlayIndex([
-      { moverMwc: 0.5, teacherDiff: 0, stepsKey: "b" },
-      { moverMwc: 0.5, teacherDiff: 1, stepsKey: "a" },
+      { rankScore: 0.5, teacherDiff: 0, stepsKey: "b" },
+      { rankScore: 0.5, teacherDiff: 1, stepsKey: "a" },
     ]),
     1,
   );
   assert.equal(
     pickBestPlayIndex([
-      { moverMwc: 0.5, teacherDiff: 0, stepsKey: "b" },
-      { moverMwc: 0.5, teacherDiff: 0, stepsKey: "a" },
+      { rankScore: 0.5, teacherDiff: 0, stepsKey: "b" },
+      { rankScore: 0.5, teacherDiff: 0, stepsKey: "a" },
     ]),
     1,
   );

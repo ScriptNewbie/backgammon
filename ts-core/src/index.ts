@@ -11,6 +11,7 @@ export {
   initialPhase,
   matchPhase,
   nextPhase,
+  openingMoneyPosition,
   openingPosition,
   opponent,
   pointsAwarded,

@@ -29,3 +29,5 @@ What becomes easier, harder, or now forbidden. Update
 ```
 
 Do not silently pick items still listed in [0000-open-questions.md](0000-open-questions.md).
+
+Unpublished dump internals (`match: null`, dead cube, per-game SGF headers, record fields) amend [0020](0020-dumper-games-no-cube.md) and `docs/domain/`. Do not mint a new ADR for those.
