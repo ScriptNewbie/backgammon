@@ -6,7 +6,7 @@
 
 ## Context
 
-ADR 0008 made training dumps **match play**: sampled odd match lengths, Crawford, dead-cube MWC ranking, and noisy cube offers/takes persisted as `decision: "cube"` rows. Training the cubeless net already ignores cube rows and splits only by `matchId`. Cube wrap for the engine and match play in battle-arena do not need the dumper to simulate matches or cube actions. Playing full matches with a cube heuristic made the dumper heavier than the training data requires.
+ADR 0008 made training dumps **match play**: sampled odd match lengths, Crawford, dead-cube MWC ranking, and noisy cube offers/takes persisted as `decision: "cube"` rows. Training the cubeless net already ignores cube rows and splits by game. Cube wrap for the engine and match play in battle-arena do not need the dumper to simulate matches or cube actions. Playing full matches with a cube heuristic made the dumper heavier than the training data requires.
 
 Dumps are an unpublished working set. There is no public dump contract to version separately.
 
@@ -15,7 +15,7 @@ Dumps are an unpublished working set. There is no public dump contract to versio
 - `move-dumper` simulates independent **money games** to bear-off. CLI `--games N` replaces `--matches`. There is no `--length`. SIGINT/SIGTERM finish after the **current game**.
 - **No cube policy.** Call `playGame({ allowCube: false })`. Never offer, take, or drop. Do not write `decision: "cube"` records. Delete the dumper cube sampler.
 - Rank/sample checker plays by **negated result cubeless equity** (`-play.eval.cubeless.equity`), not mover MWC. Store that value in `RankedPlay.rankScore` (higher is better; arena uses the same field for mover MWC). Softmax τ stays `0.08 / 0.025 / 0.008`. Infallible still tie-breaks on teacher `diff` then stable `steps`. Noob stays uniform. Keep fetching teacher cubeful `eq` (`cubefulLabels: true`); do not rank on it.
-- Keep record `"v": 1`. Set `matchId` **equal to** `gameId` so [ADR 0012](0012-training-data-layout.md) split-by-`matchId` stays valid.
+- Keep record `"v": 1`. Write `gameId` only (do not write `matchId`). [ADR 0012](0012-training-data-layout.md) splits on `gameId`; readers may fall back to `matchId` on older rows.
 - Position JSON still includes `cube` ([ADR 0003](0003-doubling-cube.md)). Dumps always emit a dead cube: `value: 1`, `owner: "centered"`, `mayDouble` both false.
 - `Position.match` is `MatchInfo | null`. The key is required. **Dumper / money JSON:** `match: null`. Do not emit a fake Crawford or 1-point match. **Arena / engine match play:** always set `match`.
 - Cube wrap still computes `cubefulEquity = cubeless.equity * cube.value` when `match` is null. `cubeAction` is `null` when `match` is null — do not run the MWC heuristic without match state ([ADR 0018](0018-cube-wrap-formula.md)).

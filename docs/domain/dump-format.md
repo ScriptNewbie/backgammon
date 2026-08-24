@@ -72,7 +72,6 @@ One line = one checker decision. Additive fields from ADR 0009; keep `"v": 1`. [
 {
   "v": 1,
   "id": "01JJ...",
-  "matchId": "01JK...",
   "gameId": "01JK...",
   "ply": 0,
   "decision": "checker",
@@ -96,7 +95,7 @@ One line = one checker decision. Additive fields from ADR 0009; keep `"v": 1`. [
 | --- | --- |
 | `v` | Schema version. Must be `1`. |
 | `id` | Unique string (ULID or UUID). Stable if a batch is merged or re-exported. |
-| `matchId` / `gameId` | Same id for a dumped game (`matchId === gameId`) so training still splits on `matchId`. |
+| `gameId` | Id of the dumped game. Training splits on this field. Older rows may still have `matchId`; readers fall back to it when `gameId` is missing. New dumps do not write `matchId`. |
 | `ply` | Checker half-moves in this game, 0-based. |
 | `decision` | `"checker"` for new dumps. Cubeless training **ignores** `"cube"` if a legacy dump still has it. |
 | `players` | Level names for `p1` and `p2` ([move-dumper.md](move-dumper.md)). |
@@ -124,15 +123,15 @@ GNU Backgammon files: `FF[4]`, `GM[6]`, UTF-8. One **game** per `replay/<gameId>
 
 Locked by [ADR 0012](../decisions/0012-training-data-layout.md). Do not copy dumps into `training-ground/`.
 
-From `training-ground/`, Compose mounts `../move-dumper/dumps` read-only at `/data/dumps`. Package source stays at `/app`. Split by `matchId` (not record, not batch):
+From `training-ground/`, Compose mounts `../move-dumper/dumps` read-only at `/data/dumps`. Package source stays at `/app`. Split by `gameId` (not record, not batch); fall back to `matchId` if `gameId` is missing:
 
-`int.from_bytes(sha256(matchId.encode("utf-8")).digest()[:8], "big") % 100`
+`int.from_bytes(sha256(gameId.encode("utf-8")).digest()[:8], "big") % 100`
 
 - `0–89` train (90%)
 - `90–94` val (5%)
 - `95–99` test (5%)
 
-New dumps set `matchId` equal to `gameId`. Cubeless training still ignores `decision == "cube"` at sample time if a legacy dump has those rows. Optional featurized cache later: gitignored `training-ground/cache/`. Checkpoints: `training-ground/checkpoints/`.
+New dumps write only `gameId`. Cubeless training still ignores `decision == "cube"` at sample time if a legacy dump has those rows. Optional featurized cache later: gitignored `training-ground/cache/`. Checkpoints: `training-ground/checkpoints/`.
 
 ## Forbidden
 

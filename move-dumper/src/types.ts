@@ -20,7 +20,6 @@ export type Level = "noob" | "beginner" | "midwit" | "genius" | "infallible";
 export type DumpRecord = {
   v: 1;
   id: string;
-  matchId: string;
   gameId: string;
   ply: number;
   decision: "checker";

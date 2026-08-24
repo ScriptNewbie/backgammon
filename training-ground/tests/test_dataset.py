@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import torch
 
-from helpers import checker_record, cube_record, match_id_for, opening_position, write_batch
+from helpers import checker_record, cube_record, game_id_for, opening_position, write_batch
 from training_ground.board import result_position
 from training_ground.cubeless import CUBELESS_OUTPUT_SIZE, cubeless_equity, cubeless_vector
 from training_ground.dataset import CubelessDumpDataset
@@ -28,9 +28,9 @@ def test_cubeless_vector_order_and_equity() -> None:
     assert got == pytest.approx(expected)
 
 
-def test_dataset_skips_cube_and_splits_by_match(tmp_path: Path) -> None:
-    train_id = match_id_for("train")
-    val_id = match_id_for("val")
+def test_dataset_skips_cube_and_splits_by_game(tmp_path: Path) -> None:
+    train_id = game_id_for("train")
+    val_id = game_id_for("val")
     write_batch(
         tmp_path,
         [
@@ -56,10 +56,21 @@ def test_dataset_skips_cube_and_splits_by_match(tmp_path: Path) -> None:
     np.testing.assert_allclose(val[0][1].numpy(), [0.4, 0.0, 0.0, 0.0, 0.0], atol=1e-6)
 
 
+def test_dataset_splits_matchId_only_record(tmp_path: Path) -> None:
+    train_id = game_id_for("train")
+    rec = checker_record(train_id, "legacy-match", 0.55)
+    rec.pop("gameId")
+    rec["matchId"] = train_id
+    write_batch(tmp_path, [rec])
+    train = CubelessDumpDataset(tmp_path, "train")
+    assert len(train) == 1
+    np.testing.assert_allclose(train[0][1].numpy(), [0.55, 0.0, 0.0, 0.0, 0.0], atol=1e-6)
+
+
 def test_dataset_reads_uncompressed_jsonl(tmp_path: Path) -> None:
     write_batch(
         tmp_path,
-        [checker_record(match_id_for("train"), "example-opening-31", 0.5)],
+        [checker_record(game_id_for("train"), "example-opening-31", 0.5)],
         gzipped=False,
     )
     ds = CubelessDumpDataset(tmp_path, "train")

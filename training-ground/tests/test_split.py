@@ -1,18 +1,18 @@
-from training_ground.split import match_bucket, split_name
+from training_ground.split import game_bucket, split_name
 
 
 def test_split_is_deterministic() -> None:
-    assert match_bucket("example-match") == match_bucket("example-match")
-    assert split_name("example-match") == split_name("example-match")
+    assert game_bucket("example-game") == game_bucket("example-game")
+    assert split_name("example-game") == split_name("example-game")
 
 
 def test_split_ranges() -> None:
     seen: set[str] = set()
     i = 0
     while len(seen) < 3:
-        name = split_name(f"match-{i}")
+        name = split_name(f"game-{i}")
         seen.add(name)
-        bucket = match_bucket(f"match-{i}")
+        bucket = game_bucket(f"game-{i}")
         if name == "train":
             assert 0 <= bucket <= 89
         elif name == "val":

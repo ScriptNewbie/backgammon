@@ -5,13 +5,13 @@ import hashlib
 SplitName = str
 
 
-def match_bucket(match_id: str) -> int:
-    digest = hashlib.sha256(match_id.encode("utf-8")).digest()[:8]
+def game_bucket(game_id: str) -> int:
+    digest = hashlib.sha256(game_id.encode("utf-8")).digest()[:8]
     return int.from_bytes(digest, "big") % 100
 
 
-def split_name(match_id: str) -> SplitName:
-    bucket = match_bucket(match_id)
+def split_name(game_id: str) -> SplitName:
+    bucket = game_bucket(game_id)
     if bucket <= 89:
         return "train"
     if bucket <= 94:

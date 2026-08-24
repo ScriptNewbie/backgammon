@@ -77,7 +77,7 @@ There is no `--matches` / `--length`. Help: add `--help` after `--`.
 
 ## training-ground
 
-CUDA image, `gpus: all` on `train` ([ADR 0013](docs/decisions/0013-training-cuda.md)). Host NVIDIA driver 580+ and NVIDIA Container Toolkit. Reads dumps at `/data/dumps`. Split by `matchId` ([ADR 0012](docs/decisions/0012-training-data-layout.md)). Never commit `checkpoints/`, `cache/`, `*.pt`, `*.onnx`, or `*.pte`.
+CUDA image, `gpus: all` on `train` ([ADR 0013](docs/decisions/0013-training-cuda.md)). Host NVIDIA driver 580+ and NVIDIA Container Toolkit. Reads dumps at `/data/dumps`. Split by `gameId` ([ADR 0012](docs/decisions/0012-training-data-layout.md)). Never commit `checkpoints/`, `cache/`, `*.pt`, `*.onnx`, or `*.pte`.
 
 From `training-ground/`:
 

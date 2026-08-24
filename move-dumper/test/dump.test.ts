@@ -12,7 +12,6 @@ function checkerRecord(id: string): DumpRecord {
   return {
     v: 1,
     id,
-    matchId: "g",
     gameId: "g",
     ply: 0,
     decision: "checker",
@@ -112,7 +111,7 @@ test("fetchWithRetry succeeds after transient failures", async () => {
   assert.equal(logs.length, 2);
 });
 
-test("fixture record is a checker game with matchId equal to gameId", async () => {
+test("fixture record is a checker game with gameId and no matchId", async () => {
   const line = (
     await readFile(path.join(import.meta.dirname, "../fixtures/records.example.jsonl"), "utf8")
   )
@@ -120,7 +119,9 @@ test("fixture record is a checker game with matchId equal to gameId", async () =
     .split("\n")[0]!;
   const rec = JSON.parse(line) as DumpRecord;
   assert.equal(rec.decision, "checker");
-  assert.equal(rec.matchId, rec.gameId);
+  assert.equal(typeof rec.gameId, "string");
+  assert.ok(rec.gameId.length > 0);
+  assert.equal("matchId" in rec, false);
   assert.equal(rec.position.cube.value, 1);
   assert.equal(rec.position.cube.owner, "centered");
   assert.equal(rec.position.cube.mayDouble.p1, false);

@@ -8,12 +8,12 @@ from typing import Any
 from training_ground.split import split_name
 
 
-def match_id_for(split: str) -> str:
+def game_id_for(split: str) -> str:
     i = 0
     while True:
-        mid = f"split-{split}-{i}"
-        if split_name(mid) == split:
-            return mid
+        gid = f"split-{split}-{i}"
+        if split_name(gid) == split:
+            return gid
         i += 1
 
 
@@ -44,13 +44,12 @@ def cubeless(win: float = 0.5) -> dict[str, Any]:
     }
 
 
-def checker_record(match_id: str, record_id: str, win: float) -> dict[str, Any]:
+def checker_record(game_id: str, record_id: str, win: float) -> dict[str, Any]:
     steps = [{"from": 8, "to": 5}, {"from": 6, "to": 5}]
     return {
         "v": 1,
         "id": record_id,
-        "matchId": match_id,
-        "gameId": "g",
+        "gameId": game_id,
         "ply": 0,
         "decision": "checker",
         "players": {"p1": "infallible", "p2": "infallible"},
@@ -72,13 +71,12 @@ def checker_record(match_id: str, record_id: str, win: float) -> dict[str, Any]:
     }
 
 
-def cube_record(match_id: str) -> dict[str, Any]:
+def cube_record(game_id: str) -> dict[str, Any]:
     steps = [{"from": 8, "to": 5}, {"from": 6, "to": 5}]
     return {
         "v": 1,
         "id": "cube-row",
-        "matchId": match_id,
-        "gameId": "g",
+        "gameId": game_id,
         "ply": 0,
         "decision": "cube",
         "players": {"p1": "midwit", "p2": "midwit"},

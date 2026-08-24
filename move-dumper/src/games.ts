@@ -55,7 +55,6 @@ class DumpingTeacher implements MatchPlayer {
 
     await this.writer.writeRecord(
       checkerRecord({
-        matchId: ctx.gameId,
         gameId: ctx.gameId,
         ply: ctx.ply,
         players: this.levels,

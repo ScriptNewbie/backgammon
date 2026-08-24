@@ -2,7 +2,7 @@ from pathlib import Path
 
 import torch
 
-from helpers import checker_record, match_id_for, write_batch
+from helpers import checker_record, game_id_for, write_batch
 from training_ground.train import main
 
 
@@ -11,8 +11,8 @@ def test_train_one_epoch_writes_checkpoint(tmp_path: Path) -> None:
     write_batch(
         dumps,
         [
-            checker_record(match_id_for("train"), "t1", 0.55),
-            checker_record(match_id_for("val"), "v1", 0.4),
+            checker_record(game_id_for("train"), "t1", 0.55),
+            checker_record(game_id_for("val"), "v1", 0.4),
         ],
     )
     ckpt_dir = tmp_path / "checkpoints"

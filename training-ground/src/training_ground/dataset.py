@@ -17,6 +17,13 @@ from training_ground.split import split_name
 Split = Literal["train", "val", "test"]
 
 
+def _split_id(rec: dict[str, Any]) -> str:
+    game_id = rec.get("gameId") or rec.get("matchId")
+    if not game_id:
+        raise ValueError(f"dump record {rec.get('id')!r} missing gameId and matchId")
+    return str(game_id)
+
+
 def _record_files(dumps_root: Path) -> list[Path]:
     if not dumps_root.is_dir():
         raise FileNotFoundError(f"dumps root does not exist: {dumps_root}")
@@ -76,7 +83,7 @@ def load_split_arrays(
     features: list[np.ndarray] = []
     labels: list[np.ndarray] = []
     for rec in iter_dump_records(dumps_root):
-        if split_name(rec["matchId"]) != split:
+        if split_name(_split_id(rec)) != split:
             continue
         for feat, label in _samples_for_record(rec):
             features.append(feat)
