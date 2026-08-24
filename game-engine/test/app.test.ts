@@ -17,15 +17,20 @@ function opening31() {
   return pos;
 }
 
+function testApp(infer: Infer = even, logs?: string[]) {
+  const log = logs ? (line: string) => logs.push(line) : () => {};
+  return createApp(infer, log);
+}
+
 test("GET /health", async () => {
-  const app = createApp(even);
+  const app = testApp();
   const res = await app.request("/health");
   assert.equal(res.status, 200);
   assert.deepEqual(await res.json(), { ok: true });
 });
 
 test("POST /evaluate opening 31 returns ranked legal plays", async () => {
-  const app = createApp(even);
+  const app = testApp();
   const res = await app.request("/evaluate", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -41,7 +46,7 @@ test("POST /evaluate opening 31 returns ranked legal plays", async () => {
 });
 
 test("POST /evaluate 400 without dice", async () => {
-  const app = createApp(even);
+  const app = testApp();
   const pos = openingPosition(7, { p1: 0, p2: 0 }, "pre");
   const res = await app.request("/evaluate", {
     method: "POST",
@@ -70,7 +75,7 @@ test("evaluatePosition ranks by negated cubeful equity", async () => {
 });
 
 test("POST /evaluate with match null returns cubeAction null", async () => {
-  const app = createApp(even);
+  const app = testApp();
   const pos = openingMoneyPosition();
   pos.onRoll = "p1";
   pos.dice = [3, 1];
@@ -85,4 +90,41 @@ test("POST /evaluate with match null returns cubeAction null", async () => {
   for (const m of body.moves) {
     assert.equal(m.eval.cubeAction, null);
   }
+});
+
+test("logs health and evaluate requests", async () => {
+  const logs: string[] = [];
+  const app = testApp(even, logs);
+  const health = await app.request("/health");
+  assert.equal(health.status, 200);
+  const ok = await app.request("/evaluate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(opening31()),
+  });
+  assert.equal(ok.status, 200);
+  const body = (await ok.json()) as { moves: unknown[] };
+  const bad = await app.request("/evaluate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(openingPosition(7, { p1: 0, p2: 0 }, "pre")),
+  });
+  assert.equal(bad.status, 400);
+  assert.equal(logs.length, 3);
+  assert.match(logs[0]!, /^GET \/health 200 \d+ms$/);
+  assert.match(logs[1]!, new RegExp(`^POST /evaluate 200 \\d+ms moves=${body.moves.length} onRoll=p1 dice=3-1$`));
+  assert.match(logs[2]!, /^POST \/evaluate 400 \d+ms error=dice must be two ints 1-6$/);
+});
+
+test("logs invalid json", async () => {
+  const logs: string[] = [];
+  const app = testApp(even, logs);
+  const res = await app.request("/evaluate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "{",
+  });
+  assert.equal(res.status, 400);
+  assert.equal(logs.length, 1);
+  assert.match(logs[0]!, /^POST \/evaluate 400 \d+ms error=invalid json$/);
 });
