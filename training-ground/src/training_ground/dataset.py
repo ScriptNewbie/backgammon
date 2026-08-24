@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import gzip
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator, Literal
 
@@ -15,6 +16,18 @@ from training_ground.features import FEATURE_SIZE, featurize
 from training_ground.split import split_name
 
 Split = Literal["train", "val", "test"]
+
+
+@dataclass(frozen=True)
+class SplitLoadStats:
+    batch_dirs: tuple[str, ...]
+    records_scanned: int
+    records_in_split: int
+    samples: int
+
+
+def dump_batch_dirs(dumps_root: Path) -> tuple[str, ...]:
+    return tuple(p.parent.name for p in _record_files(dumps_root))
 
 
 def _split_id(rec: dict[str, Any]) -> str:
@@ -79,28 +92,40 @@ def _samples_for_record(rec: dict[str, Any]) -> list[tuple[np.ndarray, np.ndarra
 
 def load_split_arrays(
     dumps_root: Path, split: Split
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, SplitLoadStats]:
+    batch_dirs = dump_batch_dirs(dumps_root)
     features: list[np.ndarray] = []
     labels: list[np.ndarray] = []
+    records_scanned = 0
+    records_in_split = 0
     for rec in iter_dump_records(dumps_root):
+        records_scanned += 1
         if split_name(_split_id(rec)) != split:
             continue
+        records_in_split += 1
         for feat, label in _samples_for_record(rec):
             features.append(feat)
             labels.append(label)
+    stats = SplitLoadStats(
+        batch_dirs=batch_dirs,
+        records_scanned=records_scanned,
+        records_in_split=records_in_split,
+        samples=len(features),
+    )
     if not features:
         return (
             np.zeros((0, FEATURE_SIZE), dtype=np.float32),
             np.zeros((0, CUBELESS_OUTPUT_SIZE), dtype=np.float32),
+            stats,
         )
-    return np.stack(features), np.stack(labels)
+    return np.stack(features), np.stack(labels), stats
 
 
 class CubelessDumpDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
     """Checker-play result positions from dump batches, one split."""
 
     def __init__(self, dumps_root: Path | str, split: Split) -> None:
-        features, labels = load_split_arrays(Path(dumps_root), split)
+        features, labels, self.stats = load_split_arrays(Path(dumps_root), split)
         self.features = torch.from_numpy(features)
         self.labels = torch.from_numpy(labels)
 

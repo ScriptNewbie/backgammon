@@ -7,6 +7,7 @@ from torch.export import export as torch_export
 
 from training_ground.cubeless import CUBELESS_OUTPUT_SIZE
 from training_ground.features import FEATURE_SIZE
+from training_ground.log import info
 
 __all__ = ["CUBELESS_OUTPUT_SIZE", "export_onnx_and_pte"]
 
@@ -31,6 +32,7 @@ def export_onnx_and_pte(
     model = model.eval().cpu()
     example = example.cpu()
 
+    info(f"exporting ONNX → {onnx_path}")
     torch.onnx.export(
         model,
         (example,),
@@ -39,11 +41,14 @@ def export_onnx_and_pte(
         output_names=["cubeless"],
         opset_version=18,
     )
+    info(f"  wrote {onnx_path} ({onnx_path.stat().st_size:,} bytes)")
 
     from executorch.exir import to_edge_transform_and_lower
 
+    info(f"exporting ExecuTorch .pte → {pte_path}")
     aten = torch_export(model, (example,), strict=True)
     et_program = to_edge_transform_and_lower(aten).to_executorch()
     pte_path.write_bytes(bytes(et_program.buffer))
+    info(f"  wrote {pte_path} ({pte_path.stat().st_size:,} bytes)")
 
     return onnx_path, pte_path
