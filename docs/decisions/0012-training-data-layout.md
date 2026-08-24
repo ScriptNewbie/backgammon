@@ -23,9 +23,9 @@ Copying batches into `training-ground/data/` would duplicate dumps and let the t
 
   Readers may fall back to `matchId` when `gameId` is missing (older dump rows). New dumps write only `gameId`.
 - **Cubeless net** ignores `decision == "cube"` at sample time (legacy match dumps). [ADR 0020](0020-dumper-games-no-cube.md) dumps are checker-only games.
-- **Optional cache later** (not required to start training): gitignored `training-ground/cache/` for featurized tensors. Training may read gzip JSONL or a derived cache. The cache is not a new dump contract.
+- **Featurized cache** ([ADR 0021](0021-featurized-tensor-cache.md)): gitignored `training-ground/cache/` for memmap `.npy` shards. Training may read gzip JSONL to build or refresh that cache. The cache is not a new dump contract.
 - **Artifacts:** checkpoints under `training-ground/checkpoints/` (gitignored). Do not commit `*.pt`, `*.onnx`, `*.pte`, or `wandb/`.
 
 ## Consequences
 
-Do not copy or symlink dump batches into `training-ground/data/`. Do not split by record id or batch id. JSONL→cache conversion, when added, writes only under `training-ground/cache/`. Spec: [dump-format.md](../domain/dump-format.md). This closes the training-layout item left open in [0005](0005-dump-file-format.md) and [0000-open-questions.md](0000-open-questions.md). GPU/CUDA image: [ADR 0013](0013-training-cuda.md).
+Do not copy or symlink dump batches into `training-ground/data/`. Do not split by record id or batch id. JSONL→cache conversion writes only under `training-ground/cache/` ([ADR 0021](0021-featurized-tensor-cache.md)). Spec: [dump-format.md](../domain/dump-format.md). This closes the training-layout item left open in [0005](0005-dump-file-format.md) and [0000-open-questions.md](0000-open-questions.md). GPU/CUDA image: [ADR 0013](0013-training-cuda.md).

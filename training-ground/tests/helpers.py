@@ -98,9 +98,15 @@ def cube_record(game_id: str) -> dict[str, Any]:
     }
 
 
-def write_batch(root: Path, records: list[dict[str, Any]], *, gzipped: bool = True) -> None:
-    batch = root / "2026-08-22T000000Z-bgweb-api"
-    batch.mkdir(parents=True)
+def write_batch(
+    root: Path,
+    records: list[dict[str, Any]],
+    *,
+    gzipped: bool = True,
+    batch_id: str = "2026-08-22T000000Z-bgweb-api",
+) -> None:
+    batch = root / batch_id
+    batch.mkdir(parents=True, exist_ok=True)
     dest = batch / ("records.jsonl.gz" if gzipped else "records.jsonl")
     payload = "".join(json.dumps(r, separators=(",", ":")) + "\n" for r in records)
     if gzipped:

@@ -85,7 +85,7 @@ From `training-ground/`:
 docker compose run --rm train python -m pytest
 
 # train the cubeless teacher net
-docker compose run --rm train python -m training_ground.train --dumps /data/dumps --epochs 20 --batch-size 1024 --checkpoint-dir checkpoints
+docker compose run --rm train python -m training_ground.train --dumps /data/dumps --epochs 20 --batch-size 1024 --checkpoint-dir checkpoints --cache-dir cache
 
 # train and export ONNX + ExecuTorch .pte for the engine (writes checkpoints/cubeless.onnx)
 docker compose run --rm train python -m training_ground.train --dumps /data/dumps --epochs 20 --batch-size 1024 --checkpoint-dir checkpoints --export-stem checkpoints/cubeless
@@ -113,6 +113,8 @@ Train flags:
 | `--resume` | (off) | Load a `.pt` checkpoint and continue |
 | `--seed` | `1` | RNG seed |
 | `--num-workers` | `0` | DataLoader workers |
+| `--cache-dir` | `cache` | Featurized tensor cache ([ADR 0021](docs/decisions/0021-featurized-tensor-cache.md)) |
+| `--rebuild-cache` | (off) | Wipe and rebuild the tensor cache |
 
 `--export-stem checkpoints/cubeless` is what `game-engine` and `battle-arena` consume (`MODEL_PATH=/models/cubeless.onnx`).
 

@@ -11,7 +11,13 @@ import torch
 from torch.utils.data import DataLoader
 
 from training_ground.cubeless import cubeless_equity
-from training_ground.dataset import CubelessDumpDataset, SplitLoadStats, dump_batch_dirs
+from training_ground.dataset import (
+    CubelessDumpDataset,
+    ShardShuffleSampler,
+    SplitLoadStats,
+    dump_batch_dirs,
+    ensure_feature_cache,
+)
 from training_ground.export import export_onnx_and_pte
 from training_ground.features import FEATURE_SIZE
 from training_ground.log import info
@@ -31,6 +37,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--resume", type=Path, default=None)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--num-workers", type=int, default=0)
+    parser.add_argument("--cache-dir", type=Path, default=Path("cache"))
+    parser.add_argument(
+        "--rebuild-cache",
+        action="store_true",
+        help="wipe and rebuild the featurized tensor cache",
+    )
     return parser.parse_args(argv)
 
 
@@ -146,7 +158,10 @@ def main(argv: list[str] | None = None) -> None:
         f"  epochs={args.epochs} batch_size={args.batch_size} lr={args.lr} "
         f"hidden_size={args.hidden_size} layers={args.layers} seed={args.seed}"
     )
-    info(f"  checkpoint_dir={args.checkpoint_dir} num_workers={args.num_workers}")
+    info(
+        f"  checkpoint_dir={args.checkpoint_dir} num_workers={args.num_workers} "
+        f"cache_dir={args.cache_dir} rebuild_cache={args.rebuild_cache}"
+    )
     if args.export_stem is not None:
         info(f"  export_stem={args.export_stem}")
     info(f"  device={_device_label(device)}")
@@ -157,12 +172,12 @@ def main(argv: list[str] | None = None) -> None:
     info(f"found {len(batch_dirs)} dump batch(es): {', '.join(batch_dirs)}")
 
     t0 = time.perf_counter()
-    train_ds = CubelessDumpDataset(args.dumps, "train")
-    _log_split_load("train", train_ds.stats, time.perf_counter() - t0)
+    cache = ensure_feature_cache(args.dumps, args.cache_dir, rebuild=args.rebuild_cache)
+    _log_split_load("train", cache.stats_for("train"), time.perf_counter() - t0)
+    _log_split_load("val", cache.stats_for("val"), 0.0)
 
-    t0 = time.perf_counter()
-    val_ds = CubelessDumpDataset(args.dumps, "val")
-    _log_split_load("val", val_ds.stats, time.perf_counter() - t0)
+    train_ds = CubelessDumpDataset(args.dumps, "train", args.cache_dir, cache=cache)
+    val_ds = CubelessDumpDataset(args.dumps, "val", args.cache_dir, cache=cache)
 
     if len(train_ds) == 0:
         raise SystemExit(f"no training samples under {args.dumps}")
@@ -177,7 +192,7 @@ def main(argv: list[str] | None = None) -> None:
     train_loader = DataLoader(
         train_ds,
         batch_size=args.batch_size,
-        shuffle=True,
+        sampler=ShardShuffleSampler(train_ds.shard_lengths),
         num_workers=args.num_workers,
         pin_memory=device.type == "cuda",
     )

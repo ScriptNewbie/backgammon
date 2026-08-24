@@ -1,6 +1,6 @@
 # Dump format
 
-Locked by [ADR 0005](../decisions/0005-dump-file-format.md), [ADR 0006](../decisions/0006-teacher-bgweb-api.md), [ADR 0007](../decisions/0007-skill-levels-and-pairing.md), [ADR 0009](../decisions/0009-dump-metadata-and-sgf.md), [ADR 0012](../decisions/0012-training-data-layout.md), and [ADR 0020](../decisions/0020-dumper-games-no-cube.md). Change only via a new ADR.
+Locked by [ADR 0005](../decisions/0005-dump-file-format.md), [ADR 0006](../decisions/0006-teacher-bgweb-api.md), [ADR 0007](../decisions/0007-skill-levels-and-pairing.md), [ADR 0009](../decisions/0009-dump-metadata-and-sgf.md), [ADR 0012](../decisions/0012-training-data-layout.md), [ADR 0020](../decisions/0020-dumper-games-no-cube.md), and [ADR 0021](../decisions/0021-featurized-tensor-cache.md). Change only via a new ADR.
 
 On-disk output of `move-dumper`. Position and eval field shapes are not redefined here — use [board-representation.md](board-representation.md) and [evaluation.md](evaluation.md). Teacher conversion: [gnubg.md](gnubg.md). Simulation: [move-dumper.md](move-dumper.md).
 
@@ -131,7 +131,7 @@ From `training-ground/`, Compose mounts `../move-dumper/dumps` read-only at `/da
 - `90–94` val (5%)
 - `95–99` test (5%)
 
-New dumps write only `gameId`. Cubeless training still ignores `decision == "cube"` at sample time if a legacy dump has those rows. Optional featurized cache later: gitignored `training-ground/cache/`. Checkpoints: `training-ground/checkpoints/`.
+New dumps write only `gameId`. Cubeless training still ignores `decision == "cube"` at sample time if a legacy dump has those rows. Featurized tensor cache: gitignored `training-ground/cache/` ([ADR 0021](../decisions/0021-featurized-tensor-cache.md)). Checkpoints: `training-ground/checkpoints/`.
 
 ## Forbidden
 

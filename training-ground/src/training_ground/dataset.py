@@ -1,136 +1,121 @@
 from __future__ import annotations
 
-import gzip
-import json
-from dataclasses import dataclass
+import bisect
+from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import Any, Iterator, Literal
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Sampler
 
-from training_ground.board import result_position
-from training_ground.cubeless import CUBELESS_OUTPUT_SIZE, cubeless_vector
-from training_ground.features import FEATURE_SIZE, featurize
-from training_ground.split import split_name
+from training_ground.cache import (
+    DEFAULT_CHUNK_SIZE,
+    FeatureCache,
+    Shard,
+    Split,
+    SplitLoadStats,
+    ensure_feature_cache,
+)
+from training_ground.dumpio import dump_batch_dirs, iter_dump_records
 
-Split = Literal["train", "val", "test"]
-
-
-@dataclass(frozen=True)
-class SplitLoadStats:
-    batch_dirs: tuple[str, ...]
-    records_scanned: int
-    records_in_split: int
-    samples: int
-
-
-def dump_batch_dirs(dumps_root: Path) -> tuple[str, ...]:
-    return tuple(p.parent.name for p in _record_files(dumps_root))
-
-
-def _split_id(rec: dict[str, Any]) -> str:
-    game_id = rec.get("gameId") or rec.get("matchId")
-    if not game_id:
-        raise ValueError(f"dump record {rec.get('id')!r} missing gameId and matchId")
-    return str(game_id)
-
-
-def _record_files(dumps_root: Path) -> list[Path]:
-    if not dumps_root.is_dir():
-        raise FileNotFoundError(f"dumps root does not exist: {dumps_root}")
-    found: list[Path] = []
-    for batch in sorted(p for p in dumps_root.iterdir() if p.is_dir()):
-        gz = batch / "records.jsonl.gz"
-        jsonl = batch / "records.jsonl"
-        if gz.is_file():
-            found.append(gz)
-        elif jsonl.is_file():
-            found.append(jsonl)
-    return found
-
-
-def _open_jsonl(path: Path) -> Iterator[str]:
-    if path.name.endswith(".jsonl.gz") or path.suffix == ".gz":
-        with gzip.open(path, "rt", encoding="utf-8") as fh:
-            yield from fh
-        return
-    with path.open("rt", encoding="utf-8") as fh:
-        yield from fh
-
-
-def iter_dump_records(dumps_root: Path) -> Iterator[dict[str, Any]]:
-    for path in _record_files(dumps_root):
-        for line in _open_jsonl(path):
-            line = line.strip()
-            if not line:
-                continue
-            rec = json.loads(line)
-            if rec.get("v") != 1:
-                raise ValueError(f"unsupported dump record v={rec.get('v')!r} in {path}")
-            yield rec
-
-
-def _samples_for_record(rec: dict[str, Any]) -> list[tuple[np.ndarray, np.ndarray]]:
-    if rec.get("decision") != "checker":
-        return []
-    position = rec["position"]
-    moves = rec.get("moves") or []
-    out: list[tuple[np.ndarray, np.ndarray]] = []
-    for i, move in enumerate(moves):
-        eval_obj = move.get("eval")
-        cubeless = None if eval_obj is None else eval_obj.get("cubeless")
-        if cubeless is None:
-            raise ValueError(
-                f"checker move {i} missing cubeless eval in record {rec.get('id')!r}"
-            )
-        result = result_position(position, move["steps"])
-        out.append((featurize(result), cubeless_vector(cubeless)))
-    return out
-
-
-def load_split_arrays(
-    dumps_root: Path, split: Split
-) -> tuple[np.ndarray, np.ndarray, SplitLoadStats]:
-    batch_dirs = dump_batch_dirs(dumps_root)
-    features: list[np.ndarray] = []
-    labels: list[np.ndarray] = []
-    records_scanned = 0
-    records_in_split = 0
-    for rec in iter_dump_records(dumps_root):
-        records_scanned += 1
-        if split_name(_split_id(rec)) != split:
-            continue
-        records_in_split += 1
-        for feat, label in _samples_for_record(rec):
-            features.append(feat)
-            labels.append(label)
-    stats = SplitLoadStats(
-        batch_dirs=batch_dirs,
-        records_scanned=records_scanned,
-        records_in_split=records_in_split,
-        samples=len(features),
-    )
-    if not features:
-        return (
-            np.zeros((0, FEATURE_SIZE), dtype=np.float32),
-            np.zeros((0, CUBELESS_OUTPUT_SIZE), dtype=np.float32),
-            stats,
-        )
-    return np.stack(features), np.stack(labels), stats
+__all__ = [
+    "CubelessDumpDataset",
+    "ShardShuffleSampler",
+    "SplitLoadStats",
+    "dump_batch_dirs",
+    "ensure_feature_cache",
+    "iter_dump_records",
+]
 
 
 class CubelessDumpDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
-    """Checker-play result positions from dump batches, one split."""
+    """Checker-play result positions from a disk-backed featurized cache, one split."""
 
-    def __init__(self, dumps_root: Path | str, split: Split) -> None:
-        features, labels, self.stats = load_split_arrays(Path(dumps_root), split)
-        self.features = torch.from_numpy(features)
-        self.labels = torch.from_numpy(labels)
+    def __init__(
+        self,
+        dumps_root: Path | str,
+        split: Split,
+        cache_dir: Path | str,
+        *,
+        cache: FeatureCache | None = None,
+        rebuild: bool = False,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+    ) -> None:
+        if cache is None:
+            cache = ensure_feature_cache(
+                dumps_root, cache_dir, rebuild=rebuild, chunk_size=chunk_size
+            )
+        self.split = split
+        self.stats = cache.stats_for(split)
+        self._shards: tuple[Shard, ...] = cache.shards_for(split)
+        self._starts = [0]
+        for shard in self._shards:
+            self._starts.append(self._starts[-1] + shard.n)
+        self._n = self._starts[-1]
+        self._feat_maps: list[np.ndarray] | None = None
+        self._label_maps: list[np.ndarray] | None = None
+
+    @property
+    def shard_lengths(self) -> tuple[int, ...]:
+        return tuple(shard.n for shard in self._shards)
 
     def __len__(self) -> int:
-        return int(self.features.shape[0])
+        return self._n
+
+    def _maps(self) -> tuple[list[np.ndarray], list[np.ndarray]]:
+        if self._feat_maps is None:
+            self._feat_maps = [
+                np.load(shard.features_path, mmap_mode="r") for shard in self._shards
+            ]
+            self._label_maps = [
+                np.load(shard.labels_path, mmap_mode="r") for shard in self._shards
+            ]
+        assert self._label_maps is not None
+        return self._feat_maps, self._label_maps
+
+    def _locate(self, index: int) -> tuple[int, int]:
+        if index < 0:
+            index += self._n
+        if index < 0 or index >= self._n:
+            raise IndexError(f"index {index} out of range for split {self.split!r} n={self._n}")
+        shard_i = bisect.bisect_right(self._starts, index) - 1
+        return shard_i, index - self._starts[shard_i]
 
     def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor]:
-        return self.features[index], self.labels[index]
+        shard_i, local = self._locate(int(index))
+        feats, labels = self._maps()
+        feat = np.array(feats[shard_i][local], dtype=np.float32, copy=True)
+        label = np.array(labels[shard_i][local], dtype=np.float32, copy=True)
+        return torch.from_numpy(feat), torch.from_numpy(label)
+
+
+class ShardShuffleSampler(Sampler[int]):
+    """Shuffle chunk order, then indices inside each chunk. RAM is O(largest chunk)."""
+
+    def __init__(
+        self, shard_lengths: Sequence[int], generator: torch.Generator | None = None
+    ) -> None:
+        self.shard_lengths = tuple(int(n) for n in shard_lengths)
+        self.generator = generator
+        starts = [0]
+        for n in self.shard_lengths:
+            starts.append(starts[-1] + n)
+        self._starts = starts
+        self._n = starts[-1]
+
+    def __len__(self) -> int:
+        return self._n
+
+    def __iter__(self) -> Iterator[int]:
+        n_shards = len(self.shard_lengths)
+        if n_shards == 0:
+            return
+        order = torch.randperm(n_shards, generator=self.generator).tolist()
+        for shard_i in order:
+            n = self.shard_lengths[shard_i]
+            if n <= 0:
+                continue
+            start = self._starts[shard_i]
+            local = torch.randperm(n, generator=self.generator).tolist()
+            for i in local:
+                yield start + i

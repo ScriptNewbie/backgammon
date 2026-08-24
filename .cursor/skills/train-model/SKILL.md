@@ -5,7 +5,7 @@ description: Workflow for training the backgammon evaluation model in training-g
 
 # Train model
 
-Docker only ([ADR 0011](docs/decisions/0011-docker-only.md)). CUDA PyTorch in the `train` image ([ADR 0013](docs/decisions/0013-training-cuda.md)). Data layout: [ADR 0012](docs/decisions/0012-training-data-layout.md). Featurizer: `src/training_ground/features.py`. Golden vectors: `fixtures/features.json`.
+Docker only ([ADR 0011](docs/decisions/0011-docker-only.md)). CUDA PyTorch in the `train` image ([ADR 0013](docs/decisions/0013-training-cuda.md)). Data layout: [ADR 0012](docs/decisions/0012-training-data-layout.md). Featurized cache: [ADR 0021](docs/decisions/0021-featurized-tensor-cache.md). Featurizer: `src/training_ground/features.py`. Golden vectors: `fixtures/features.json`.
 
 ## Steps
 
@@ -15,7 +15,7 @@ Docker only ([ADR 0011](docs/decisions/0011-docker-only.md)). CUDA PyTorch in th
 4. Train the **teacher** `CubelessNet` (default 206→512→512→512→5, sigmoid, MSE on cubeless probs; [ADR 0015](docs/decisions/0015-teacher-cubeless-mlp.md)). Cubeful labels are for the cube wrapper, not the main loss. Distillation to a smaller student is a later ADR.
 5. Keep the Python featurizer in lockstep with TypeScript in `ts-core`; run golden vector fixtures (`docker compose run --rm train python -m pytest`).
 6. Export **ONNX** for `game-engine` and ExecuTorch **`.pte`** via `export_onnx_and_pte` ([ADR 0014](docs/decisions/0014-export-onnx-and-pte.md)). Optionally keep `.pt` for Python parity checks.
-7. Data, `training-ground/cache/`, `training-ground/checkpoints/`, `wandb/`, `*.pt`, `*.onnx`, `*.pte` stay on ignored paths. Never commit them.
-8. From `training-ground/`. Host commands: [README.md](README.md). Tests: `docker compose run --rm train python -m pytest`. Train: `docker compose run --rm train python -m training_ground.train --dumps /data/dumps --epochs 20 --batch-size 1024 --checkpoint-dir checkpoints` (`gpus: all` on `train`). Export ONNX for the engine with `--export-stem checkpoints/cubeless`. IDE `.venv`: `docker compose --profile install-host run --rm install-host` (Linux venv is not a host interpreter). Install CUDA torch from the cu130 index, not PyPI. Do not run host `python` or `pip`.
+7. Data, `training-ground/cache/` ([ADR 0021](docs/decisions/0021-featurized-tensor-cache.md)), `training-ground/checkpoints/`, `wandb/`, `*.pt`, `*.onnx`, `*.pte` stay on ignored paths. Never commit them. Cache is per-dump-batch memmap shards; invalidation is SHA-256 of dump bytes plus a code digest of the featurizer/split/sample modules.
+8. From `training-ground/`. Host commands: [README.md](README.md). Tests: `docker compose run --rm train python -m pytest`. Train: `docker compose run --rm train python -m training_ground.train --dumps /data/dumps --epochs 20 --batch-size 1024 --checkpoint-dir checkpoints --cache-dir cache` (`gpus: all` on `train`). `--rebuild-cache` wipes the tensor cache. Export ONNX for the engine with `--export-stem checkpoints/cubeless`. IDE `.venv`: `docker compose --profile install-host run --rm install-host` (Linux venv is not a host interpreter). Install CUDA torch from the cu130 index, not PyPI. Do not run host `python` or `pip`.
 
 Do not copy dumps into `training-ground/`. Do not list `torch`, `onnx`, or `executorch` as PyPI dependencies that would replace the cu130 torch wheel.

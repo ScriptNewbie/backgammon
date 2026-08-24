@@ -30,6 +30,8 @@ def test_train_one_epoch_writes_checkpoint(tmp_path: Path) -> None:
             "1",
             "--checkpoint-dir",
             str(ckpt_dir),
+            "--cache-dir",
+            str(tmp_path / "cache"),
             "--seed",
             "1",
         ]
