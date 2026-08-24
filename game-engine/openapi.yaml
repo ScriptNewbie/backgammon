@@ -1,0 +1,379 @@
+openapi: 3.1.0
+info:
+  title: game-engine
+  description: |
+    Backgammon move-evaluation HTTP API. Accepts a position JSON with dice, runs ONNX
+    cubeless inference on legal checker plays, and returns moves ranked best-first for the
+    mover (by negated cubeful equity of the resulting position).
+
+    Domain docs: `docs/domain/game-engine.md`, `docs/domain/board-representation.md`,
+    `docs/domain/evaluation.md`.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Docker Compose publish port (`docker compose up` from `game-engine/`)
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Liveness check
+      responses:
+        "200":
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                ok: true
+
+  /evaluate:
+    post:
+      operationId: evaluatePosition
+      summary: Evaluate legal checker plays for a position
+      description: |
+        Request body is a position JSON with `dice` set to two integers 1–6. Returns all
+        legal checker plays for the side on roll, each with the eval of the **resulting**
+        position (opponent is side to move there). Moves are sorted best-first for the
+        mover: lowest `cubefulEquity` first (negated result equity). Empty `moves` when
+        the player dances.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluateRequest"
+            examples:
+              opening31Match:
+                summary: Standard opening, p1 on roll with 3-1 (7-point match)
+                value:
+                  points: [-2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2]
+                  bar: { p1: 0, p2: 0 }
+                  off: { p1: 0, p2: 0 }
+                  onRoll: p1
+                  dice: [3, 1]
+                  cube:
+                    value: 1
+                    owner: centered
+                    mayDouble: { p1: true, p2: true }
+                  match:
+                    length: 7
+                    score: { p1: 0, p2: 0 }
+                    crawford: false
+              opening31Money:
+                summary: Money opening, p1 on roll with 3-1 (`match` null)
+                value:
+                  points: [-2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2]
+                  bar: { p1: 0, p2: 0 }
+                  off: { p1: 0, p2: 0 }
+                  onRoll: p1
+                  dice: [3, 1]
+                  cube:
+                    value: 1
+                    owner: centered
+                    mayDouble: { p1: true, p2: true }
+                  match: null
+      responses:
+        "200":
+          description: Ranked legal checker plays with evaluations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluateResponse"
+              example:
+                moves:
+                  - steps:
+                      - { from: 8, to: 5 }
+                      - { from: 6, to: 5 }
+                    eval:
+                      cubeless:
+                        equity: 0.1
+                        win: 0.55
+                        gammon: 0.1
+                        backgammon: 0
+                        loseGammon: 0.05
+                        loseBackgammon: 0
+                      cubefulEquity: 0.1
+                      cubeAction:
+                        double: false
+                        take: true
+                      source: model
+        "400":
+          description: Invalid JSON, position, or dice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidJson:
+                  summary: Malformed request body
+                  value:
+                    error: invalid json
+                invalidPosition:
+                  summary: Validation failure
+                  value:
+                    error: dice must be two ints 1-6
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required: [ok]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          const: true
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      additionalProperties: false
+      properties:
+        error:
+          type: string
+
+    Player:
+      type: string
+      enum: [p1, p2]
+
+    CubeOwner:
+      type: string
+      enum: [centered, p1, p2]
+
+    CubeValue:
+      type: integer
+      enum: [1, 2, 4, 8, 16, 32, 64]
+
+    CheckerCounts:
+      type: object
+      required: [p1, p2]
+      additionalProperties: false
+      properties:
+        p1:
+          type: integer
+          minimum: 0
+          maximum: 15
+        p2:
+          type: integer
+          minimum: 0
+          maximum: 15
+
+    Cube:
+      type: object
+      required: [value, owner, mayDouble]
+      additionalProperties: false
+      properties:
+        value:
+          $ref: "#/components/schemas/CubeValue"
+        owner:
+          $ref: "#/components/schemas/CubeOwner"
+        mayDouble:
+          type: object
+          required: [p1, p2]
+          additionalProperties: false
+          properties:
+            p1:
+              type: boolean
+            p2:
+              type: boolean
+
+    MatchInfo:
+      type: object
+      required: [length, score, crawford]
+      additionalProperties: false
+      properties:
+        length:
+          type: integer
+          minimum: 1
+          maximum: 15
+        score:
+          type: object
+          required: [p1, p2]
+          additionalProperties: false
+          properties:
+            p1:
+              type: integer
+              minimum: 0
+            p2:
+              type: integer
+              minimum: 0
+        crawford:
+          type: boolean
+
+    DicePair:
+      type: array
+      minItems: 2
+      maxItems: 2
+      items:
+        type: integer
+        minimum: 1
+        maximum: 6
+
+    Points:
+      type: array
+      minItems: 24
+      maxItems: 24
+      description: |
+        Length 24. Index 0 is point 1. Positive values are p1 checkers; negative values
+        are p2 checkers. Checker counts must sum to 15 per player (points + bar + off).
+      items:
+        type: integer
+
+    Position:
+      type: object
+      required: [points, bar, off, onRoll, dice, cube, match]
+      additionalProperties: false
+      properties:
+        points:
+          $ref: "#/components/schemas/Points"
+        bar:
+          $ref: "#/components/schemas/CheckerCounts"
+        off:
+          $ref: "#/components/schemas/CheckerCounts"
+        onRoll:
+          $ref: "#/components/schemas/Player"
+        dice:
+          oneOf:
+            - $ref: "#/components/schemas/DicePair"
+            - type: "null"
+          description: Two ints 1–6 when rolled; `null` when not in play.
+        cube:
+          $ref: "#/components/schemas/Cube"
+        match:
+          oneOf:
+            - $ref: "#/components/schemas/MatchInfo"
+            - type: "null"
+          description: Live match state, or `null` for money play.
+
+    EvaluateRequest:
+      allOf:
+        - $ref: "#/components/schemas/Position"
+        - type: object
+          properties:
+            dice:
+              $ref: "#/components/schemas/DicePair"
+          required: [dice]
+
+    StepFrom:
+      oneOf:
+        - type: integer
+          minimum: 1
+          maximum: 24
+        - type: string
+          enum: [bar]
+
+    StepTo:
+      oneOf:
+        - type: integer
+          minimum: 1
+          maximum: 24
+        - type: string
+          enum: [off]
+
+    Step:
+      type: object
+      required: [from, to]
+      additionalProperties: false
+      properties:
+        from:
+          $ref: "#/components/schemas/StepFrom"
+        to:
+          $ref: "#/components/schemas/StepTo"
+
+    Cubeless:
+      type: object
+      required: [equity, win, gammon, backgammon, loseGammon, loseBackgammon]
+      additionalProperties: false
+      properties:
+        equity:
+          type: number
+          description: Cubeless money equity for side to move (cube = 1).
+        win:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: P(STM wins), including gammons and backgammons.
+        gammon:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: P(STM wins a gammon), including backgammons.
+        backgammon:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: P(STM wins a backgammon).
+        loseGammon:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: P(STM loses a gammon), including backgammons.
+        loseBackgammon:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: P(STM loses a backgammon).
+
+    CubeAction:
+      type: object
+      required: [double, take]
+      additionalProperties: false
+      properties:
+        double:
+          type: boolean
+          description: Whether STM should double.
+        take:
+          type: boolean
+          description: Whether the opponent should take if STM doubled.
+
+    EvalSource:
+      type: string
+      enum: [bgweb-api, model, heuristic, unknown]
+
+    Eval:
+      type: object
+      required: [cubeless, cubefulEquity, cubeAction, source]
+      additionalProperties: false
+      properties:
+        cubeless:
+          $ref: "#/components/schemas/Cubeless"
+        cubefulEquity:
+          type: number
+          description: |
+            Dead-cube money equity for STM: `cubeless.equity * cube.value`. Not match-winning
+            chance.
+        cubeAction:
+          oneOf:
+            - $ref: "#/components/schemas/CubeAction"
+            - type: "null"
+          description: |
+            STM double/take heuristic when `match` is set and STM may double; otherwise `null`.
+        source:
+          $ref: "#/components/schemas/EvalSource"
+          description: Engine responses use `model`.
+
+    ScoredMove:
+      type: object
+      required: [steps, eval]
+      additionalProperties: false
+      properties:
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/Step"
+        eval:
+          $ref: "#/components/schemas/Eval"
+
+    EvaluateResponse:
+      type: object
+      required: [moves]
+      additionalProperties: false
+      properties:
+        moves:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoredMove"
+          description: Legal checker plays sorted best-first for the mover.
