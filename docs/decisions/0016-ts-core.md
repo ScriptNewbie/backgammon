@@ -19,4 +19,4 @@
 
 ## Consequences
 
-Package list: [ADR 0019](0019-battle-arena.md). Spec: [board-representation.md](../domain/board-representation.md), [features.md](../domain/features.md). Run tests from `ts-core/` with `npm test` ([ADR 0011](0011-docker-only.md)).
+Package list: [ADR 0019](0019-battle-arena.md). Spec: [board-representation.md](../domain/board-representation.md), [features.md](../domain/features.md). Run tests from `ts-core/` with `docker compose --profile test run --rm test` ([ADR 0011](0011-docker-only.md), [README.md](../../README.md)).

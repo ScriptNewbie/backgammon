@@ -13,20 +13,11 @@ This is a six-package monorepo. Do not add other top-level packages.
 
 ## Docker
 
-The only supported host tool is **Docker** (Engine + Compose v2). Do not install or invoke Node, Python, or pip on the host — even if they are on PATH ([ADR 0011](docs/decisions/0011-docker-only.md)). Run Compose **from the package directory**. Runtime TypeScript `node_modules` live in a Compose volume (Linux).
+The only supported host tool is **Docker** (Engine + Compose v2). Do not install or invoke host Node, npm, Python, or pip — even if they are on PATH ([ADR 0011](docs/decisions/0011-docker-only.md)). Run Compose **from the package directory**. Runtime TypeScript `node_modules` live in a Compose volume (Linux).
 
-TypeScript npm scripts wrap Compose. They do not run `tsx` / Vite on the host. `*:inner` scripts are in-container only. If `npm` is missing, use the equivalent `docker compose` lines in that package’s `package.json`.
+Host commands: [README.md](README.md). Do not wrap Compose in host npm. `*:inner` scripts (and `start` / `dev`) run inside the container, where npm exists.
 
-`install:host` writes IDE files onto the host bind-mount (TypeScript: `node_modules`; Python: `.venv` once `pyproject.toml` or `requirements.txt` exists). Do not run dumps, tests, Vite, or training against that host tree.
-
-| Package | Tests | Run | IDE deps |
-| --- | --- | --- | --- |
-| `ts-core` | `npm test` | (library; no HTTP) | `npm run install:host` |
-| `move-dumper` | `npm test` | Teacher API: `npm run up`. Dump: `npm run dump -- --games 1 --seed 1` | `npm run install:host` |
-| `replay-player` | `npm test` | `npm run up` (http://localhost:5173) | `npm run install:host` |
-| `training-ground` | `docker compose run --rm train python -m pytest` | `docker compose run --rm train python -m training_ground.train --dumps /data/dumps --epochs 20 --batch-size 1024 --checkpoint-dir checkpoints` (CUDA image, `gpus: all`; dumps at `/data/dumps`, [ADR 0012](docs/decisions/0012-training-data-layout.md), [ADR 0013](docs/decisions/0013-training-cuda.md), [ADR 0015](docs/decisions/0015-teacher-cubeless-mlp.md)) | `docker compose --profile install-host run --rm install-host` |
-| `game-engine` | `npm test` | `npm run up` (http://localhost:3000) | `npm run install:host` |
-| `battle-arena` | `npm test` | Teacher + engine: `npm run up`. Battle: `npm run battle -- --matches 1 --seed 1` | `npm run install:host` |
+`install-host` writes IDE files onto the host bind-mount (TypeScript: `node_modules`; Python: `.venv` once `pyproject.toml` or `requirements.txt` exists). Do not run dumps, tests, Vite, or training against that host tree.
 
 Images: `node:22-bookworm` for TypeScript packages; `python:3.12-bookworm` plus a cu130 PyTorch wheel for `training-ground` ([ADR 0013](docs/decisions/0013-training-cuda.md)). Do not use `docker run -v "${PWD}:/app"` as the workflow.
 
@@ -46,6 +37,7 @@ This repo is used in **Cursor** and **Grok Build**. Shared truth is `AGENTS.md` 
 
 ## Where to look
 
+- Host commands: [README.md](README.md)
 - Domain facts: `docs/domain/`
 - Architecture Decision Records: `docs/decisions/`
 - Workflows: `.cursor/skills/` and `.grok/skills/`

@@ -6,12 +6,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "up": "docker compose up",
-    "down": "docker compose down",
     "start": "tsx src/server.ts",
-    "test": "docker compose --profile test run --rm test",
-    "test:inner": "tsx --test test/*.test.ts",
-    "install:host": "docker compose --profile install-host run --rm install-host"
+    "test:inner": "tsx --test test/*.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",

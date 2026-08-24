@@ -14,9 +14,7 @@
   },
   "files": ["src"],
   "scripts": {
-    "test": "docker compose --profile test run --rm test",
-    "test:inner": "tsx --test test/*.test.ts",
-    "install:host": "docker compose --profile install-host run --rm install-host"
+    "test:inner": "tsx --test test/*.test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

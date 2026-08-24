@@ -22,7 +22,7 @@ export async function engineHealthCheck(baseUrl: string): Promise<void> {
   const url = `${baseUrl.replace(/\/$/, "")}/health`;
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(`game-engine health ${res.status} at ${url}. Is npm run up running with cubeless.onnx?`);
+    throw new Error(`game-engine health ${res.status} at ${url}. Is docker compose up -d running with cubeless.onnx?`);
   }
 }
 

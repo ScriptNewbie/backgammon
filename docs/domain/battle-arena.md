@@ -4,18 +4,18 @@ Locked by [ADR 0019](../decisions/0019-battle-arena.md). Match math: [match-play
 
 TypeScript tool that plays match-play between engine **drivers**. v1 is our `game-engine` vs the bgweb-api teacher, both at **max strength**.
 
-From `battle-arena/` ([ADR 0011](../decisions/0011-docker-only.md)):
+From `battle-arena/` ([ADR 0011](../decisions/0011-docker-only.md)). Host commands: [README.md](../../README.md).
 
 ```sh
-npm run up
-npm test
-npm run battle -- --matches 1 --seed 1 --length 7
-npm run battle -- --matches 1 --seed 1 --no-cube
-npm run down
-npm run install:host
+docker compose up -d
+docker compose --profile test run --rm test
+docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --length 7
+docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --no-cube
+docker compose down
+docker compose --profile install-host run --rm install-host
 ```
 
-Those scripts wrap Docker Compose (`battle:inner` / `test:inner` run inside the container). `install:host` writes `node_modules` onto the host for IDE typechecking only. Requires `training-ground/checkpoints/cubeless.onnx` (mounted into the game-engine service).
+`battle:inner` / `test:inner` run inside the container. `install-host` writes `node_modules` onto the host for IDE typechecking only. Requires `training-ground/checkpoints/cubeless.onnx` (mounted into the game-engine service).
 
 ## Per match
 

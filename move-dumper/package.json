@@ -6,13 +6,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "up": "docker compose up -d",
-    "down": "docker compose down",
-    "test": "docker compose --profile test run --rm test",
     "test:inner": "tsx --test test/*.test.ts",
-    "dump": "docker compose --profile dumper run --rm dumper npm run dump:inner --",
-    "dump:inner": "tsx src/cli.ts",
-    "install:host": "docker compose --profile install-host run --rm install-host"
+    "dump:inner": "tsx src/cli.ts"
   },
   "dependencies": {
     "ts-core": "file:../ts-core"

@@ -37,7 +37,7 @@ export function parseArgs(argv: string[]): CliArgs {
 }
 
 function printHelp(): void {
-  console.log(`Usage: npm run dump -- [--games N] [--seed N] [--base-url URL]
+  console.log(`Usage: docker compose --profile dumper run --rm dumper npm run dump:inner -- [--games N] [--seed N] [--base-url URL]
 
 Simulate money games (no cube) and dump labelled checker plays from bgweb-api.
 
@@ -45,12 +45,11 @@ Simulate money games (no cube) and dump labelled checker plays from bgweb-api.
   --seed       RNG seed stored on the batch manifest (default 1)
   --base-url   bgweb-api origin (default http://127.0.0.1:8080, or BGWEB_BASE_URL)
 
-From move-dumper/ (npm wraps Docker Compose):
-  npm run up
-  npm test
-  npm run dump -- --games 1 --seed 1
-  npm run down
-  npm run install:host
+From move-dumper/ (see README.md):
+  docker compose up -d
+  docker compose --profile test run --rm test
+  docker compose --profile dumper run --rm dumper npm run dump:inner -- --games 1 --seed 1
+  docker compose down
 `);
 }
 

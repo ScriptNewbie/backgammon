@@ -2,7 +2,7 @@
 
 Locked by [ADR 0004](../decisions/0004-game-engine-typescript-onnx.md), [ADR 0017](../decisions/0017-hono.md), and [ADR 0018](../decisions/0018-cube-wrap-formula.md). Bodies: [board-representation.md](board-representation.md), [evaluation.md](evaluation.md). Tensor: [features.md](features.md).
 
-Hono on Compose port **3000**. From `game-engine/`: `npm run up` (http://localhost:3000). Model: `MODEL_PATH` (default `/models/cubeless.onnx`); Compose mounts `training-ground/checkpoints` read-only. Do not commit weights.
+Hono on Compose port **3000**. From `game-engine/`: `docker compose up` (http://localhost:3000). Host commands: [README.md](../../README.md). Model: `MODEL_PATH` (default `/models/cubeless.onnx`); Compose mounts `training-ground/checkpoints` read-only. Do not commit weights.
 
 ## `GET /health`
 

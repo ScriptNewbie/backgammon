@@ -20,4 +20,4 @@ TypeScript + Hono + `onnxruntime-node` ([ADR 0004](docs/decisions/0004-game-engi
 3. Rank checker plays by **negated** cubeful equity of the resulting position.
 4. Do not spawn Python per request.
 5. Keep the TS featurizer in `ts-core` in lockstep with Python fixtures.
-6. From `game-engine/`: `npm run up` (http://localhost:3000), `npm test`, `npm run install:host`. Port 3000 is the Compose publish port, not an HTTP-framework decision.
+6. From `game-engine/`. Host commands: [README.md](README.md) (`docker compose up` → http://localhost:3000). Port 3000 is the Compose publish port, not an HTTP-framework decision.

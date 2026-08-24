@@ -189,7 +189,7 @@ export async function fetchWithRetry(
       res = await doFetch(url, { ...init, signal: init.signal ?? AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
-      log(`bgweb-api unreachable (${reason}); retry in ${delay}ms. Keep npm run up. Do not use the gnubg CLI.`);
+      log(`bgweb-api unreachable (${reason}); retry in ${delay}ms. Keep docker compose up -d. Do not use the gnubg CLI.`);
       await doSleep(delay);
       delay = Math.min(delay * 2, RETRY_MAX_DELAY_MS);
       continue;

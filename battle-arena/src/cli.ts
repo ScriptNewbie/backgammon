@@ -57,7 +57,7 @@ export function parseArgs(argv: string[]): CliArgs {
 }
 
 function printHelp(): void {
-  console.log(`Usage: npm run battle -- [--matches N] [--seed N] [--length N] [--no-cube] [--teacher-url URL] [--engine-url URL]
+  console.log(`Usage: docker compose --profile arena run --rm arena npm run battle:inner -- [--matches N] [--seed N] [--length N] [--no-cube] [--teacher-url URL] [--engine-url URL]
 
 Play our game-engine against the bgweb-api teacher at max strength.
 
@@ -68,13 +68,12 @@ Play our game-engine against the bgweb-api teacher at max strength.
   --teacher-url   bgweb-api origin (default http://127.0.0.1:8080, or BGWEB_BASE_URL)
   --engine-url    game-engine origin (default http://127.0.0.1:3000, or ENGINE_BASE_URL)
 
-From battle-arena/ (npm wraps Docker Compose):
-  npm run up
-  npm test
-  npm run battle -- --matches 1 --seed 1 --length 7
-  npm run battle -- --matches 1 --seed 1 --no-cube
-  npm run down
-  npm run install:host
+From battle-arena/ (see README.md):
+  docker compose up -d
+  docker compose --profile test run --rm test
+  docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --length 7
+  docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --no-cube
+  docker compose down
 
 Requires training-ground/checkpoints/cubeless.onnx. Writes GNU SGF under replays/.
 `);

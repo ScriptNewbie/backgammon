@@ -6,13 +6,13 @@ On-disk dumps: [dump-format.md](dump-format.md). Dumper simulation (independent 
 
 ## Run
 
-From `move-dumper/` (Docker only — [ADR 0011](../decisions/0011-docker-only.md)):
+From `move-dumper/` (Docker only — [ADR 0011](../decisions/0011-docker-only.md)). Host commands: [README.md](../../README.md).
 
 ```sh
-npm run up
+docker compose up -d
 ```
 
-That starts [foochu/bgweb-api](https://github.com/foochu/bgweb-api) via [docker-compose.yml](../../move-dumper/docker-compose.yml). Stop with `npm run down`. Dump games with `npm run dump -- --games 1 --seed 1` (Compose sets `BGWEB_BASE_URL` to the `bgweb-api` service). Tests: `npm test`. IDE `node_modules` on the host: `npm run install:host`.
+That starts [foochu/bgweb-api](https://github.com/foochu/bgweb-api) via [docker-compose.yml](../../move-dumper/docker-compose.yml). Stop with `docker compose down`. Dump games with `docker compose --profile dumper run --rm dumper npm run dump:inner -- --games 1 --seed 1` (Compose sets `BGWEB_BASE_URL` to the `bgweb-api` service). Tests: `docker compose --profile test run --rm test`. IDE `node_modules` on the host: `docker compose --profile install-host run --rm install-host`.
 
 Default host base URL: `http://127.0.0.1:8080`. Endpoint: `POST /api/v1/getmoves`. Confirm with a getmoves request (or open `/`); if the server is down, stop and tell the user.
 

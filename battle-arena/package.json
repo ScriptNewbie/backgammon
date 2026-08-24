@@ -6,13 +6,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "up": "docker compose up -d",
-    "down": "docker compose down",
-    "test": "docker compose --profile test run --rm test",
     "test:inner": "tsx --test test/*.test.ts",
-    "battle": "docker compose up -d && docker compose --profile arena run --rm arena npm run battle:inner --",
-    "battle:inner": "tsx src/cli.ts",
-    "install:host": "docker compose --profile install-host run --rm install-host"
+    "battle:inner": "tsx src/cli.ts"
   },
   "dependencies": {
     "ts-core": "file:../ts-core"

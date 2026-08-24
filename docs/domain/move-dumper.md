@@ -4,17 +4,17 @@ Locked by [ADR 0007](../decisions/0007-skill-levels-and-pairing.md), [ADR 0009](
 
 Simulates independent money games, labels every checker play from bgweb-api, and writes JSONL plus GNU Backgammon SGF. The game loop lives in `ts-core/sim` (`playGame`); this package adds skill sampling and dump I/O. There is **no doubling-cube policy**.
 
-From `move-dumper/` ([ADR 0011](../decisions/0011-docker-only.md)):
+From `move-dumper/` ([ADR 0011](../decisions/0011-docker-only.md)). Host commands: [README.md](../../README.md).
 
 ```sh
-npm run up
-npm test
-npm run dump -- --games 1 --seed 1
-npm run down
-npm run install:host
+docker compose up -d
+docker compose --profile test run --rm test
+docker compose --profile dumper run --rm dumper npm run dump:inner -- --games 1 --seed 1
+docker compose down
+docker compose --profile install-host run --rm install-host
 ```
 
-Those scripts wrap Docker Compose (`dump:inner` / `test:inner` run inside the container). `install:host` writes `node_modules` onto the host for IDE typechecking only.
+`dump:inner` / `test:inner` run inside the container. `install-host` writes `node_modules` onto the host for IDE typechecking only.
 
 ## Per game
 

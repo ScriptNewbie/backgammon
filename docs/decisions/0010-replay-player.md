@@ -17,4 +17,4 @@
 
 ## Consequences
 
-Package list and shared board code: [ADR 0016](0016-ts-core.md) (`ts-core`; replay-player imports that, not a local apply-steps copy). Do not parse SGF in `training-ground`. Spec: [dump-format.md](../domain/dump-format.md). Start the viewer with `npm run up` in `replay-player/` ([ADR 0011](0011-docker-only.md)).
+Package list and shared board code: [ADR 0016](0016-ts-core.md) (`ts-core`; replay-player imports that, not a local apply-steps copy). Do not parse SGF in `training-ground`. Spec: [dump-format.md](../domain/dump-format.md). Start the viewer with `docker compose up --build` in `replay-player/` ([ADR 0011](0011-docker-only.md), [README.md](../../README.md)).
