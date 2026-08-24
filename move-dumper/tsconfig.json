@@ -12,7 +12,6 @@
     "types": ["node"],
     "paths": {
       "ts-core": ["../ts-core/src/index.ts"],
-      "ts-core/match": ["../ts-core/src/match.ts"],
       "ts-core/sim": ["../ts-core/src/sim.ts"],
       "ts-core/bgweb": ["../ts-core/src/bgweb.ts"],
       "ts-core/sgf": ["../ts-core/src/sgf.ts"]

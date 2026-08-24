@@ -36,7 +36,7 @@ Later turns: roll both dice. Never consult cube.
 
 1. `POST /api/v1/getmoves` with `score-moves: true`, **no** `max-moves`. Cubeless and cubeful-equity passes as in [gnubg.md](gnubg.md).
 2. Append a `decision: "checker"` record with **all** legal plays and teacher evals.
-3. Sample `chosen` with the on-roll level (below). Rank by **negated result cubeless equity** (`-eval.cubeless.equity` of the teacher result, which is STM of the result). Store that as `RankedPlay.rankScore` (higher is better). Do not rank by MWC or cubeful equity. Loop: `src/games.ts`.
+3. Sample `chosen` with the on-roll level (below). Rank by **negated result cubeless equity** (`-eval.cubeless.equity` of the teacher result, which is STM of the result). Store that as `RankedPlay.rankScore` (higher is better). Do not rank by MWC or cubeful equity. Do not import `ts-core/match`. Loop: `src/games.ts`.
 4. Apply `chosen.steps` to the position JSON (hits implied). Do not re-generate the legal list; the teacher list is source.
 5. If a player has 15 off: the game is over (single / gammon / backgammon for SGF `RE` only). Next game is independent.
 
