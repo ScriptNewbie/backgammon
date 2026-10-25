@@ -38,5 +38,6 @@ export type {
   Player,
   Point,
   Position,
+  SearchPly,
   Step,
 } from "./types";

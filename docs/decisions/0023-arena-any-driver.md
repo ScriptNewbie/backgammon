@@ -13,7 +13,7 @@ Battle-arena played our game-engine against one opponent (`teacher` or `hedgehog
 - Each match is two drivers, side `a` and side `b`. Each side is `game-engine`, `teacher`, or `hedgehog`. The same driver may sit on both sides.
 - Default remains `game-engine` vs `teacher`. Seats still alternate: even matches a=`p1` / b=`p2`, odd matches swapped.
 - CLI: `--a`, `--b`, `--a-url`, `--b-url`, `--a-ply`, `--b-ply`. Each side's URL defaults from `ENGINE_BASE_URL`, `BGWEB_BASE_URL`, or `HEDGEHOG_BASE_URL` by that side's driver.
-- A parameter is applied only when that driver supports it. `ply` (1 or 2, default 2) is supported by hedgehog only. Any other side discards `ply` and prints a warning. Health-check only the sides that play.
+- A parameter is applied only when that driver supports it. `ply` (GnuBG 0 or 1, default 1) is supported by hedgehog only. Any other side discards `ply` and prints a warning. Health-check only the sides that play.
 - Checker rank stays mover MWC. Cube stays the shared infallible heuristic (`--no-cube` disables it). Hedgehog stays an external sidecar and is not a dump source ([0022](0022-hedgehog-external.md)).
 
 ## Consequences

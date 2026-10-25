@@ -2,6 +2,9 @@ export type Player = "p1" | "p2";
 
 export type MatchPhase = "pre" | "crawford" | "post";
 
+/** GnuBG checker depth. `0` is the static net. `1` is one opponent roll. */
+export type SearchPly = 0 | 1;
+
 export type Point = number | "bar" | "off";
 
 export type Step = {

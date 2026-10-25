@@ -158,7 +158,7 @@ docker compose --profile test run --rm test
 
 docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --length 7
 docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --no-cube
-docker compose --profile arena run --rm arena npm run battle:inner -- --a game-engine --b hedgehog --b-ply 1 --matches 1 --seed 1
+docker compose --profile arena run --rm arena npm run battle:inner -- --a game-engine --b hedgehog --b-ply 0 --matches 1 --seed 1
 
 docker compose down
 docker compose --profile install-host run --rm install-host
@@ -175,7 +175,7 @@ Battle flags (after `--`):
 | `--a DRIVER` | `game-engine` | Side a: `game-engine`, `teacher`, or `hedgehog` |
 | `--b DRIVER` | `teacher` | Side b. Same driver on both sides is allowed |
 | `--a-url URL` / `--b-url URL` | by driver | `ENGINE_BASE_URL` / `BGWEB_BASE_URL` / `HEDGEHOG_BASE_URL`, or `http://127.0.0.1:3000` / `:8080` / `:8090` |
-| `--a-ply N` / `--b-ply N` | `2` for hedgehog | Search depth 1 or 2. Hedgehog only; other drivers ignore it and warn |
+| `--a-ply N` / `--b-ply N` | `1` for hedgehog | GnuBG ply 0 (net) or 1 (one opponent roll). Other drivers ignore it and warn |
 
 Help: add `--help` after `--`.
 

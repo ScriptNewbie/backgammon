@@ -54,11 +54,11 @@ test("summary keeps two copies of the same driver apart", () => {
         points: { a: 7, b: 0 },
       },
     ],
-    { length: 7, seed: 1, sides: { a: "hedgehog-ply1", b: "hedgehog-ply2" } },
+    { length: 7, seed: 1, sides: { a: "hedgehog-ply0", b: "hedgehog-ply1" } },
   );
   assert.equal(summary.winsAsP2.a, 1);
   const text = formatSummary(summary);
-  assert.match(text, /a hedgehog-ply1 vs b hedgehog-ply2/);
+  assert.match(text, /a hedgehog-ply0 vs b hedgehog-ply1/);
   assert.match(text, /a: 1 wins \(as p1: 0, as p2: 1\)/);
   assert.match(text, /b: 0 wins/);
 });

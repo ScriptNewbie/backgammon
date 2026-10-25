@@ -1,3 +1,5 @@
+import type { SearchPly } from "ts-core";
+
 export const DRIVER_NAMES = ["game-engine", "teacher", "hedgehog"] as const;
 
 export type DriverName = (typeof DRIVER_NAMES)[number];
@@ -15,14 +17,14 @@ const SUPPORTED: Record<DriverName, readonly DriverParam[]> = {
 
 export type RequestedParams = {
   url?: string;
-  ply?: 1 | 2;
+  ply?: SearchPly;
 };
 
 export type SideSpec = {
   id: SideId;
   driver: DriverName;
   url: string;
-  ply?: 1 | 2;
+  ply?: SearchPly;
   label: string;
 };
 
@@ -41,13 +43,14 @@ export function defaultDriverUrl(driver: DriverName): string {
   }
 }
 
-export function sideLabel(driver: DriverName, ply?: 1 | 2): string {
+export function sideLabel(driver: DriverName, ply?: SearchPly): string {
   return ply === undefined ? driver : `${driver}-ply${ply}`;
 }
 
 /**
  * Keep a requested parameter only when this driver lists it.
- * Hedgehog's omitted `ply` becomes 2. Anything else is a warning and is dropped.
+ * Hedgehog's omitted `ply` becomes 1 (GnuBG 1-ply).
+ * Anything else is a warning and is dropped.
  */
 export function resolveSide(
   id: SideId,
@@ -56,12 +59,12 @@ export function resolveSide(
 ): { side: SideSpec; warnings: string[] } {
   const supported = new Set<DriverParam>(SUPPORTED[driver]);
   const warnings: string[] = [];
-  let ply: 1 | 2 | undefined;
+  let ply: SearchPly | undefined;
   if (requested.ply !== undefined) {
     if (supported.has("ply")) ply = requested.ply;
     else warnings.push(`warning: ${id} (${driver}) does not support ply; ignoring --${id}-ply`);
   } else if (supported.has("ply")) {
-    ply = 2;
+    ply = 1;
   }
   return {
     side: {

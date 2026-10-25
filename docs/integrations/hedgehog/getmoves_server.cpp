@@ -14,9 +14,9 @@
 // one NNEnsembleContext under a mutex, so a second move waits.
 //
 // GET /health
-// POST /v1/moves   {"ogid":"...","ply":1|2}
+// POST /v1/moves   {"ogid":"...","ply":0|1}
 //
-// ply 1 is a direct net eval of each successor. ply 2 is the community
+// GnuBG ply. 0 is a direct net eval of each successor. 1 is the community
 // expectiminimax one roll past that successor (the public engine's maximum).
 // Each move's probabilities are from the player who just moved. `ogid` is the
 // successor, with the opponent to move. Checker fields are what the client matches.
@@ -71,11 +71,11 @@ int json_int_field(const std::string& body, const char* key, int fallback) {
 
 EvalResult score_successor(NNEnsembleContext* ctx, BoardState succ, int mover, int ply) {
   const int opp = 1 - mover;
-  if (ply <= 1) {
+  if (ply <= 0) {
     EvalResult ev = eval_ensemble(succ, opp, ctx);
     return eval_flip(&ev);
   }
-  return ogx_community::community_search_ensemble(ctx, succ, mover, opp, ply - 1, nullptr);
+  return ogx_community::community_search_ensemble(ctx, succ, mover, opp, ply, nullptr);
 }
 
 std::string moves_json(NNEnsembleContext* ctx, const std::string& ogid, int ply) {
@@ -176,14 +176,14 @@ int main(int argc, char** argv) {
   });
 
   svr.Get("/health", [model](const httplib::Request&, httplib::Response& res) {
-    set_json(res, 200, std::string("{\"ok\":true,\"model\":\"") + model + "\",\"maxPly\":2}");
+    set_json(res, 200, std::string("{\"ok\":true,\"model\":\"") + model + "\",\"maxPly\":1}");
   });
 
   svr.Post("/v1/moves", [ctx, &eval_mu](const httplib::Request& req, httplib::Response& res) {
     const std::string ogid = json_string_field(req.body, "ogid");
-    int ply = json_int_field(req.body, "ply", 2);
-    if (ply < 1) ply = 1;
-    if (ply > 2) ply = 2;
+    int ply = json_int_field(req.body, "ply", 1);
+    if (ply < 0) ply = 0;
+    if (ply > 1) ply = 1;
     if (ogid.empty() || ogid.find('"') != std::string::npos) {
       set_json(res, 400, "{\"error\":\"ogid required\"}");
       return;
@@ -200,7 +200,7 @@ int main(int argc, char** argv) {
     set_json(res, 200, json);
   });
 
-  std::fprintf(stderr, "hedgehog getmoves on :%d model %s (ply max 2)\n", port, model.c_str());
+  std::fprintf(stderr, "hedgehog getmoves on :%d model %s (ply max 1)\n", port, model.c_str());
   if (!svr.listen("0.0.0.0", port)) {
     std::fprintf(stderr, "error: could not listen on :%d\n", port);
     return 1;

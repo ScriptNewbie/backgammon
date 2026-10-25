@@ -41,36 +41,37 @@ test("each side keeps its own driver, url, and ply", () => {
     "--a-url",
     "http://hedgehog-a:8090",
     "--a-ply",
-    "1",
+    "0",
     "--b",
     "hedgehog",
     "--b-url",
     "http://hedgehog-b:8091",
     "--b-ply",
-    "2",
+    "1",
   ]);
   assert.equal(args.a.driver, "hedgehog");
   assert.equal(args.a.url, "http://hedgehog-a:8090");
-  assert.equal(args.a.ply, 1);
-  assert.equal(args.a.label, "hedgehog-ply1");
+  assert.equal(args.a.ply, 0);
+  assert.equal(args.a.label, "hedgehog-ply0");
   assert.equal(args.b.driver, "hedgehog");
   assert.equal(args.b.url, "http://hedgehog-b:8091");
-  assert.equal(args.b.ply, 2);
-  assert.equal(args.b.label, "hedgehog-ply2");
+  assert.equal(args.b.ply, 1);
+  assert.equal(args.b.label, "hedgehog-ply1");
   assert.deepEqual(args.warnings, []);
 });
 
-test("hedgehog ply defaults to 2", () => {
+test("hedgehog ply defaults to 1", () => {
   const args = parseArgs(["--b", "hedgehog"]);
-  assert.equal(args.b.ply, 2);
-  assert.equal(args.b.label, "hedgehog-ply2");
+  assert.equal(args.b.ply, 1);
+  assert.equal(args.b.label, "hedgehog-ply1");
   assert.deepEqual(args.warnings, []);
 });
 
 test("ply on a driver that does not support it is dropped", () => {
-  const args = parseArgs(["--a-ply", "1", "--b", "teacher", "--b-ply", "2"]);
+  const args = parseArgs(["--a-ply", "0", "--b", "teacher", "--b-ply", "1"]);
   assert.equal(args.a.driver, "game-engine");
   assert.equal(args.a.ply, undefined);
+  assert.equal(args.b.driver, "teacher");
   assert.equal(args.b.ply, undefined);
   assert.equal(args.warnings.length, 2);
   assert.match(args.warnings[0]!, /a \(game-engine\) does not support ply/);
@@ -84,6 +85,10 @@ test("CLI --no-cube disables cube", () => {
 
 test("CLI rejects even match length", () => {
   assert.throws(() => parseArgs(["--length", "2"]), /--length/);
+});
+
+test("CLI rejects ply outside 0 or 1", () => {
+  assert.throws(() => parseArgs(["--a-ply", "2"]), /--a-ply must be 0 or 1/);
 });
 
 test("CLI rejects an unknown driver", () => {

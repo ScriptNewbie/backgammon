@@ -7,7 +7,7 @@
 
 We want to score our engine against Hedgehog ([hedgehog-bg.com](https://hedgehog-bg.com/)) at the strongest setting the public engine allows. This repository stays MIT. GNU Backgammon remains the training teacher: `foochu/bgweb-api` in Compose, not the gnubg sources ([ADR 0006](0006-teacher-bgweb-api.md)).
 
-The evaluation library at [gitlab.com/eranlambooij/hedgehog-public](https://gitlab.com/eranlambooij/hedgehog-public) is MIT. It does not ship weights, and it has no HTTP server and no published image. The site's WASM build and the `.ogxf` networks are licensed for non-commercial use, separate from that MIT code. Colossus, the strongest net on their benchmark page, is not in the public model directory. Aureus (`aureus_v0.12_2026-09-26.ogxf`) is the strongest file that directory serves, and the public search stops at 2-ply.
+The evaluation library at [gitlab.com/eranlambooij/hedgehog-public](https://gitlab.com/eranlambooij/hedgehog-public) is MIT. It does not ship weights, and it has no HTTP server and no published image. The site's WASM build and the `.ogxf` networks are licensed for non-commercial use, separate from that MIT code. Colossus, the strongest net on their benchmark page, is not in the public model directory. Aureus (`aureus_v0.12_2026-09-26.ogxf`) is the strongest file that directory serves, and the public search stops at what that project calls 2-ply. This repository names that depth GnuBG 1-ply: `ply` 0 is the net and `ply` 1 is one roll.
 
 ## Decision
 

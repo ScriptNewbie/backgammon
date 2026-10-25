@@ -3,7 +3,7 @@ import { fetchWithRetry } from "./bgweb";
 import { flipStmCubeless, makeCubeless } from "./eval";
 import { generateLegalPlays } from "./moves";
 import type { LegalPlay } from "./bgweb";
-import type { Player, Position, Step } from "./types";
+import type { Player, Position, SearchPly, Step } from "./types";
 
 /**
  * Wire encoding for the external Hedgehog getmoves server.
@@ -146,8 +146,8 @@ export function positionToOgid(position: Position): string {
   ].join(":");
 }
 
-export function clampPly(ply: number): 1 | 2 {
-  if (ply !== 1 && ply !== 2) throw new Error(`hedgehog ply must be 1 or 2 (got ${ply})`);
+export function clampPly(ply: number): SearchPly {
+  if (ply !== 0 && ply !== 1) throw new Error(`ply must be 0 or 1 (got ${ply})`);
   return ply;
 }
 
@@ -204,7 +204,7 @@ export class HedgehogClient {
 
   constructor(
     readonly baseUrl: string,
-    readonly ply: 1 | 2 = 2,
+    readonly ply: SearchPly = 1,
   ) {}
 
   async getMoves(position: Position): Promise<{ plays: LegalPlay[]; plies: number }> {

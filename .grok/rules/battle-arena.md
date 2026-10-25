@@ -3,6 +3,6 @@
 TypeScript. Play any driver against any driver at max strength ([ADR 0019](../../docs/decisions/0019-battle-arena.md), [ADR 0023](../../docs/decisions/0023-arena-any-driver.md)). Default is game-engine vs the bgweb-api teacher.
 
 - Loop: `docs/domain/battle-arena.md`, `ts-core/sim`. Rank checkers by mover MWC (`RankedPlay.rankScore`). Shared infallible cube heuristic (`--no-cube` disables it). Alternate seats (`--a` is p1 on even matches).
-- Drivers: `game-engine` (`POST /evaluate`; re-rank, do not use money-equity order), `teacher` (`getmoves`), and `hedgehog` (external sidecar, `docs/domain/hedgehog.md`). Do not vendor that engine or its `.ogxf` weights, and do not label dumps from it. The same driver may sit on both sides. `ply` is per side and hedgehog only; other drivers drop it and warn.
+- Drivers: `game-engine` (`POST /evaluate`; re-rank, do not use money-equity order), `teacher` (`getmoves`), and `hedgehog` (external sidecar, `docs/domain/hedgehog.md`). Do not vendor that engine or its `.ogxf` weights, and do not label dumps from it. The same driver may sit on both sides. `ply` is GnuBG 0 or 1 (default 1) per side and hedgehog only; other drivers drop it and warn.
 - SGF under gitignored `battle-arena/replays/`. No training JSONL. Open in replay-player or gnubg.
 - Docker only, from `battle-arena/`. Host commands: [README.md](../../README.md). Do not run `battle:inner` / `test:inner` on the host. A game-engine side requires `training-ground/checkpoints/cubeless.onnx`.
