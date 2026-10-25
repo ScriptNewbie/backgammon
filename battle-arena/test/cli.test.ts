@@ -24,6 +24,13 @@ test("CLI defaults", () => {
   }
 });
 
+test("CLI hedgehog opponent", () => {
+  const args = parseArgs(["--opponent", "hedgehog", "--ply", "1"]);
+  assert.equal(args.opponent, "hedgehog");
+  assert.equal(args.ply, 1);
+  assert.equal(seatsForMatch(0, "hedgehog").labels.p2, "hedgehog");
+});
+
 test("CLI --no-cube disables cube", () => {
   const args = parseArgs(["--no-cube"]);
   assert.equal(args.allowCube, false);

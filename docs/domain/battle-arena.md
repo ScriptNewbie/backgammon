@@ -29,6 +29,7 @@ No skill levels. No training JSONL. Never commit `replays/`.
 ## Drivers
 
 - **Teacher:** `POST /api/v1/getmoves` as in [gnubg.md](gnubg.md). Rank the returned list by mover MWC.
+- **Hedgehog:** `--opponent hedgehog` uses the sidecar in [hedgehog.md](hedgehog.md), ranked by mover MWC. Arena opponent only.
 - **Game-engine:** `POST /evaluate` with the full position JSON (dice set). Re-rank by mover MWC; do not use the API’s money-equity order for match play.
 
 Cube is not asked of either HTTP API.

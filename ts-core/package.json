@@ -10,6 +10,7 @@
     "./match": "./src/match.ts",
     "./sim": "./src/sim.ts",
     "./bgweb": "./src/bgweb.ts",
+    "./hedgehog": "./src/hedgehog.ts",
     "./sgf": "./src/sgf.ts"
   },
   "files": ["src"],

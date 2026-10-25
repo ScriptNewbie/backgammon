@@ -36,6 +36,7 @@ Canonical specs:
 - Evaluations: [evaluation.md](evaluation.md)
 - Dump files: [dump-format.md](dump-format.md)
 - Teacher (bgweb-api): [gnubg.md](gnubg.md)
+- Hedgehog arena opponent: [hedgehog.md](hedgehog.md)
 - Simulation: [move-dumper.md](move-dumper.md)
 - Match play / MET: [match-play.md](match-play.md)
 - Game-engine HTTP: [game-engine.md](game-engine.md)

@@ -9,6 +9,10 @@ test("batch stamp uses engine-vs-teacher suffix", () => {
   const { batchId, createdAt } = batchStamp(new Date("2026-08-22T12:15:00Z"));
   assert.equal(createdAt, "2026-08-22T12:15:00Z");
   assert.equal(batchId, "2026-08-22T121500Z-engine-vs-teacher");
+  assert.equal(
+    batchStamp(new Date("2026-08-22T12:15:00Z"), "hedgehog").batchId,
+    "2026-08-22T121500Z-engine-vs-hedgehog",
+  );
 });
 
 test("writeMatchSgf writes GM[6] file", async () => {

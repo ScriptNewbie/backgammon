@@ -48,7 +48,7 @@ Store the probabilities **and** `equity`; do not store equity alone. The trained
 }
 ```
 
-- `source`: `"bgweb-api"` | `"model"` | `"heuristic"` | `"unknown"`.
+- `source`: `"bgweb-api"` | `"hedgehog"` | `"model"` | `"heuristic"` | `"unknown"`. `"hedgehog"` is an arena opponent eval and stays out of training dumps; those plays leave `cubefulEquity` at 0 ([hedgehog.md](hedgehog.md)).
 - `cubefulEquity`: expected **money** points per game **for STM**, with the cube in its current state. Teacher dumps match bgweb-api `eq` after the mover→STM flip in [gnubg.md](gnubg.md). The engine uses dead-cube money `cubeless.equity * cube.value` ([ADR 0018](../decisions/0018-cube-wrap-formula.md)). This is **not** match-winning chance.
 - `cubeAction`: STM’s double decision and opponent’s take/drop if STM doubled. Use `null` when unknown or not applicable. **bgweb-api does not emit cube actions** — teacher evals leave this `null`. The engine fills this from the dead-cube MWC heuristic when `position.match` is set and STM may double ([ADR 0018](../decisions/0018-cube-wrap-formula.md)). `null` when `match` is null ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)). The dumper does not simulate cube actions.
 

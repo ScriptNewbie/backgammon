@@ -49,5 +49,5 @@ export type Eval = {
   cubeless: Cubeless;
   cubefulEquity: number;
   cubeAction: CubeActionFlag | null;
-  source: "bgweb-api" | "model" | "heuristic" | "unknown";
+  source: "bgweb-api" | "hedgehog" | "model" | "heuristic" | "unknown";
 };

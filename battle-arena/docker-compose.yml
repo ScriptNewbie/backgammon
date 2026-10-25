@@ -23,6 +23,8 @@ services:
     volumes:
       - ..:/repo
       - battle_arena_node_modules:/repo/battle-arena/node_modules
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       BGWEB_BASE_URL: http://bgweb-api:8080
       ENGINE_BASE_URL: http://game-engine:3000
