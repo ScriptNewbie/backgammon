@@ -20,7 +20,7 @@ foochu/bgweb-api (GNU Backgammon nets over HTTP)
                        shared board/featurizer: ts-core
         │
         ▼
-  battle-arena         TypeScript — engine vs teacher (max strength),
+  battle-arena         TypeScript — any driver vs any driver (max strength; default engine vs teacher),
                        win summary + GNU SGF replays
                        shared match loop: ts-core/sim
 ```

@@ -20,3 +20,5 @@
 ## Consequences
 
 Allowed top-level packages: `ts-core`, `move-dumper`, `training-ground`, `game-engine`, `replay-player`, `battle-arena`. Do not add a seventh. Spec: [battle-arena.md](../domain/battle-arena.md). Replay-player file picker accepts GM[6] from dumper dumps or arena replays. Never commit `battle-arena/replays/`.
+
+[0023](0023-arena-any-driver.md) generalizes pairing: any driver versus any driver, with per-side parameters.

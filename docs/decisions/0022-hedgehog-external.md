@@ -18,4 +18,6 @@ The evaluation library at [gitlab.com/eranlambooij/hedgehog-public](https://gitl
 
 ## Consequences
 
-bgweb-api dumps and battles are unchanged when the arena flag is left off. Rebuilding the sidecar is required when hedgehog-public changes the load or search API. Do not commit model files or the sidecar image.
+bgweb-api dumps and battles are unchanged when hedgehog is not one of the sides. Rebuilding the sidecar is required when hedgehog-public changes the load or search API. Do not commit model files or the sidecar image.
+
+[0023](0023-arena-any-driver.md) replaces `--opponent hedgehog` with `--a` / `--b`. Hedgehog is still an external sidecar and still not a dump source. `ply` is set per side (`--a-ply`, `--b-ply`).

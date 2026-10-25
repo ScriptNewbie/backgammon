@@ -5,13 +5,13 @@ import path from "node:path";
 import { test } from "node:test";
 import { batchStamp, writeMatchSgf } from "../src/replay.ts";
 
-test("batch stamp uses engine-vs-teacher suffix", () => {
-  const { batchId, createdAt } = batchStamp(new Date("2026-08-22T12:15:00Z"));
+test("batch stamp names both sides", () => {
+  const { batchId, createdAt } = batchStamp(new Date("2026-08-22T12:15:00Z"), "game-engine", "teacher");
   assert.equal(createdAt, "2026-08-22T12:15:00Z");
-  assert.equal(batchId, "2026-08-22T121500Z-engine-vs-teacher");
+  assert.equal(batchId, "2026-08-22T121500Z-game-engine-vs-teacher");
   assert.equal(
-    batchStamp(new Date("2026-08-22T12:15:00Z"), "hedgehog").batchId,
-    "2026-08-22T121500Z-engine-vs-hedgehog",
+    batchStamp(new Date("2026-08-22T12:15:00Z"), "hedgehog-ply1", "hedgehog-ply2").batchId,
+    "2026-08-22T121500Z-hedgehog-ply1-vs-hedgehog-ply2",
   );
 });
 

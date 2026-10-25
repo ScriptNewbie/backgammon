@@ -49,7 +49,7 @@ Borne-off checkers are omitted. A successor is matched on the checker multiset, 
 Arena (from `battle-arena/`, sidecar on the host):
 
 ```sh
-docker compose --profile arena run --rm -e HEDGEHOG_BASE_URL=http://host.docker.internal:8090 arena npm run battle:inner -- --opponent hedgehog --matches 1 --seed 1 --length 7
+docker compose --profile arena run --rm -e HEDGEHOG_BASE_URL=http://host.docker.internal:8090 arena npm run battle:inner -- --a game-engine --b hedgehog --matches 1 --seed 1 --length 7
 ```
 
-`--ply 1` is the direct net. Default `--ply 2`. `host.docker.internal` is published on the arena service (`host-gateway`). The sidecar listens on port 8090.
+`--b-ply 1` is the direct net on that side. Default ply is 2. `host.docker.internal` is published on the arena service (`host-gateway`). The sidecar listens on port 8090. Both sides may be hedgehog, each with its own `--a-url` / `--b-url` and `--a-ply` / `--b-ply`. A driver other than hedgehog ignores `ply` and warns.
