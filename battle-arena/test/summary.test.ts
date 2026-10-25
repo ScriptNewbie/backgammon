@@ -1,12 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { engineAtSeat, formatSummary, summarize } from "../src/summary.ts";
+import { engineAtSeat, formatSummary, summarize, winnerName } from "../src/summary.ts";
 
 test("engineAtSeat maps match winner to engine id", () => {
   assert.equal(engineAtSeat("p1", "p1"), "game-engine");
   assert.equal(engineAtSeat("p1", "p2"), "teacher");
   assert.equal(engineAtSeat("p2", "p1"), "teacher");
   assert.equal(engineAtSeat("p2", "p2"), "game-engine");
+  assert.equal(winnerName("teacher", "hedgehog"), "hedgehog");
+  assert.equal(winnerName("game-engine", "hedgehog"), "game-engine");
+  assert.equal(winnerName("teacher"), "teacher");
 });
 
 test("summarize counts wins by seat", () => {

@@ -24,6 +24,11 @@ export function engineAtSeat(engineSeat: "p1" | "p2", seat: "p1" | "p2"): Engine
   return "teacher";
 }
 
+/** Name printed in match logs. The non-engine seat stays "teacher" only for the bgweb opponent. */
+export function winnerName(winner: EngineId, opponent = "teacher"): string {
+  return winner === "game-engine" ? winner : opponent;
+}
+
 export function summarize(
   rows: readonly MatchSummaryRow[],
   opts: { length: number; seed: number; allowCube?: boolean },
@@ -51,12 +56,12 @@ export function summarize(
   return summary;
 }
 
-export function formatSummary(summary: BattleSummary): string {
+export function formatSummary(summary: BattleSummary, opponent = "teacher"): string {
   const lines = [
-    `engine vs teacher`,
+    `engine vs ${opponent}`,
     `matches: ${summary.matches}  length: ${summary.length}  seed: ${summary.seed}  cube: ${summary.allowCube ? "on" : "off"}`,
     `game-engine: ${summary.wins["game-engine"]} wins (as p1: ${summary.winsAsP1["game-engine"]}, as p2: ${summary.winsAsP2["game-engine"]})  points: ${summary.points["game-engine"]}`,
-    `teacher: ${summary.wins.teacher} wins (as p1: ${summary.winsAsP1.teacher}, as p2: ${summary.winsAsP2.teacher})  points: ${summary.points.teacher}`,
+    `${opponent}: ${summary.wins.teacher} wins (as p1: ${summary.winsAsP1.teacher}, as p2: ${summary.winsAsP2.teacher})  points: ${summary.points.teacher}`,
   ];
   return lines.join("\n");
 }

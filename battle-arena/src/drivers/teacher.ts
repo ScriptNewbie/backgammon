@@ -1,8 +1,13 @@
-import { BgwebClient } from "ts-core/bgweb";
+import type { Position } from "ts-core";
+import type { LegalPlay } from "ts-core/bgweb";
 import { infallibleCube, type MatchPlayer } from "ts-core/sim";
 import { pickBestPlay } from "../rank";
 
-export function createTeacherDriver(client: BgwebClient): MatchPlayer {
+type CheckerClient = {
+  getMoves(pos: Position): Promise<{ plays: LegalPlay[] }>;
+};
+
+export function createTeacherDriver(client: CheckerClient): MatchPlayer {
   return {
     ...infallibleCube(),
     async chooseChecker(pos, ctx) {

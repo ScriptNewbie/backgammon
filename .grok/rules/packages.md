@@ -2,7 +2,7 @@
 
 ## ts-core
 
-Shared TypeScript ([ADR 0016](../../docs/decisions/0016-ts-core.md), [ADR 0019](../../docs/decisions/0019-battle-arena.md)). Board types, apply-steps, legal moves, featurizer, GNU checker-move encode/decode (isomorphic). Node: `ts-core/match`, `ts-core/sim`, `ts-core/bgweb`, `ts-core/sgf` (writer).
+Shared TypeScript ([ADR 0016](../../docs/decisions/0016-ts-core.md), [ADR 0019](../../docs/decisions/0019-battle-arena.md)). Board types, apply-steps, legal moves, featurizer, GNU checker-move encode/decode (isomorphic). Node: `ts-core/match`, `ts-core/sim`, `ts-core/bgweb`, `ts-core/hedgehog`, `ts-core/sgf` (writer).
 
 - Specs: `docs/domain/board-representation.md`, `docs/domain/features.md`, `docs/domain/match-play.md`.
 - Golden vectors: `training-ground/fixtures/features.json`.
@@ -48,6 +48,6 @@ Vite + vanilla TypeScript. Debug viewer for GNU Backgammon SGF dumps ([ADR 0010]
 
 TypeScript. Play our game-engine against the bgweb-api teacher at max strength ([ADR 0019](../../docs/decisions/0019-battle-arena.md)).
 
-- Loop: `ts-core/sim`. Drivers: `POST /evaluate` and teacher `getmoves`. Rank checkers by mover MWC. Shared infallible cube heuristic (`--no-cube` disables it).
+- Loop: `ts-core/sim`. Drivers: `POST /evaluate` and teacher `getmoves`. `--opponent hedgehog` is an arena opponent via the external sidecar (`docs/domain/hedgehog.md`); do not vendor the engine or `.ogxf` weights, and do not label dumps from it. Rank checkers by mover MWC. Shared infallible cube heuristic (`--no-cube` disables it).
 - SGF under gitignored `battle-arena/replays/`. No training JSONL. Open in replay-player or gnubg.
 - Docker only, from `battle-arena/`. Host commands: [README.md](../../README.md). Do not run `battle:inner` / `test:inner` on the host. Requires `training-ground/checkpoints/cubeless.onnx`.

@@ -60,7 +60,7 @@ Checker counts must sum to 15 per player (points + bar + off).
 
 Ordered checker steps: `{ "from": <1-24|"bar">, "to": <1-24|"off"> }`. Hits are implied (blot to bar).
 
-Convert bgweb-api `play` (and XGID, if used) at the dumper boundary only. See [gnubg.md](gnubg.md).
+Convert bgweb-api `play` (and XGID, if used) at the dumper boundary only. See [gnubg.md](gnubg.md). Hedgehog OGID is an arena wire encoding ([hedgehog.md](hedgehog.md)). Do not store it.
 
 ## Forbidden
 

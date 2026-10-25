@@ -172,6 +172,9 @@ Battle flags (after `--`):
 | `--length N` | `7` | Match length `1,3,5,7,9,11,13,15` |
 | `--no-cube` | (off) | Checker-only; never offer, take, or drop |
 | `--teacher-url URL` | `BGWEB_BASE_URL` or `http://127.0.0.1:8080` | Teacher origin |
+| `--opponent` | `teacher` | `teacher` (bgweb-api) or `hedgehog` |
+| `--hedgehog-url URL` | `HEDGEHOG_BASE_URL` or `http://127.0.0.1:8090` | Hedgehog sidecar ([docs/domain/hedgehog.md](docs/domain/hedgehog.md)) |
+| `--ply N` | `2` | Hedgehog search depth, 1 or 2 |
 | `--engine-url URL` | `ENGINE_BASE_URL` or `http://127.0.0.1:3000` | Engine origin |
 
 Help: add `--help` after `--`.
