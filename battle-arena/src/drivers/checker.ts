@@ -7,7 +7,8 @@ type CheckerClient = {
   getMoves(pos: Position): Promise<{ plays: LegalPlay[] }>;
 };
 
-export function createTeacherDriver(client: CheckerClient): MatchPlayer {
+/** Max-strength checker driver for the teacher and Hedgehog clients. */
+export function createCheckerDriver(client: CheckerClient): MatchPlayer {
   return {
     ...infallibleCube(),
     async chooseChecker(pos, ctx) {

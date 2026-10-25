@@ -149,7 +149,7 @@ http://localhost:5173 — pick an `.sgf` and step with Previous / Next.
 
 ## battle-arena
 
-Needs `training-ground/checkpoints/cubeless.onnx`. Starts teacher + game-engine, then plays matches. Writes gitignored `battle-arena/replays/`. From `battle-arena/`:
+Starts teacher + game-engine, then plays matches. A `game-engine` side needs `training-ground/checkpoints/cubeless.onnx`. Writes gitignored `battle-arena/replays/`. From `battle-arena/`:
 
 ```sh
 docker compose up -d
@@ -158,6 +158,7 @@ docker compose --profile test run --rm test
 
 docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --length 7
 docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --no-cube
+docker compose --profile arena run --rm arena npm run battle:inner -- --a game-engine --b hedgehog --b-ply 1 --matches 1 --seed 1
 
 docker compose down
 docker compose --profile install-host run --rm install-host
@@ -171,11 +172,10 @@ Battle flags (after `--`):
 | `--seed N` | `1` | RNG seed |
 | `--length N` | `7` | Match length `1,3,5,7,9,11,13,15` |
 | `--no-cube` | (off) | Checker-only; never offer, take, or drop |
-| `--teacher-url URL` | `BGWEB_BASE_URL` or `http://127.0.0.1:8080` | Teacher origin |
-| `--opponent` | `teacher` | `teacher` (bgweb-api) or `hedgehog` |
-| `--hedgehog-url URL` | `HEDGEHOG_BASE_URL` or `http://127.0.0.1:8090` | Hedgehog sidecar ([docs/domain/hedgehog.md](docs/domain/hedgehog.md)) |
-| `--ply N` | `2` | Hedgehog search depth, 1 or 2 |
-| `--engine-url URL` | `ENGINE_BASE_URL` or `http://127.0.0.1:3000` | Engine origin |
+| `--a DRIVER` | `game-engine` | Side a: `game-engine`, `teacher`, or `hedgehog` |
+| `--b DRIVER` | `teacher` | Side b. Same driver on both sides is allowed |
+| `--a-url URL` / `--b-url URL` | by driver | `ENGINE_BASE_URL` / `BGWEB_BASE_URL` / `HEDGEHOG_BASE_URL`, or `http://127.0.0.1:3000` / `:8080` / `:8090` |
+| `--a-ply N` / `--b-ply N` | `2` for hedgehog | Search depth 1 or 2. Hedgehog only; other drivers ignore it and warn |
 
 Help: add `--help` after `--`.
 

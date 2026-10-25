@@ -46,8 +46,8 @@ Vite + vanilla TypeScript. Debug viewer for GNU Backgammon SGF dumps ([ADR 0010]
 
 ## battle-arena
 
-TypeScript. Play our game-engine against the bgweb-api teacher at max strength ([ADR 0019](../../docs/decisions/0019-battle-arena.md)).
+TypeScript. Play any driver against any driver at max strength ([ADR 0019](../../docs/decisions/0019-battle-arena.md), [ADR 0023](../../docs/decisions/0023-arena-any-driver.md)). Default is game-engine vs the bgweb-api teacher.
 
-- Loop: `ts-core/sim`. Drivers: `POST /evaluate` and teacher `getmoves`. `--opponent hedgehog` is an arena opponent via the external sidecar (`docs/domain/hedgehog.md`); do not vendor the engine or `.ogxf` weights, and do not label dumps from it. Rank checkers by mover MWC. Shared infallible cube heuristic (`--no-cube` disables it).
+- Loop: `ts-core/sim`. Drivers: `POST /evaluate`, teacher `getmoves`, and the Hedgehog sidecar (`docs/domain/hedgehog.md`). Do not vendor that engine or `.ogxf` weights, and do not label dumps from it. The same driver may sit on both sides. `ply` is per side and hedgehog only; other drivers drop it and warn. Rank checkers by mover MWC. Shared infallible cube heuristic (`--no-cube` disables it).
 - SGF under gitignored `battle-arena/replays/`. No training JSONL. Open in replay-player or gnubg.
-- Docker only, from `battle-arena/`. Host commands: [README.md](../../README.md). Do not run `battle:inner` / `test:inner` on the host. Requires `training-ground/checkpoints/cubeless.onnx`.
+- Docker only, from `battle-arena/`. Host commands: [README.md](../../README.md). Do not run `battle:inner` / `test:inner` on the host. A game-engine side requires `training-ground/checkpoints/cubeless.onnx`.
