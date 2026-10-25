@@ -10,8 +10,8 @@ test("batch stamp names both sides", () => {
   assert.equal(createdAt, "2026-08-22T12:15:00Z");
   assert.equal(batchId, "2026-08-22T121500Z-game-engine-vs-teacher");
   assert.equal(
-    batchStamp(new Date("2026-08-22T12:15:00Z"), "hedgehog-ply1", "hedgehog-ply2").batchId,
-    "2026-08-22T121500Z-hedgehog-ply1-vs-hedgehog-ply2",
+    batchStamp(new Date("2026-08-22T12:15:00Z"), "hedgehog-ply0", "hedgehog-ply1").batchId,
+    "2026-08-22T121500Z-hedgehog-ply0-vs-hedgehog-ply1",
   );
 });
 

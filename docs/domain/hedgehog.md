@@ -8,7 +8,7 @@ The evaluation library is [eranlambooij/hedgehog-public](https://gitlab.com/eran
 
 [Benchmarks](https://hedgehog-bg.com/benchmarks) (0-ply, cubeful, 10M games, 2026-10-13): Aureus beats FOX, and both beat GnuBG. Colossus 2.0 is stronger and is not in the public model list. The strongest file that list serves, and that the MIT engine loads, is `aureus_v0.12_2026-09-26.ogxf`.
 
-The public search stops at 2-ply. `ply` 2 is that search. `ply` 1 is the direct net eval of each successor. Default is 2.
+The public search stops at GnuBG 1-ply. `ply` 0 is the direct net eval of each successor. `ply` 1 is that one-roll search. Default is 1.
 
 Published nets do not emit a cubeful head. Arena plays store cubeless probabilities and `cubefulEquity: 0`. `cubeAction` stays `null`. Arena cube decisions stay on the shared infallible heuristic.
 
@@ -21,9 +21,9 @@ docker build -t hedgehog-getmoves docs/integrations/hedgehog
 docker run --rm -p 8090:8090 hedgehog-getmoves
 ```
 
-`GET /health` returns `{"ok":true,"model":"aureus_v0.12_2026-09-26.ogxf","maxPly":2}`.
+`GET /health` returns `{"ok":true,"model":"aureus_v0.12_2026-09-26.ogxf","maxPly":1}`.
 
-`POST /v1/moves` body is `{"ogid":"...","ply":2}`. Each move is the successor OGID plus cubeless probabilities from the player who just moved (`win`, `gammon_win`, `bg_win`, `gammon_loss`, `bg_loss`, `equity`). `ply` above 2 is clamped.
+`POST /v1/moves` body is `{"ogid":"...","ply":1}`. Ply is GnuBG's: 0 is the net, 1 is one roll. Each move is the successor OGID plus cubeless probabilities from the player who just moved (`win`, `gammon_win`, `bg_win`, `gammon_loss`, `bg_loss`, `equity`). `ply` outside 0..1 is clamped. Rebuild this image; an older build used Hedgehog's 1 (net) and 2 (one roll).
 
 FOX is the faster public net: `docker build --build-arg MODEL=fox_v0.34_2026-09-26.ogxf -t hedgehog-getmoves docs/integrations/hedgehog`.
 
@@ -52,4 +52,4 @@ Arena (from `battle-arena/`, sidecar on the host):
 docker compose --profile arena run --rm -e HEDGEHOG_BASE_URL=http://host.docker.internal:8090 arena npm run battle:inner -- --a game-engine --b hedgehog --matches 1 --seed 1 --length 7
 ```
 
-`--b-ply 1` is the direct net on that side. Default ply is 2. `host.docker.internal` is published on the arena service (`host-gateway`). The sidecar listens on port 8090. Both sides may be hedgehog, each with its own `--a-url` / `--b-url` and `--a-ply` / `--b-ply`. A driver other than hedgehog ignores `ply` and warns.
+`--b-ply 0` is the direct net on that side. Default ply is 1. `host.docker.internal` is published on the arena service (`host-gateway`). The sidecar listens on port 8090. Both sides may be hedgehog, each with its own `--a-url` / `--b-url` and `--a-ply` / `--b-ply`. A driver other than hedgehog ignores `ply` and warns.

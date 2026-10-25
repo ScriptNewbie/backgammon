@@ -45,10 +45,10 @@ function take(argv: string[], index: number, flag: string): string {
   return value;
 }
 
-function takePly(argv: string[], index: number, flag: string): 1 | 2 {
+function takePly(argv: string[], index: number, flag: string): 0 | 1 {
   const raw = take(argv, index, flag);
   const n = Number(raw);
-  if (n !== 1 && n !== 2) throw new Error(`${flag} must be 1 or 2 (got ${raw})`);
+  if (n !== 0 && n !== 1) throw new Error(`${flag} must be 0 or 1 (got ${raw})`);
   return n;
 }
 
@@ -110,7 +110,7 @@ export function parseArgs(argv: string[]): CliArgs {
 }
 
 function printHelp(): void {
-  console.log(`Usage: docker compose --profile arena run --rm arena npm run battle:inner -- [--matches N] [--seed N] [--length N] [--no-cube] [--a DRIVER] [--b DRIVER] [--a-url URL] [--b-url URL] [--a-ply 1|2] [--b-ply 1|2]
+  console.log(`Usage: docker compose --profile arena run --rm arena npm run battle:inner -- [--matches N] [--seed N] [--length N] [--no-cube] [--a DRIVER] [--b DRIVER] [--a-url URL] [--b-url URL] [--a-ply 0|1] [--b-ply 0|1]
 
 Play any driver against any driver at max strength. Default is game-engine vs teacher.
 The same driver may sit on both sides. Side a is p1 on even matches and p2 on odd matches.
@@ -123,7 +123,7 @@ The same driver may sit on both sides. Side a is p1 on even matches and p2 on od
   --b             Side b (default teacher)
   --a-url         Origin for side a (default depends on that driver)
   --b-url         Origin for side b
-  --a-ply         Search depth 1 or 2. Hedgehog only (default 2). Other drivers ignore it and warn.
+  --a-ply         GnuBG ply 0 or 1. Hedgehog only (default 1). 0 is the net, 1 is one opponent roll. Other drivers ignore it and warn.
   --b-ply         Same for side b
 
 URL defaults: game-engine ENGINE_BASE_URL or http://127.0.0.1:3000; teacher BGWEB_BASE_URL or http://127.0.0.1:8080; hedgehog HEDGEHOG_BASE_URL or http://127.0.0.1:8090.
@@ -132,7 +132,7 @@ From battle-arena/ (see README.md):
   docker compose up -d
   docker compose --profile test run --rm test
   docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --length 7
-  docker compose --profile arena run --rm arena npm run battle:inner -- --a game-engine --b hedgehog --b-ply 1 --matches 1 --seed 1
+  docker compose --profile arena run --rm arena npm run battle:inner -- --a game-engine --b hedgehog --b-ply 0 --matches 1 --seed 1
   docker compose down
 
 A game-engine side needs training-ground/checkpoints/cubeless.onnx. Writes GNU SGF under replays/.
@@ -160,7 +160,7 @@ export function playersForSeats(
 function createPlayer(side: SideSpec): MatchPlayer {
   if (side.driver === "game-engine") return createGameEngineDriver(side.url);
   if (side.driver === "teacher") return createCheckerDriver(new BgwebClient(side.url));
-  return createCheckerDriver(new HedgehogClient(side.url, side.ply ?? 2));
+  return createCheckerDriver(new HedgehogClient(side.url, side.ply ?? 1));
 }
 
 async function healthCheckSide(side: SideSpec): Promise<void> {
@@ -172,7 +172,7 @@ async function healthCheckSide(side: SideSpec): Promise<void> {
     await new BgwebClient(side.url).healthCheck();
     return;
   }
-  await new HedgehogClient(side.url, side.ply ?? 2).healthCheck();
+  await new HedgehogClient(side.url, side.ply ?? 1).healthCheck();
 }
 
 async function checkHealth(sides: readonly SideSpec[]): Promise<boolean> {

@@ -10,9 +10,9 @@
 //   ./build/getmoves_server aureus_v0.12_2026-09-26.ogxf 8090
 //
 // GET /health
-// POST /v1/moves   {"ogid":"...","ply":1|2}
+// POST /v1/moves   {"ogid":"...","ply":0|1}
 //
-// ply 1 is a direct net eval of each successor. ply 2 is the community
+// GnuBG ply. 0 is a direct net eval of each successor. 1 is the community
 // expectiminimax one roll past that successor (the public engine's maximum).
 // Each move's probabilities are from the player who just moved. `ogid` is the
 // successor, with the opponent to move. Checker fields are what the client matches.
@@ -68,11 +68,11 @@ int json_int_field(const std::string& body, const char* key, int fallback) {
 
 EvalResult score_successor(NNEnsembleContext* ctx, BoardState succ, int mover, int ply) {
   const int opp = 1 - mover;
-  if (ply <= 1) {
+  if (ply <= 0) {
     EvalResult ev = eval_ensemble(succ, opp, ctx);
     return eval_flip(&ev);
   }
-  return ogx_community::community_search_ensemble(ctx, succ, mover, opp, ply - 1, nullptr);
+  return ogx_community::community_search_ensemble(ctx, succ, mover, opp, ply, nullptr);
 }
 
 std::string moves_json(NNEnsembleContext* ctx, const std::string& ogid, int ply) {
@@ -171,7 +171,7 @@ void handle(int fd, NNEnsembleContext* ctx, const std::string& model) {
   const std::string body = header_end == std::string::npos ? "" : req.substr(header_end + 4);
 
   if (start.rfind("GET /health", 0) == 0) {
-    respond(fd, 200, std::string("{\"ok\":true,\"model\":\"") + model + "\",\"maxPly\":2}");
+    respond(fd, 200, std::string("{\"ok\":true,\"model\":\"") + model + "\",\"maxPly\":1}");
     return;
   }
   if (start.rfind("POST /v1/moves", 0) != 0) {
@@ -179,9 +179,9 @@ void handle(int fd, NNEnsembleContext* ctx, const std::string& model) {
     return;
   }
   const std::string ogid = json_string_field(body, "ogid");
-  int ply = json_int_field(body, "ply", 2);
-  if (ply < 1) ply = 1;
-  if (ply > 2) ply = 2;
+  int ply = json_int_field(body, "ply", 1);
+  if (ply < 0) ply = 0;
+  if (ply > 1) ply = 1;
   if (ogid.empty() || ogid.find('"') != std::string::npos) {
     respond(fd, 400, "{\"error\":\"ogid required\"}");
     return;
@@ -235,7 +235,7 @@ int main(int argc, char** argv) {
     std::perror("listen");
     return 1;
   }
-  std::fprintf(stderr, "hedgehog getmoves on :%d model %s (ply max 2)\n", port, model.c_str());
+  std::fprintf(stderr, "hedgehog getmoves on :%d model %s (ply max 1)\n", port, model.c_str());
 
   for (;;) {
     const int fd = ::accept(server, nullptr, nullptr);
