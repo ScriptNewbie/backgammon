@@ -4,12 +4,12 @@ A backgammon engine split into six packages. **Docker** (Engine + Compose v2) is
 
 | Package | Role |
 | --- | --- |
-| `ts-core` | Shared TypeScript: board, legal moves, featurizer; Node match/MWC/cube, sim, teacher client, SGF writer ([ADR 0016](docs/decisions/0016-ts-core.md), [ADR 0019](docs/decisions/0019-battle-arena.md)) |
+| `ts-core` | Shared TypeScript: board, legal moves, featurizer; Node match/MWC/cube, sim, teacher client, hedgehog client, SGF writer ([ADR 0016](docs/decisions/0016-ts-core.md), [ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0022](docs/decisions/0022-hedgehog-external.md)) |
 | `move-dumper` | Simulates money games (no cube) and dumps labelled checker plays from [bgweb-api](https://github.com/foochu/bgweb-api) (GNU Backgammon nets over HTTP) |
 | `training-ground` | PyTorch training of the cubeless eval net; exports ONNX and ExecuTorch `.pte` ([ADR 0014](docs/decisions/0014-export-onnx-and-pte.md)). CUDA image ([ADR 0013](docs/decisions/0013-training-cuda.md)) |
 | `game-engine` | TypeScript HTTP API (Hono): board + dice → legal moves with evaluations; infers the net via ONNX Runtime |
 | `replay-player` | Vite web app that steps through GNU Backgammon SGF dumps (dumper or arena) |
-| `battle-arena` | Play our engine against the teacher at max strength; win summary + SGF ([ADR 0019](docs/decisions/0019-battle-arena.md)) |
+| `battle-arena` | Play any driver against any driver (default: our engine vs the teacher); win summary + SGF ([ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0023](docs/decisions/0023-arena-any-driver.md)) |
 
 Money play includes a doubling cube in the engine and arena. **Dumper dumps are money games without a cube** ([ADR 0020](docs/decisions/0020-dumper-games-no-cube.md)). Players are `p1` / `p2`. Agent instructions: [AGENTS.md](AGENTS.md) and `docs/`. Cursor and Grok Build both use that file; Grok-native copies live under `.grok/`. In a Grok terminal: `grok` then `grok inspect`.
 
@@ -30,10 +30,10 @@ Typical path from labelled games to a battling engine:
 
 1. Dump games with the teacher (`move-dumper`).
 2. Train the cubeless net and export `cubeless.onnx` (`training-ground`).
-3. Serve the engine (`game-engine`) or play it against the teacher (`battle-arena`).
+3. Serve the engine (`game-engine`) or play any driver against any driver (`battle-arena`; default is the engine vs the teacher).
 4. Open GNU SGF in `replay-player` (or gnubg).
 
-`game-engine` and `battle-arena` need `training-ground/checkpoints/cubeless.onnx`. Training needs dumps under `move-dumper/dumps/` (Compose mounts them at `/data/dumps`).
+`game-engine` needs `training-ground/checkpoints/cubeless.onnx`. Training needs dumps under `move-dumper/dumps/` (Compose mounts them at `/data/dumps`).
 
 ## ts-core
 
@@ -116,7 +116,7 @@ Train flags:
 | `--cache-dir` | `cache` | Featurized tensor cache ([ADR 0021](docs/decisions/0021-featurized-tensor-cache.md)) |
 | `--rebuild-cache` | (off) | Wipe and rebuild the tensor cache |
 
-`--export-stem checkpoints/cubeless` is what `game-engine` and `battle-arena` consume (`MODEL_PATH=/models/cubeless.onnx`).
+`--export-stem checkpoints/cubeless` is the model `game-engine` loads (`MODEL_PATH=/models/cubeless.onnx`).
 
 ## game-engine
 

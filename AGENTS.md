@@ -4,7 +4,7 @@ This is a six-package monorepo. Do not add other top-level packages.
 
 | Package | Stack | Job |
 | --- | --- | --- |
-| `ts-core` | TypeScript | Shared board types, apply-steps, legal moves, featurizer; Node match/MWC/cube formula, sim, teacher client, SGF writer |
+| `ts-core` | TypeScript | Shared board types, apply-steps, legal moves, featurizer; Node match/MWC/cube formula, sim, teacher client, hedgehog client, SGF writer |
 | `move-dumper` | TypeScript | Simulate games (no cube); dump labelled checker positions/moves from bgweb-api (GNU Backgammon nets) |
 | `training-ground` | PyTorch → ONNX + ExecuTorch `.pte` | Train the cubeless eval net |
 | `game-engine` | TypeScript + Hono + `onnxruntime-node` | Board + dice → legal moves with cubeful evals |

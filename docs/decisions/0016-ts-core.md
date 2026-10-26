@@ -16,6 +16,7 @@
 - **Node** export (`./match`): MET, dead-cube MWC, cube-action formula (`node:fs`). Replay-player must not import this.
 - Do not share dump CLI, skill sampling, Vite UI, or the SGF **parser**. Replay-player imports `ts-core`, not `move-dumper`. Training still ignores SGF.
 - Node exports `./sim`, `./bgweb`, and `./sgf` (writer) are [ADR 0019](0019-battle-arena.md).
+- Node export `./hedgehog` (sidecar client) is [ADR 0022](0022-hedgehog-external.md).
 
 ## Consequences
 
