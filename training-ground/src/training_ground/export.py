@@ -17,7 +17,12 @@ def export_onnx_and_pte(
     example: torch.Tensor,
     dest_stem: Path | str,
 ) -> tuple[Path, Path]:
-    """Write `<stem>.onnx` (ADR 0004) and `<stem>.pte` (ExecuTorch, ADR 0014)."""
+    """Write `<stem>.onnx` (ADR 0004) and `<stem>.pte` (ExecuTorch, ADR 0014).
+
+    ONNX weights are stored in the `.onnx` file. Torch 2.13 defaults to a
+    sibling `.onnx.data` sidecar (`external_data=True`); this model is far
+    under the 2GB protobuf limit, so the engine can load one file.
+    """
     stem = Path(dest_stem)
     onnx_path = stem.with_suffix(".onnx")
     pte_path = stem.with_suffix(".pte")
@@ -33,6 +38,11 @@ def export_onnx_and_pte(
     example = example.cpu()
 
     info(f"exporting ONNX → {onnx_path}")
+    # Drop a stale sidecar so a previous external-data export cannot linger
+    # next to the single-file model.
+    sidecar = onnx_path.with_name(f"{onnx_path.name}.data")
+    if sidecar.is_file():
+        sidecar.unlink()
     torch.onnx.export(
         model,
         (example,),
@@ -40,7 +50,10 @@ def export_onnx_and_pte(
         input_names=["features"],
         output_names=["cubeless"],
         opset_version=18,
+        external_data=False,
     )
+    if sidecar.exists():
+        raise RuntimeError(f"ONNX export wrote external data at {sidecar}")
     info(f"  wrote {onnx_path} ({onnx_path.stat().st_size:,} bytes)")
 
     from executorch.exir import to_edge_transform_and_lower
