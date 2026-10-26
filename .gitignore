@@ -18,6 +18,7 @@ mlruns/
 *.pt
 *.pth
 *.onnx
+*.onnx.data
 *.pte
 *.safetensors
 
