@@ -40,4 +40,4 @@ Canonical specs:
 - Simulation: [move-dumper.md](move-dumper.md)
 - Match play / MET: [match-play.md](match-play.md)
 - Game-engine HTTP: [game-engine.md](game-engine.md)
-- Engine vs teacher: [battle-arena.md](battle-arena.md)
+- Arena matches: [battle-arena.md](battle-arena.md)
