@@ -7,9 +7,29 @@
   </head>
   <body class="h-dvh bg-stone-100 font-sans text-stone-900 antialiased">
     <div class="mx-auto flex h-full min-h-[520px] max-w-[1080px] flex-col gap-2 px-5 py-3">
-      <header class="flex shrink-0 items-center justify-between gap-4">
+      <header class="flex shrink-0 items-center gap-6">
         <h1 class="text-xl font-semibold tracking-tight">Backgammon</h1>
-        <label class="flex items-center gap-2 text-sm text-stone-600">
+        <nav class="flex rounded bg-stone-200 p-0.5 text-sm" role="tablist">
+          <button type="button" role="tab" data-mode="play" class="cursor-pointer rounded px-3 py-1">Play</button>
+          <button type="button" role="tab" data-mode="replay" class="cursor-pointer rounded px-3 py-1">Replay</button>
+        </nav>
+        <div id="play-tools" class="ml-auto flex items-center gap-3 text-sm" hidden>
+          <label class="flex items-center gap-2 text-stone-600">
+            Match to
+            <select id="match-length" class="rounded border border-stone-300 bg-white px-2 py-1 text-stone-900">
+              <option value="1">1</option>
+              <option value="3">3</option>
+              <option value="5" selected>5</option>
+              <option value="7">7</option>
+              <option value="9">9</option>
+              <option value="11">11</option>
+            </select>
+          </label>
+          <button id="new-match" type="button" class="cursor-pointer rounded bg-stone-900 px-3 py-1.5 text-white hover:bg-stone-700">
+            New match
+          </button>
+        </div>
+        <label id="replay-tools" class="ml-auto flex items-center gap-2 text-sm text-stone-600" hidden>
           Open SGF
           <input
             id="file"
@@ -22,9 +42,10 @@
       <p id="error" class="shrink-0 rounded bg-red-100 px-3 py-2 text-sm text-red-800" hidden></p>
       <section id="hud" class="shrink-0 text-sm" hidden></section>
       <section id="board" class="flex min-h-0 flex-1 flex-col rounded-md bg-stone-800 p-2" hidden></section>
-      <footer class="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-4">
-        <p id="caption" class="truncate font-mono text-sm" hidden></p>
-        <nav class="col-start-2 flex items-center gap-4">
+      <footer class="grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4">
+        <!-- Fixed height (3 lines) so a longer review wraps without shifting the board. -->
+        <p id="caption" class="col-start-1 row-start-1 flex h-12 flex-col justify-center font-mono text-xs leading-4 break-words" hidden></p>
+        <nav id="replay-controls" class="col-start-2 row-start-1 flex items-center gap-4" hidden>
           <button
             id="prev"
             type="button"
@@ -43,7 +64,8 @@
             Next
           </button>
         </nav>
-        <p id="notice" class="truncate text-right text-sm font-medium text-amber-700" hidden></p>
+        <nav id="play-controls" class="col-start-2 row-start-1 flex items-center gap-3" hidden></nav>
+        <p id="notice" class="col-start-3 row-start-1 truncate text-right text-sm font-medium text-amber-700" hidden></p>
       </footer>
     </div>
     <script type="module" src="/src/main.ts"></script>

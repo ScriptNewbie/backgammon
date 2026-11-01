@@ -8,7 +8,7 @@ A backgammon engine split into six packages. **Docker** (Engine + Compose v2) is
 | `move-dumper` | Simulates money games (no cube) and dumps labelled checker plays from [bgweb-api](https://github.com/foochu/bgweb-api) (GNU Backgammon nets over HTTP) |
 | `training-ground` | PyTorch training of the cubeless eval net; exports ONNX and ExecuTorch `.pte` ([ADR 0014](docs/decisions/0014-export-onnx-and-pte.md)). CUDA image ([ADR 0013](docs/decisions/0013-training-cuda.md)) |
 | `game-engine` | TypeScript HTTP API (Hono): board + dice → legal moves with evaluations; infers the net via ONNX Runtime |
-| `gui` | Vite + Tailwind web app that steps through GNU Backgammon SGF dumps (dumper or arena) |
+| `gui` | Vite + Tailwind web app: play a match against `game-engine`, or step through GNU Backgammon SGF dumps (dumper or arena) ([ADR 0027](docs/decisions/0027-gui-play-vs-engine.md)) |
 | `battle-arena` | Play any driver against any driver (default: our engine vs the teacher); win summary + SGF ([ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0023](docs/decisions/0023-arena-any-driver.md)) |
 
 Money play includes a doubling cube in the engine and arena. **Dumper dumps are money games without a cube** ([ADR 0020](docs/decisions/0020-dumper-games-no-cube.md)). Players are `p1` / `p2`. Agent instructions: [AGENTS.md](AGENTS.md) and `docs/`. Cursor, Grok Build, and Claude Code all use that file; Grok-native copies live under `.grok/`, Claude Code copies under `.claude/` (`.claude/CLAUDE.md` imports `AGENTS.md`). In a Grok terminal: `grok` then `grok inspect`. In Claude Code: `claude` from the repo root.
@@ -31,7 +31,7 @@ Typical path from labelled games to a battling engine:
 1. Dump games with the teacher (`move-dumper`).
 2. Train the cubeless net and export `cubeless.onnx` (`training-ground`).
 3. Serve the engine (`game-engine`) or play any driver against any driver (`battle-arena`; default is the engine vs the teacher).
-4. Open GNU SGF in `gui` (or gnubg).
+4. Play the engine in `gui`, or open GNU SGF there (or in gnubg).
 
 `game-engine` needs `training-ground/checkpoints/cubeless.onnx`. Training needs dumps under `move-dumper/dumps/` (Compose mounts them at `/data/dumps`).
 
@@ -135,7 +135,7 @@ http://localhost:3000 — `GET /health` → `{"ok":true}`. `POST /evaluate` with
 
 ## gui
 
-Debug viewer for GNU SGF (`FF[4]` `GM[6]`) from `move-dumper/dumps/<batch>/replay/` or `battle-arena/replays/`. File picker only. From `gui/`:
+Two screens. **Play**: a match against `game-engine` (live cube, random dice); start the engine first (`docker compose up` in `game-engine/`, needs `cubeless.onnx`). **Replay**: GNU SGF (`FF[4]` `GM[6]`) from `move-dumper/dumps/<batch>/replay/` or `battle-arena/replays/`, file picker only. Spec: [docs/domain/gui.md](docs/domain/gui.md). From `gui/`:
 
 ```sh
 docker compose up --build
@@ -145,7 +145,7 @@ docker compose --profile test run --rm test
 docker compose --profile install-host run --rm install-host
 ```
 
-http://localhost:5173 — pick an `.sgf` and step with Previous / Next.
+http://localhost:5173 — **Play**: pick a match length, New match, click checkers (Swap dice / Undo / Done). **Replay**: pick an `.sgf` and step with Previous / Next. The dev server proxies `/api/engine` to `ENGINE_URL` (default `http://host.docker.internal:3000`).
 
 ## battle-arena
 

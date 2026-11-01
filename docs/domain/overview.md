@@ -11,8 +11,8 @@ foochu/bgweb-api (GNU Backgammon nets over HTTP)
         ├──────────────────────────────┐
         ▼                              ▼
   training-ground                gui
-  PyTorch — cubeless net,        Vite + Tailwind — debug SGF stepper
-  export ONNX                    (dumper dumps or arena replays)
+  PyTorch — cubeless net,        Vite + Tailwind — play vs game-engine,
+  export ONNX                    SGF stepper (dumps or arena replays)
         │
         ▼
   game-engine          TypeScript HTTP (Hono) + onnxruntime-node
@@ -42,3 +42,4 @@ Canonical specs:
 - Match play / MET: [match-play.md](match-play.md)
 - Game-engine HTTP: [game-engine.md](game-engine.md)
 - Arena matches: [battle-arena.md](battle-arena.md)
+- GUI (play + replay): [gui.md](gui.md)

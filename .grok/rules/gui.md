@@ -1,9 +1,10 @@
 # gui
 
-Vite + vanilla TypeScript + Tailwind CSS ([ADR 0026](../../docs/decisions/0026-gui-tailwind.md)). Debug viewer for GNU Backgammon SGF dumps ([ADR 0010](../../docs/decisions/0010-replay-player.md)).
+Vite + vanilla TypeScript + Tailwind CSS. Two screens: **Play** a match against `game-engine`, and **Replay** GNU Backgammon SGF ([ADR 0010](../../docs/decisions/0010-replay-player.md), [ADR 0026](../../docs/decisions/0026-gui-tailwind.md), [ADR 0027](../../docs/decisions/0027-gui-play-vs-engine.md)). Spec: [gui.md](../../docs/domain/gui.md).
 
-- Input is `FF[4]` `GM[6]` match files from `move-dumper/dumps/<batch>/replay/` or `battle-arena/replays/`. File picker only. No JSONL, no backend, no React.
-- From `gui/`. Host commands: [README.md](../../README.md) (http://localhost:5173). Do not run `test:inner` / `dev` on the host. Previous / Next is one checker step or cube action.
-- Reconstruct position JSON by applying checker steps and cube double / take / drop from the standard opening (`docs/domain/board-representation.md`). Hits implied. Board helpers and GNU checker-move encode/decode come from `ts-core`. The match-file parser stays here.
-- Do not import `move-dumper`. Do not import `ts-core/match`. Do not treat SGF as a training representation.
+- From `gui/`. Host commands: [README.md](../../README.md) (http://localhost:5173). Do not run `test:inner` / `dev` on the host. No React, no backend of its own.
+- Play: human is `p1`, engine `p2`; match with live cube and Crawford; browser random dice. Talk to the engine only via `POST /api/engine/evaluate` (Vite proxy to `ENGINE_URL`); send position JSON. Engine plays `moves[0]`. Engine cube decisions come from eval `cubeAction` (human play → engine doubles; engine play → engine takes). Do not add an engine endpoint or MET code for the GUI.
+- Play input: click a checker → first die (display order) that gives a legal step; Swap dice / Undo / Done. Legality = prefix of `ts-core` `generateLegalSequences`. Pure rules live in `src/play/rules.ts` (tested).
+- Replay: `FF[4]` `GM[6]` files from `move-dumper/dumps/<batch>/replay/` or `battle-arena/replays/`; file picker only, no JSONL. Previous / Next is one roll, checker step, or cube action. Rebuild position JSON by applying SGF events from the standard opening with `ts-core`. The match-file parser stays here.
+- Do not import `move-dumper`. Do not import Node-only `ts-core` exports (`match`, `sim`, `bgweb`, …). Do not treat SGF or play results as training data.
 - Style with Tailwind utility classes. Keep custom CSS to what Tailwind cannot express. Minimal look: solid readable colors, no gradients, no decorative shadows. Dice roll in 3D (short, ease-out spin) and land flat with no tilt. Animations ignore the OS reduce-motion setting.

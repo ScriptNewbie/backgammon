@@ -151,18 +151,21 @@ export function animateCube(root: HTMLElement): void {
  * Start and end differ by whole turns, so the last frame equals the resting
  * transform: the die lands flat, upright, with no tilt.
  */
-export function rollDice(root: HTMLElement): void {
+export function rollDice(root: HTMLElement): Promise<void> {
+  const done: Promise<unknown>[] = [];
   root.querySelectorAll<HTMLElement>(".die3d").forEach((die, i) => {
     const cube = die.querySelector<HTMLElement>(".die-cube");
     const [rx, ry] = FACE_ROTATION[Number(die.dataset.value)] ?? FACE_ROTATION[1]!;
     if (!cube) return;
     const dir = i % 2 === 0 ? 1 : -1;
-    cube.animate(
+    const anim = cube.animate(
       [
         { transform: dieTransform(rx - 360 * dir, ry + 360 * dir) },
         { transform: dieTransform(rx, ry) },
       ],
       { duration: ROLL_MS, delay: i * 40, easing: "cubic-bezier(0.2, 0.7, 0.2, 1)", fill: "backwards" },
     );
+    done.push(anim.finished.catch(() => undefined));
   });
+  return Promise.all(done).then(() => undefined);
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { openingPosition, stepsKey } from "../src/board.ts";
-import { generateLegalPlays } from "../src/moves.ts";
+import { generateLegalPlays, generateLegalSequences } from "../src/moves.ts";
 import type { Position, Step } from "../src/types.ts";
 
 function opening(onRoll: "p1" | "p2", dice: [number, number]): Position {
@@ -89,4 +89,19 @@ test("doubles play four pips", () => {
   const plays = generateLegalPlays(pos);
   assert.ok(plays.length > 0);
   assert.ok(plays.every((p) => p.length === 4));
+});
+
+test("legal sequences cover both step orders and tag the die per step", () => {
+  const seqs = generateLegalSequences(opening("p1", [3, 1]));
+  const k = new Set(seqs.map((s) => `${stepsKey(s.steps)}#${s.dice.join(",")}`));
+  assert.ok(k.has("8/5 6/5#3,1"), [...k].join(" | "));
+  assert.ok(k.has("6/5 8/5#1,3"), [...k].join(" | "));
+  for (const s of seqs) assert.equal(s.steps.length, s.dice.length);
+  assert.ok(seqs.length >= generateLegalPlays(opening("p1", [3, 1])).length);
+});
+
+test("legal sequences for doubles use four steps of the same die", () => {
+  const seqs = generateLegalSequences(opening("p1", [6, 6]));
+  assert.ok(seqs.length > 0);
+  for (const s of seqs) assert.deepEqual(s.dice, [6, 6, 6, 6]);
 });

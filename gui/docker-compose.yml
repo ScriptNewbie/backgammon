@@ -2,6 +2,11 @@ services:
   gui:
     build: .
     working_dir: /repo/gui
+    environment:
+      # Play mode: Vite proxies /api/engine here. Start game-engine first (docker compose up in game-engine/).
+      ENGINE_URL: ${ENGINE_URL:-http://host.docker.internal:3000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ..:/repo
       - gui_node_modules:/repo/gui/node_modules

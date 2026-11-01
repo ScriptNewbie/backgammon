@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-08-20
-- Amended by: [0026](0026-gui-tailwind.md) (package renamed `gui`, Tailwind styling)
+- Amended by: [0026](0026-gui-tailwind.md) (package renamed `gui`, Tailwind styling), [0027](0027-gui-play-vs-engine.md) (play mode against game-engine)
 
 ## Context
 

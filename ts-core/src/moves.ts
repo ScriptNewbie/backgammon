@@ -78,13 +78,14 @@ function possibleSteps(position: Position, die: number): Step[] {
   return steps;
 }
 
-type Play = { steps: Step[] };
+/** A legal play in one concrete step order, with the die each step consumes. */
+export type LegalSequence = { steps: Step[]; dice: number[] };
 
-function search(position: Position, remaining: number[]): Play[] {
-  if (remaining.length === 0) return [{ steps: [] }];
+function search(position: Position, remaining: number[]): LegalSequence[] {
+  if (remaining.length === 0) return [{ steps: [], dice: [] }];
 
   const seen = new Set<number>();
-  const plays: Play[] = [];
+  const plays: LegalSequence[] = [];
   let any = false;
   for (let i = 0; i < remaining.length; i++) {
     const die = remaining[i]!;
@@ -97,11 +98,11 @@ function search(position: Position, remaining: number[]): Play[] {
     for (const step of options) {
       const nextPos = applySteps(position, [step]);
       for (const rest of search(nextPos, nextDice)) {
-        plays.push({ steps: [step, ...rest.steps] });
+        plays.push({ steps: [step, ...rest.steps], dice: [die, ...rest.dice] });
       }
     }
   }
-  if (!any) return [{ steps: [] }];
+  if (!any) return [{ steps: [], dice: [] }];
   return plays;
 }
 
@@ -119,7 +120,7 @@ function stepUsesDie(position: Position, step: Step, die: number): boolean {
   return destPoint(player, step.from, die) === step.to;
 }
 
-export function generateLegalPlays(position: Position): Step[][] {
+function rollDice(position: Position): [number, number] {
   const dice = position.dice;
   if (!dice) throw new Error("dice required");
   const [d1, d2] = dice;
@@ -133,16 +134,42 @@ export function generateLegalPlays(position: Position): Step[][] {
   ) {
     throw new Error("dice must be two ints 1-6");
   }
+  return [d1, d2];
+}
+
+/** Maximal-length plays (and the higher-die rule) in every step order, with the die per step. Not deduped. */
+function maximalSequences(position: Position): LegalSequence[] {
+  const [d1, d2] = rollDice(position);
   const remaining = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2];
   const raw = search(position, remaining);
   const maxLen = Math.max(0, ...raw.map((p) => p.steps.length));
+  if (maxLen === 0) return [];
   let best = raw.filter((p) => p.steps.length === maxLen);
   if (d1 !== d2 && maxLen === 1) {
     const higher = Math.max(d1, d2);
     const withHigher = best.filter((p) => p.steps[0] !== undefined && stepUsesDie(position, p.steps[0], higher));
     if (withHigher.length > 0) best = withHigher;
   }
-  if (maxLen === 0) return [];
+  return best;
+}
+
+/**
+ * Every legal play in every step order, each step tagged with the die it uses.
+ * For step-by-step input: a partial play is legal iff it is a prefix of one of these.
+ */
+export function generateLegalSequences(position: Position): LegalSequence[] {
+  const best = maximalSequences(position);
+  const [d1, d2] = rollDice(position);
+  if (d1 !== d2 && best.length > 0 && best[0]!.steps.length === 1) {
+    const higher = Math.max(d1, d2);
+    const tagged = best.filter((p) => p.dice[0] === higher);
+    if (tagged.length > 0) return tagged;
+  }
+  return best;
+}
+
+export function generateLegalPlays(position: Position): Step[][] {
+  const best = maximalSequences(position);
   const byBoard = new Map<string, Step[]>();
   for (const play of best) {
     if (play.steps.length === 0) continue;

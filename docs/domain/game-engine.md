@@ -39,3 +39,5 @@ Request body is a position JSON. `dice` must be two integers `1`–`6`. `points`
 - Each `eval` is for the **resulting** position (opponent is STM). Terminal 15-off positions skip the net and use exact outcome probabilities.
 - `cubefulEquity = cubeless.equity * cube.value`. `cubeAction` from the match MWC formula; `null` when STM cannot double or `match` is `null`.
 - `400` on invalid JSON / position / dice. Do not spawn Python per request.
+
+Clients: `battle-arena` (`game-engine` driver) and the `gui` Play screen (through the Vite proxy `/api/engine`, [gui.md](gui.md)). The GUI derives engine cube decisions from these evals; there is no separate cube endpoint.

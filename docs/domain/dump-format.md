@@ -111,7 +111,7 @@ Do not store full resulting boards on each move; replay `steps` if a trainer nee
 
 ## Replay SGF
 
-GNU Backgammon files: `FF[4]`, `GM[6]`, UTF-8. One **game** per `replay/<gameId>.sgf`. `PW` = p1, `PB` = p2; `W[]` = p1, `B[]` = p2. Checker plays only (no cube events). Open in `gui` (`docker compose up --build` in `gui/` then pick the file) or gnubg. Replay tests: `docker compose --profile test run --rm test` from `gui/`. **Not a training input.** Not a fourth board representation. Arena **matches** still use the same encoding under `battle-arena/replays/` ([battle-arena.md](battle-arena.md)).
+GNU Backgammon files: `FF[4]`, `GM[6]`, UTF-8. One **game** per `replay/<gameId>.sgf`. `PW` = p1, `PB` = p2; `W[]` = p1, `B[]` = p2. Checker plays only (no cube events). Open in `gui` (`docker compose up --build` in `gui/`, Replay tab, pick the file) or gnubg. Replay tests: `docker compose --profile test run --rm test` from `gui/`. **Not a training input.** Not a fourth board representation. Arena **matches** still use the same encoding under `battle-arena/replays/` ([battle-arena.md](battle-arena.md)).
 
 ## Training use
 

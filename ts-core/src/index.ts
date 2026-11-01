@@ -20,7 +20,8 @@ export {
 export type { GameResult, GameResultKind } from "./board";
 export { cubelessEquity, cubelessFromVector, flipStmCubeless, makeCubeless, terminalCubeless } from "./eval";
 export { FEATURE_SIZE, featurize } from "./features";
-export { generateLegalPlays } from "./moves";
+export { generateLegalPlays, generateLegalSequences } from "./moves";
+export type { LegalSequence } from "./moves";
 export {
   decodePoint,
   encodeCheckerMove,

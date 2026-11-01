@@ -1,123 +1,33 @@
 import "./style.css";
-import { animateCheckerPlay, animateCube, cancelMoveAnimation, measureCheckerTip, rollDice } from "./animate";
-import { buildFrames } from "./replay";
-import { actionNotice, renderBoard, renderHud } from "./render";
-import { parseMatchSgf } from "./sgf";
-import type { Frame } from "./types";
+import type { Screen } from "./dom";
+import { playScreen } from "./play/view";
+import { replayScreen } from "./replay-view";
 
-const fileInput = document.querySelector<HTMLInputElement>("#file")!;
-const errorEl = document.querySelector<HTMLParagraphElement>("#error")!;
-const hudEl = document.querySelector<HTMLElement>("#hud")!;
-const boardEl = document.querySelector<HTMLElement>("#board")!;
-const noticeEl = document.querySelector<HTMLParagraphElement>("#notice")!;
-const captionEl = document.querySelector<HTMLParagraphElement>("#caption")!;
-const prevBtn = document.querySelector<HTMLButtonElement>("#prev")!;
-const nextBtn = document.querySelector<HTMLButtonElement>("#next")!;
-const progressEl = document.querySelector<HTMLSpanElement>("#progress")!;
+type Mode = "play" | "replay";
 
-let frames: Frame[] = [];
-let index = 0;
+const screens: Record<Mode, Screen> = { play: playScreen, replay: replayScreen };
+const tabs = [...document.querySelectorAll<HTMLButtonElement>("[data-mode]")];
 
-function showError(message: string | null): void {
-  if (!message) {
-    errorEl.hidden = true;
-    errorEl.textContent = "";
-    return;
+const TAB_ON = ["bg-white", "text-stone-900", "font-medium"];
+const TAB_OFF = ["text-stone-600", "hover:text-stone-900"];
+
+let current: Mode | null = null;
+
+function show(mode: Mode): void {
+  if (mode === current) return;
+  if (current) screens[current].deactivate();
+  current = mode;
+  for (const tab of tabs) {
+    const on = tab.dataset.mode === mode;
+    tab.setAttribute("aria-selected", String(on));
+    tab.classList.remove(...TAB_ON, ...TAB_OFF);
+    tab.classList.add(...(on ? TAB_ON : TAB_OFF));
   }
-  errorEl.hidden = false;
-  errorEl.textContent = message;
+  screens[mode].activate();
 }
 
-function render(): void {
-  cancelMoveAnimation();
-  const frame = frames[index];
-  if (!frame) {
-    hudEl.hidden = true;
-    boardEl.hidden = true;
-    noticeEl.hidden = true;
-    captionEl.hidden = true;
-    prevBtn.disabled = true;
-    nextBtn.disabled = true;
-    progressEl.textContent = "No file";
-    return;
-  }
-  hudEl.hidden = false;
-  boardEl.hidden = false;
-  captionEl.hidden = false;
-  hudEl.innerHTML = renderHud(frame, index, frames.length);
-  boardEl.innerHTML = renderBoard(frame.position, frame.usedDice);
-  captionEl.textContent = frame.caption;
-  noticeEl.hidden = false;
-  noticeEl.textContent = actionNotice(frame) ?? "\u00a0";
-  prevBtn.disabled = index <= 0;
-  nextBtn.disabled = index >= frames.length - 1;
-  progressEl.textContent = `${index + 1} / ${frames.length}`;
+for (const tab of tabs) {
+  tab.addEventListener("click", () => show(tab.dataset.mode as Mode));
 }
 
-function playFrameAnimation(
-  frame: Frame,
-  reverse: boolean,
-  from: { x: number; y: number } | null,
-): void {
-  const event = reverse ? frames[index + 1]?.lastEvent : frame.lastEvent;
-  if (!event) return;
-  if (event.kind === "cube") {
-    animateCube(boardEl);
-    return;
-  }
-  if (event.kind === "roll") {
-    if (!reverse) rollDice(boardEl);
-    return;
-  }
-  void animateCheckerPlay({
-    root: boardEl,
-    player: event.player,
-    steps: event.steps,
-    reverse,
-    from: from ?? undefined,
-  });
-}
-
-function go(delta: number): void {
-  if (frames.length === 0) return;
-  const nextIndex = Math.min(frames.length - 1, Math.max(0, index + delta));
-  if (nextIndex === index) return;
-  const reverse = delta < 0;
-  const event = reverse ? frames[index]?.lastEvent : frames[nextIndex]?.lastEvent;
-  let from: { x: number; y: number } | null = null;
-  if (event?.kind === "move" && event.steps[0]) {
-    const origin = reverse ? event.steps[0].to : event.steps[0].from;
-    from = measureCheckerTip(boardEl, origin, event.player);
-  }
-  index = nextIndex;
-  const frame = frames[index]!;
-  render();
-  playFrameAnimation(frame, reverse, from);
-}
-
-fileInput.addEventListener("change", async () => {
-  const file = fileInput.files?.[0];
-  if (!file) return;
-  try {
-    const text = await file.text();
-    frames = buildFrames(parseMatchSgf(text));
-    index = 0;
-    showError(null);
-    render();
-  } catch (err) {
-    frames = [];
-    index = 0;
-    showError(err instanceof Error ? err.message : String(err));
-    render();
-  }
-});
-
-prevBtn.addEventListener("click", () => go(-1));
-nextBtn.addEventListener("click", () => go(1));
-
-window.addEventListener("keydown", (ev) => {
-  if (ev.key === "ArrowLeft") go(-1);
-  if (ev.key === "ArrowRight") go(1);
-});
-
-render();
+show("play");

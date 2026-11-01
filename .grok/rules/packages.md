@@ -38,12 +38,13 @@ TypeScript + Hono + `onnxruntime-node` ([ADR 0017](../../docs/decisions/0017-hon
 
 ## gui
 
-Vite + vanilla TypeScript + Tailwind CSS ([ADR 0026](../../docs/decisions/0026-gui-tailwind.md)). Debug viewer for GNU Backgammon SGF dumps ([ADR 0010](../../docs/decisions/0010-replay-player.md)).
+Vite + vanilla TypeScript + Tailwind CSS. **Play** a match against `game-engine` and **Replay** GNU SGF ([ADR 0027](../../docs/decisions/0027-gui-play-vs-engine.md), spec [gui.md](../../docs/domain/gui.md)).
 
-- Load GNU SGF via file picker from `move-dumper/dumps/<batch>/replay/` or `battle-arena/replays/`. Step with Previous / Next.
 - From `gui/`. Host commands: [README.md](../../README.md) (http://localhost:5173). Do not run `test:inner` / `dev` on the host.
+- Play: human `p1` vs engine `p2`, live cube, random dice; engine via Vite proxy `/api/engine/evaluate`; cube decisions from eval `cubeAction`. Click a checker → first legal die; Swap dice / Undo / Done.
+- Replay: GNU SGF via file picker from `move-dumper/dumps/<batch>/replay/` or `battle-arena/replays/`. Step with Previous / Next. Do not parse JSONL.
 - Tailwind utilities, solid colors, no gradients. Dice roll in 3D and land flat. Animations ignore the OS reduce-motion setting.
-- Reconstruct position JSON from SGF events. Do not parse JSONL. Import `ts-core`, not `move-dumper`. Training ignores SGF.
+- Import `ts-core` (browser exports only), not `move-dumper`. Training ignores SGF and play results.
 
 ## battle-arena
 
