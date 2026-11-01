@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Backgammon GUI</title>
+  </head>
+  <body class="h-dvh bg-stone-100 font-sans text-stone-900 antialiased">
+    <div class="mx-auto flex h-full min-h-[520px] max-w-[1080px] flex-col gap-2 px-5 py-3">
+      <header class="flex shrink-0 items-center justify-between gap-4">
+        <h1 class="text-xl font-semibold tracking-tight">Backgammon</h1>
+        <label class="flex items-center gap-2 text-sm text-stone-600">
+          Open SGF
+          <input
+            id="file"
+            type="file"
+            accept=".sgf,application/x-go-sgf,text/plain"
+            class="text-sm file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-stone-900 file:px-3 file:py-1.5 file:text-white hover:file:bg-stone-700"
+          />
+        </label>
+      </header>
+      <p id="error" class="shrink-0 rounded bg-red-100 px-3 py-2 text-sm text-red-800" hidden></p>
+      <section id="hud" class="shrink-0 text-sm" hidden></section>
+      <section id="board" class="flex min-h-0 flex-1 flex-col rounded-md bg-stone-800 p-2" hidden></section>
+      <footer class="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-4">
+        <p id="caption" class="truncate font-mono text-sm" hidden></p>
+        <nav class="col-start-2 flex items-center gap-4">
+          <button
+            id="prev"
+            type="button"
+            class="cursor-pointer rounded bg-stone-900 px-4 py-1.5 text-sm text-white hover:bg-stone-700 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-stone-900"
+            disabled
+          >
+            Previous
+          </button>
+          <span id="progress" class="min-w-24 text-center text-sm tabular-nums text-stone-600">No file</span>
+          <button
+            id="next"
+            type="button"
+            class="cursor-pointer rounded bg-stone-900 px-4 py-1.5 text-sm text-white hover:bg-stone-700 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-stone-900"
+            disabled
+          >
+            Next
+          </button>
+        </nav>
+        <p id="notice" class="truncate text-right text-sm font-medium text-amber-700" hidden></p>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

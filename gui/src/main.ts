@@ -1,5 +1,5 @@
 import "./style.css";
-import { animateCheckerPlay, animateCube, cancelMoveAnimation, measureCheckerTip } from "./animate";
+import { animateCheckerPlay, animateCube, cancelMoveAnimation, measureCheckerTip, rollDice } from "./animate";
 import { buildFrames } from "./replay";
 import { actionNotice, renderBoard, renderHud } from "./render";
 import { parseMatchSgf } from "./sgf";
@@ -45,17 +45,7 @@ function render(): void {
   boardEl.hidden = false;
   captionEl.hidden = false;
   hudEl.innerHTML = renderHud(frame, index, frames.length);
-  const rolling = frame.lastEvent?.kind === "roll";
-  boardEl.innerHTML = renderBoard(frame.position, rolling, frame.usedDice);
-  if (rolling) {
-    for (const cube of boardEl.querySelectorAll(".die-cube")) {
-      cube.addEventListener(
-        "animationend",
-        () => cube.parentElement?.classList.remove("rolling"),
-        { once: true },
-      );
-    }
-  }
+  boardEl.innerHTML = renderBoard(frame.position, frame.usedDice);
   captionEl.textContent = frame.caption;
   noticeEl.hidden = false;
   noticeEl.textContent = actionNotice(frame) ?? "\u00a0";
@@ -75,7 +65,10 @@ function playFrameAnimation(
     animateCube(boardEl);
     return;
   }
-  if (event.kind === "roll") return;
+  if (event.kind === "roll") {
+    if (!reverse) rollDice(boardEl);
+    return;
+  }
   void animateCheckerPlay({
     root: boardEl,
     player: event.player,

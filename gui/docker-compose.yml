@@ -1,25 +1,25 @@
 services:
-  replay-player:
+  gui:
     build: .
-    working_dir: /repo/replay-player
+    working_dir: /repo/gui
     volumes:
       - ..:/repo
-      - replay_player_node_modules:/repo/replay-player/node_modules
+      - gui_node_modules:/repo/gui/node_modules
     ports:
       - "5173:5173"
 
   test:
     build: .
-    working_dir: /repo/replay-player
+    working_dir: /repo/gui
     volumes:
       - ..:/repo
-      - replay_player_node_modules:/repo/replay-player/node_modules
+      - gui_node_modules:/repo/gui/node_modules
     command: ["npm", "run", "test:inner"]
     profiles: ["test"]
 
   install-host:
     build: .
-    working_dir: /repo/replay-player
+    working_dir: /repo/gui
     volumes:
       - ..:/repo
     entrypoint: ["npm"]
@@ -27,4 +27,4 @@ services:
     profiles: ["install-host"]
 
 volumes:
-  replay_player_node_modules:
+  gui_node_modules:

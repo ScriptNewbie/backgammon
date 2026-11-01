@@ -4,5 +4,5 @@ Shared TypeScript library ([ADR 0016](../../docs/decisions/0016-ts-core.md), [AD
 
 - Specs: `docs/domain/board-representation.md`, `docs/domain/features.md`, `docs/domain/match-play.md`.
 - Golden feature vectors: `training-ground/fixtures/features.json`.
-- Do not add dump CLI, skill sampling, Vite UI, or the SGF **file** parser here. Replay-player must not import Node exports.
+- Do not add dump CLI, skill sampling, Vite UI, or the SGF **file** parser here. `gui` must not import Node exports.
 - Docker only, from `ts-core/`. Host commands: [README.md](../../README.md). Do not run `test:inner` on the host.

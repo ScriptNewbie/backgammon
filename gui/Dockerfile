@@ -1,6 +1,6 @@
 FROM node:22-bookworm
 
-WORKDIR /repo/replay-player
+WORKDIR /repo/gui
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN sed -i 's/\r$//' /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh

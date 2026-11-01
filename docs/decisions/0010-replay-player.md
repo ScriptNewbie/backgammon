@@ -2,6 +2,7 @@
 
 - Status: accepted
 - Date: 2026-08-20
+- Amended by: [0026](0026-gui-tailwind.md) (package renamed `gui`, Tailwind styling)
 
 ## Context
 

@@ -84,4 +84,4 @@ The dumper owns dice and applying `steps`. Legality comes from getmoves. Have th
 
 ## Replay
 
-GNU Backgammon SGF (`FF[4]`, `GM[6]`), one file per game. `PW` = p1, `PB` = p2; `W[]` = p1 plays, `B[]` = p2. No cube doubles / takes / drops. Open in `replay-player` or gnubg. Training ignores SGF.
+GNU Backgammon SGF (`FF[4]`, `GM[6]`), one file per game. `PW` = p1, `PB` = p2; `W[]` = p1 plays, `B[]` = p2. No cube doubles / takes / drops. Open in `gui` or gnubg. Training ignores SGF.

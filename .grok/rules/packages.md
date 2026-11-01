@@ -36,12 +36,13 @@ TypeScript + Hono + `onnxruntime-node` ([ADR 0017](../../docs/decisions/0017-hon
 - Rank checker plays by negated cubeful equity of the resulting position. Cube wrap: [ADR 0018](../../docs/decisions/0018-cube-wrap-formula.md).
 - Docker only, from `game-engine/`. Host commands: [README.md](../../README.md) (http://localhost:3000). Port 3000 is the Compose publish port only.
 
-## replay-player
+## gui
 
-Vite + vanilla TypeScript. Debug viewer for GNU Backgammon SGF dumps ([ADR 0010](../../docs/decisions/0010-replay-player.md)).
+Vite + vanilla TypeScript + Tailwind CSS ([ADR 0026](../../docs/decisions/0026-gui-tailwind.md)). Debug viewer for GNU Backgammon SGF dumps ([ADR 0010](../../docs/decisions/0010-replay-player.md)).
 
 - Load GNU SGF via file picker from `move-dumper/dumps/<batch>/replay/` or `battle-arena/replays/`. Step with Previous / Next.
-- From `replay-player/`. Host commands: [README.md](../../README.md) (http://localhost:5173). Do not run `test:inner` / `dev` on the host.
+- From `gui/`. Host commands: [README.md](../../README.md) (http://localhost:5173). Do not run `test:inner` / `dev` on the host.
+- Tailwind utilities, solid colors, no gradients. Dice roll in 3D and land flat. Animations ignore the OS reduce-motion setting.
 - Reconstruct position JSON from SGF events. Do not parse JSONL. Import `ts-core`, not `move-dumper`. Training ignores SGF.
 
 ## battle-arena
@@ -49,5 +50,5 @@ Vite + vanilla TypeScript. Debug viewer for GNU Backgammon SGF dumps ([ADR 0010]
 TypeScript. Play any driver against any driver at max strength ([ADR 0019](../../docs/decisions/0019-battle-arena.md), [ADR 0023](../../docs/decisions/0023-arena-any-driver.md)). Default is game-engine vs the bgweb-api teacher.
 
 - Loop: `ts-core/sim`. Drivers: `POST /evaluate`, teacher `getmoves`, the Hedgehog sidecar (`docs/domain/hedgehog.md`), and the eXtreme Gammon GUI sidecar (`docs/domain/xg.md`, [ADR 0025](../../docs/decisions/0025-xg-gui-sidecar.md); XG plays its own top move and its own cube). Do not vendor Hedgehog or `.ogxf` weights, do not touch the XG binary, memory, or settings, and do not label dumps from either. The same driver may sit on both sides. `ply` is GnuBG 0 or 1 (default 1) per side and hedgehog only; other drivers drop it and warn. Rank checkers by mover MWC. Shared infallible cube heuristic (`--no-cube` disables it).
-- SGF under gitignored `battle-arena/replays/`. No training JSONL. Open in replay-player or gnubg.
+- SGF under gitignored `battle-arena/replays/`. No training JSONL. Open in `gui` or gnubg.
 - Docker only, from `battle-arena/`. Host commands: [README.md](../../README.md). Do not run `battle:inner` / `test:inner` on the host. A game-engine side requires `training-ground/checkpoints/cubeless.onnx`.

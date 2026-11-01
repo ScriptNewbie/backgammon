@@ -42,4 +42,4 @@ Parameters are per side. A driver applies a parameter only when it supports it. 
 
 ## Replay SGF
 
-Same GNU Backgammon encoding as [dump-format.md](dump-format.md) (`FF[4]`, `GM[6]`). `PW`/`PB` are `p1-<label>` / `p2-<label>`, where the label is the driver (`game-engine`, `teacher`, `hedgehog-ply1`). `AP[battle-arena:1]`. Open in `replay-player` (file picker) or gnubg. Training ignores these files.
+Same GNU Backgammon encoding as [dump-format.md](dump-format.md) (`FF[4]`, `GM[6]`). `PW`/`PB` are `p1-<label>` / `p2-<label>`, where the label is the driver (`game-engine`, `teacher`, `hedgehog-ply1`). `AP[battle-arena:1]`. Open in `gui` (file picker) or gnubg. Training ignores these files.

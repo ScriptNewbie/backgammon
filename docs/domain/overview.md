@@ -10,8 +10,8 @@ foochu/bgweb-api (GNU Backgammon nets over HTTP)
         │
         ├──────────────────────────────┐
         ▼                              ▼
-  training-ground                replay-player
-  PyTorch — cubeless net,        Vite — debug SGF stepper
+  training-ground                gui
+  PyTorch — cubeless net,        Vite + Tailwind — debug SGF stepper
   export ONNX                    (dumper dumps or arena replays)
         │
         ▼

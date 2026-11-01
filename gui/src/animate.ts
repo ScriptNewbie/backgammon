@@ -1,6 +1,9 @@
+import { checkerClass, dieTransform, FACE_ROTATION } from "./render";
 import type { Player, Step } from "./types";
 
 const FLY_MS = 320;
+const ROLL_MS = 650;
+
 
 let generation = 0;
 
@@ -31,14 +34,14 @@ function centerOf(el: HTMLElement): { x: number; y: number } {
 
 function visibleAnchor(slot: HTMLElement): { x: number; y: number } {
   const checkers = [...slot.querySelectorAll<HTMLElement>(":scope .stack > .checker")].filter(
-    (c) => !c.classList.contains("pending"),
+    (c) => !c.classList.contains("invisible"),
   );
   if (checkers.length > 0) return centerOf(checkers[checkers.length - 1]!);
   return centerOf(slot);
 }
 
 function pendingAnchor(slot: HTMLElement): { x: number; y: number } {
-  const pending = slot.querySelectorAll<HTMLElement>(":scope .stack > .checker.pending");
+  const pending = slot.querySelectorAll<HTMLElement>(":scope .stack > .checker.invisible");
   if (pending.length > 0) return centerOf(pending[pending.length - 1]!);
   return visibleAnchor(slot);
 }
@@ -50,7 +53,7 @@ function flyChecker(player: Player, from: { x: number; y: number }, to: { x: num
       return;
     }
     const el = document.createElement("span");
-    el.className = `checker ${player} flyer`;
+    el.className = `flyer pointer-events-none fixed z-50 transition-transform duration-[320ms] ease-[cubic-bezier(0.22,0.82,0.28,1)] ${checkerClass(player)}`;
     const size = 28;
     el.style.left = `${from.x - size / 2}px`;
     el.style.top = `${from.y - size / 2}px`;
@@ -99,7 +102,7 @@ export async function animateCheckerPlay(opts: {
   const steps = opts.reverse
     ? [...opts.steps].reverse().map((s) => ({ from: s.to, to: s.from }))
     : opts.steps;
-  if (steps.length === 0 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (steps.length === 0) return;
 
   const arrivals = new Map<HTMLElement, HTMLElement[]>();
   for (const step of steps) {
@@ -109,7 +112,7 @@ export async function animateCheckerPlay(opts: {
     const next = lastCheckers(dest, hidden.length + 1);
     const extra = next.find((c) => !hidden.includes(c));
     if (extra) {
-      extra.classList.add("pending");
+      extra.classList.add("invisible");
       arrivals.set(dest, [...hidden, extra]);
     }
   }
@@ -119,7 +122,7 @@ export async function animateCheckerPlay(opts: {
     const pending = arrivals.get(slot);
     const checker = pending?.pop();
     if (!checker) return;
-    checker.classList.remove("pending");
+    checker.classList.remove("invisible");
   };
 
   for (const step of steps) {
@@ -135,8 +138,31 @@ export async function animateCheckerPlay(opts: {
 }
 
 export function animateCube(root: HTMLElement): void {
-  const cube = root.querySelector(".cube");
-  cube?.classList.remove("cube-pulse");
-  void (cube as HTMLElement | null)?.offsetWidth;
-  cube?.classList.add("cube-pulse");
+  const cube = root.querySelector<HTMLElement>(".cube");
+  if (!cube) return;
+  cube.animate([{ transform: "scale(1)" }, { transform: "scale(1.15)" }, { transform: "scale(1)" }], {
+    duration: 300,
+    easing: "ease-out",
+  });
+}
+
+/**
+ * Spin each die one full turn on both axes and settle on its face.
+ * Start and end differ by whole turns, so the last frame equals the resting
+ * transform: the die lands flat, upright, with no tilt.
+ */
+export function rollDice(root: HTMLElement): void {
+  root.querySelectorAll<HTMLElement>(".die3d").forEach((die, i) => {
+    const cube = die.querySelector<HTMLElement>(".die-cube");
+    const [rx, ry] = FACE_ROTATION[Number(die.dataset.value)] ?? FACE_ROTATION[1]!;
+    if (!cube) return;
+    const dir = i % 2 === 0 ? 1 : -1;
+    cube.animate(
+      [
+        { transform: dieTransform(rx - 360 * dir, ry + 360 * dir) },
+        { transform: dieTransform(rx, ry) },
+      ],
+      { duration: ROLL_MS, delay: i * 40, easing: "cubic-bezier(0.2, 0.7, 0.2, 1)", fill: "backwards" },
+    );
+  });
 }

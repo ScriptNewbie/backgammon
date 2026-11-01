@@ -6,15 +6,15 @@
 
 ## Context
 
-`move-dumper` and `replay-player` duplicated position/cube/step types and `applySteps` / opening / cube-take. `game-engine` needs the same board code plus legal-move generation and a TypeScript featurizer. A thin apply-steps copy in the replay player was allowed by [ADR 0010](0010-replay-player.md), which also forbade a fifth package. That duplication is now the wrong trade.
+`move-dumper` and `gui` duplicated position/cube/step types and `applySteps` / opening / cube-take. `game-engine` needs the same board code plus legal-move generation and a TypeScript featurizer. A thin apply-steps copy in the GUI was allowed by [ADR 0010](0010-replay-player.md), which also forbade a fifth package. That duplication is now the wrong trade.
 
 ## Decision
 
 - Add top-level package `ts-core`: shared TypeScript (source, no emit). Docker test + `install:host` like the other TS packages.
 - Consumers depend on `"ts-core": "file:../ts-core"`. Compose mounts the repo root so `file:` resolves.
 - **Isomorphic** export (`.`, safe in the browser): board types, apply/opening/`gameResult`, legal moves, featurizer, GNU checker-move encode/decode.
-- **Node** export (`./match`): MET, dead-cube MWC, cube-action formula (`node:fs`). Replay-player must not import this.
-- Do not share dump CLI, skill sampling, Vite UI, or the SGF **parser**. Replay-player imports `ts-core`, not `move-dumper`. Training still ignores SGF.
+- **Node** export (`./match`): MET, dead-cube MWC, cube-action formula (`node:fs`). `gui` must not import this.
+- Do not share dump CLI, skill sampling, Vite UI, or the SGF **parser**. `gui` imports `ts-core`, not `move-dumper`. Training still ignores SGF.
 - Node exports `./sim`, `./bgweb`, and `./sgf` (writer) are [ADR 0019](0019-battle-arena.md).
 - Node export `./hedgehog` (sidecar client) is [ADR 0022](0022-hedgehog-external.md).
 

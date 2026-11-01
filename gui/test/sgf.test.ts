@@ -114,7 +114,7 @@ test("frames include a roll before each checker step", () => {
   assert.equal(actionNotice(frames[5]!), "p1 accepted");
   const game2 = frames.find((f) => f.caption.includes("Game 1 opening"));
   assert.ok(game2);
-  assert.equal(game2!.position.match.score.p1, 1);
+  assert.equal(game2!.position.match!.score.p1, 1);
   assert.equal(game2!.position.cube.value, 1);
 });
 
