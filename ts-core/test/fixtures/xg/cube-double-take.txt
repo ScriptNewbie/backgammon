@@ -1,0 +1,35 @@
+XGID=-CCCCBA------------accccb-:0:0:1:00:0:0:0:7:6
+
+X:Player 1   O:Player 2
+Score is X:0 O:0 7 pt.(s) match.
+ +13-14-15-16-17-18------19-20-21-22-23-24-+
+ |                  |   | O  O  O  O  O  O |
+ |                  |   |    O  O  O  O  O |
+ |                  |   |    O  O  O  O    |
+ |                  |   |                  |
+ |                  |   |                  |
+ |                  |BAR|                  |
+ |                  |   |                  |
+ |                  |   |                  |
+ |                  |   |       X  X  X  X |
+ |                  |   |    X  X  X  X  X |
+ |                  |   | X  X  X  X  X  X |
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+
+Pip count  X: 46  O: 50 X-O: 0-0/7
+Cube: 1
+X on roll, cube action
+
+Analyzed in 4-ply
+Player Winning Chances:   72,37% (G:0,00% B:0,00%)
+Opponent Winning Chances: 27,63% (G:0,00% B:0,00%)
+
+Cubeless Equities: No Double=+0,447, Double=+0,903
+
+Cubeful Equities:
+       No double:     +0,701 (-0,027)
+       Double/Take:   +0,728
+       Double/Pass:   +1,000 (+0,272)
+
+Best Cube action: Double / Take
+
+eXtreme Gammon Version: 2.10, MET: Kazaross XG2

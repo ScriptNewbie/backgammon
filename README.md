@@ -4,7 +4,7 @@ A backgammon engine split into six packages. **Docker** (Engine + Compose v2) is
 
 | Package | Role |
 | --- | --- |
-| `ts-core` | Shared TypeScript: board, legal moves, featurizer; Node match/MWC/cube, sim, teacher client, hedgehog client, SGF writer ([ADR 0016](docs/decisions/0016-ts-core.md), [ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0022](docs/decisions/0022-hedgehog-external.md)) |
+| `ts-core` | Shared TypeScript: board, legal moves, featurizer; Node match/MWC/cube, sim, teacher client, hedgehog client, XG sidecar client, SGF writer ([ADR 0016](docs/decisions/0016-ts-core.md), [ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0022](docs/decisions/0022-hedgehog-external.md), [ADR 0025](docs/decisions/0025-xg-gui-sidecar.md)) |
 | `move-dumper` | Simulates money games (no cube) and dumps labelled checker plays from [bgweb-api](https://github.com/foochu/bgweb-api) (GNU Backgammon nets over HTTP) |
 | `training-ground` | PyTorch training of the cubeless eval net; exports ONNX and ExecuTorch `.pte` ([ADR 0014](docs/decisions/0014-export-onnx-and-pte.md)). CUDA image ([ADR 0013](docs/decisions/0013-training-cuda.md)) |
 | `game-engine` | TypeScript HTTP API (Hono): board + dice → legal moves with evaluations; infers the net via ONNX Runtime |
@@ -159,6 +159,7 @@ docker compose --profile test run --rm test
 docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --length 7
 docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --no-cube
 docker compose --profile arena run --rm arena npm run battle:inner -- --a game-engine --b hedgehog --b-ply 0 --matches 1 --seed 1
+docker compose --profile arena run --rm -e XG_BASE_URL=http://host.docker.internal:8091 arena npm run battle:inner -- --a game-engine --b xg --matches 1 --seed 1 --length 1
 
 docker compose down
 docker compose --profile install-host run --rm install-host
@@ -172,10 +173,12 @@ Battle flags (after `--`):
 | `--seed N` | `1` | RNG seed |
 | `--length N` | `7` | Match length `1,3,5,7,9,11,13,15` |
 | `--no-cube` | (off) | Checker-only; never offer, take, or drop |
-| `--a DRIVER` | `game-engine` | Side a: `game-engine`, `teacher`, or `hedgehog` |
+| `--a DRIVER` | `game-engine` | Side a: `game-engine`, `teacher`, `hedgehog`, or `xg` |
 | `--b DRIVER` | `teacher` | Side b. Same driver on both sides is allowed |
-| `--a-url URL` / `--b-url URL` | by driver | `ENGINE_BASE_URL` / `BGWEB_BASE_URL` / `HEDGEHOG_BASE_URL`, or `http://127.0.0.1:3000` / `:8080` / `:8090` |
+| `--a-url URL` / `--b-url URL` | by driver | `ENGINE_BASE_URL` / `BGWEB_BASE_URL` / `HEDGEHOG_BASE_URL` / `XG_BASE_URL`, or `http://127.0.0.1:3000` / `:8080` / `:8090` / `:8091` |
 | `--a-ply N` / `--b-ply N` | `1` for hedgehog | GnuBG ply 0 (net) or 1 (one opponent roll). Other drivers ignore it and warn |
+
+An `xg` side needs eXtreme Gammon 2 and its host sidecar running first ([docs/domain/xg.md](docs/domain/xg.md)).
 
 Help: add `--help` after `--`.
 

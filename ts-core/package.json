@@ -11,6 +11,7 @@
     "./sim": "./src/sim.ts",
     "./bgweb": "./src/bgweb.ts",
     "./hedgehog": "./src/hedgehog.ts",
+    "./xg": "./src/xg.ts",
     "./sgf": "./src/sgf.ts"
   },
   "files": ["src"],

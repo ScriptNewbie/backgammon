@@ -2,7 +2,7 @@
 
 ## ts-core
 
-Shared TypeScript ([ADR 0016](../../docs/decisions/0016-ts-core.md), [ADR 0019](../../docs/decisions/0019-battle-arena.md)). Board types, apply-steps, legal moves, featurizer, GNU checker-move encode/decode (isomorphic). Node: `ts-core/match`, `ts-core/sim`, `ts-core/bgweb`, `ts-core/hedgehog`, `ts-core/sgf` (writer).
+Shared TypeScript ([ADR 0016](../../docs/decisions/0016-ts-core.md), [ADR 0019](../../docs/decisions/0019-battle-arena.md)). Board types, apply-steps, legal moves, featurizer, GNU checker-move encode/decode (isomorphic). Node: `ts-core/match`, `ts-core/sim`, `ts-core/bgweb`, `ts-core/hedgehog`, `ts-core/xg` (eXtreme Gammon sidecar client), `ts-core/sgf` (writer).
 
 - Specs: `docs/domain/board-representation.md`, `docs/domain/features.md`, `docs/domain/match-play.md`.
 - Golden vectors: `training-ground/fixtures/features.json`.
@@ -48,6 +48,6 @@ Vite + vanilla TypeScript. Debug viewer for GNU Backgammon SGF dumps ([ADR 0010]
 
 TypeScript. Play any driver against any driver at max strength ([ADR 0019](../../docs/decisions/0019-battle-arena.md), [ADR 0023](../../docs/decisions/0023-arena-any-driver.md)). Default is game-engine vs the bgweb-api teacher.
 
-- Loop: `ts-core/sim`. Drivers: `POST /evaluate`, teacher `getmoves`, and the Hedgehog sidecar (`docs/domain/hedgehog.md`). Do not vendor that engine or `.ogxf` weights, and do not label dumps from it. The same driver may sit on both sides. `ply` is GnuBG 0 or 1 (default 1) per side and hedgehog only; other drivers drop it and warn. Rank checkers by mover MWC. Shared infallible cube heuristic (`--no-cube` disables it).
+- Loop: `ts-core/sim`. Drivers: `POST /evaluate`, teacher `getmoves`, the Hedgehog sidecar (`docs/domain/hedgehog.md`), and the eXtreme Gammon GUI sidecar (`docs/domain/xg.md`, [ADR 0025](../../docs/decisions/0025-xg-gui-sidecar.md); XG plays its own top move and its own cube). Do not vendor Hedgehog or `.ogxf` weights, do not touch the XG binary, memory, or settings, and do not label dumps from either. The same driver may sit on both sides. `ply` is GnuBG 0 or 1 (default 1) per side and hedgehog only; other drivers drop it and warn. Rank checkers by mover MWC. Shared infallible cube heuristic (`--no-cube` disables it).
 - SGF under gitignored `battle-arena/replays/`. No training JSONL. Open in replay-player or gnubg.
 - Docker only, from `battle-arena/`. Host commands: [README.md](../../README.md). Do not run `battle:inner` / `test:inner` on the host. A game-engine side requires `training-ground/checkpoints/cubeless.onnx`.

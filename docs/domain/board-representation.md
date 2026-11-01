@@ -60,7 +60,7 @@ Checker counts must sum to 15 per player (points + bar + off).
 
 Ordered checker steps: `{ "from": <1-24|"bar">, "to": <1-24|"off"> }`. Hits are implied (blot to bar).
 
-Convert bgweb-api `play` (and XGID, if used) at the dumper boundary only. See [gnubg.md](gnubg.md). Hedgehog OGID is an arena wire encoding ([hedgehog.md](hedgehog.md)). Do not store it.
+Convert bgweb-api `play` (and XGID, if used) at the dumper boundary only. See [gnubg.md](gnubg.md). Hedgehog OGID is an arena wire encoding ([hedgehog.md](hedgehog.md)). Do not store it. XGID is also the eXtreme Gammon sidecar's wire ([xg.md](xg.md)): built in `ts-core/xg`, never stored.
 
 ## Forbidden
 

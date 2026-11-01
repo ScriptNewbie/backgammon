@@ -2,12 +2,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { BgwebClient } from "ts-core/bgweb";
 import { HedgehogClient } from "ts-core/hedgehog";
+import { XgClient } from "ts-core/xg";
 import { renderMatchSgf } from "ts-core/sgf";
 import { playMatch, Rng, type MatchPlayer } from "ts-core/sim";
 import { createCheckerDriver } from "./drivers/checker";
 import { createGameEngineDriver, engineHealthCheck } from "./drivers/game-engine";
+import { createXgDriver } from "./drivers/xg";
 import { batchStamp, writeMatchSgf } from "./replay";
 import {
+  DRIVER_NAMES,
   isDriverName,
   resolveSide,
   type DriverName,
@@ -73,7 +76,7 @@ export function parseArgs(argv: string[]): CliArgs {
       const side: SideId = arg === "--a" ? "a" : "b";
       const name = take(argv, ++i, arg);
       if (!isDriverName(name)) {
-        throw new Error(`${arg} must be ${["game-engine", "teacher", "hedgehog"].join(", ")} (got ${name})`);
+        throw new Error(`${arg} must be ${DRIVER_NAMES.join(", ")} (got ${name})`);
       }
       requested[side].driver = name;
     } else if (arg === "--a-url" || arg === "--b-url") {
@@ -119,14 +122,15 @@ The same driver may sit on both sides. Side a is p1 on even matches and p2 on od
   --seed          RNG seed (default 1)
   --length        Match length 1,3,5,7,9,11,13,15 (default 7)
   --no-cube       Checker-only: never offer, take, or drop
-  --a             Side a: game-engine, teacher, or hedgehog (default game-engine)
+  --a             Side a: game-engine, teacher, hedgehog, or xg (default game-engine)
   --b             Side b (default teacher)
   --a-url         Origin for side a (default depends on that driver)
   --b-url         Origin for side b
   --a-ply         GnuBG ply 0 or 1. Hedgehog only (default 1). 0 is the net, 1 is one opponent roll. Other drivers ignore it and warn.
   --b-ply         Same for side b
 
-URL defaults: game-engine ENGINE_BASE_URL or http://127.0.0.1:3000; teacher BGWEB_BASE_URL or http://127.0.0.1:8080; hedgehog HEDGEHOG_BASE_URL or http://127.0.0.1:8090.
+URL defaults: game-engine ENGINE_BASE_URL or http://127.0.0.1:3000; teacher BGWEB_BASE_URL or http://127.0.0.1:8080; hedgehog HEDGEHOG_BASE_URL or http://127.0.0.1:8090; xg XG_BASE_URL or http://127.0.0.1:8091.
+An xg side plays eXtreme Gammon's own checker play, double, and take through the host GUI sidecar (docs/domain/xg.md); its level is whatever is set in XG.
 
 From battle-arena/ (see README.md):
   docker compose up -d
@@ -160,6 +164,7 @@ export function playersForSeats(
 function createPlayer(side: SideSpec): MatchPlayer {
   if (side.driver === "game-engine") return createGameEngineDriver(side.url);
   if (side.driver === "teacher") return createCheckerDriver(new BgwebClient(side.url));
+  if (side.driver === "xg") return createXgDriver(new XgClient(side.url));
   return createCheckerDriver(new HedgehogClient(side.url, side.ply ?? 1));
 }
 
@@ -170,6 +175,10 @@ async function healthCheckSide(side: SideSpec): Promise<void> {
   }
   if (side.driver === "teacher") {
     await new BgwebClient(side.url).healthCheck();
+    return;
+  }
+  if (side.driver === "xg") {
+    await new XgClient(side.url).healthCheck();
     return;
   }
   await new HedgehogClient(side.url, side.ply ?? 1).healthCheck();
@@ -188,6 +197,9 @@ async function checkHealth(sides: readonly SideSpec[]): Promise<boolean> {
       console.error(message);
       if (side.driver === "hedgehog") {
         console.error("Start the Hedgehog sidecar first. See docs/domain/hedgehog.md.");
+      }
+      if (side.driver === "xg") {
+        console.error("Start eXtreme Gammon 2 and the XG sidecar on the host first. See docs/domain/xg.md.");
       }
       return false;
     }

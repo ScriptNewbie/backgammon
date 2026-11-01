@@ -1,0 +1,43 @@
+XGID=-CCCCBA------------abcccc-:0:0:1:61:0:0:0:7:6
+
+X:Player 1   O:Player 2
+Score is X:0 O:0 7 pt.(s) match.
+ +13-14-15-16-17-18------19-20-21-22-23-24-+
+ |                  |   | O  O  O  O  O  O |
+ |                  |   |    O  O  O  O  O |
+ |                  |   |       O  O  O  O |
+ |                  |   |                  |
+ |                  |   |                  |
+ |                  |BAR|                  |
+ |                  |   |                  |
+ |                  |   |                  |
+ |                  |   |       X  X  X  X |
+ |                  |   |    X  X  X  X  X |
+ |                  |   | X  X  X  X  X  X |
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+
+Pip count  X: 46  O: 46 X-O: 0-0/7
+Cube: 1
+X to play 61
+
+    1. 4-ply       6/Off 1/Off                  eq:+0,447
+      Player:   64,64% (G:0,00% B:0,00%)
+      Opponent: 35,36% (G:0,00% B:0,00%)
+
+    2. 4-ply       6/Off 5/4                    eq:+0,238 (-0,209)
+      Player:   58,63% (G:0,00% B:0,00%)
+      Opponent: 41,37% (G:0,00% B:0,00%)
+
+    3. 1-ply       6/Off 4/3                    eq:+0,239 (-0,208)
+      Player:   58,39% (G:0,00% B:0,00%)
+      Opponent: 41,61% (G:0,00% B:0,00%)
+
+    4. 1-ply       6/Off 3/2                    eq:+0,200 (-0,247)
+      Player:   57,02% (G:0,00% B:0,00%)
+      Opponent: 42,98% (G:0,00% B:0,00%)
+
+    5. 1-ply       6/Off                        eq:+0,199 (-0,248)
+      Player:   56,98% (G:0,00% B:0,00%)
+      Opponent: 43,02% (G:0,00% B:0,00%)
+
+
+eXtreme Gammon Version: 2.10, MET: Kazaross XG2

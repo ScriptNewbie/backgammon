@@ -1,6 +1,6 @@
 import type { SearchPly } from "ts-core";
 
-export const DRIVER_NAMES = ["game-engine", "teacher", "hedgehog"] as const;
+export const DRIVER_NAMES = ["game-engine", "teacher", "hedgehog", "xg"] as const;
 
 export type DriverName = (typeof DRIVER_NAMES)[number];
 
@@ -13,6 +13,7 @@ const SUPPORTED: Record<DriverName, readonly DriverParam[]> = {
   "game-engine": [],
   teacher: [],
   hedgehog: ["ply"],
+  xg: [],
 };
 
 export type RequestedParams = {
@@ -40,6 +41,8 @@ export function defaultDriverUrl(driver: DriverName): string {
       return process.env.BGWEB_BASE_URL ?? "http://127.0.0.1:8080";
     case "hedgehog":
       return process.env.HEDGEHOG_BASE_URL ?? "http://127.0.0.1:8090";
+    case "xg":
+      return process.env.XG_BASE_URL ?? "http://127.0.0.1:8091";
   }
 }
 
