@@ -33,7 +33,7 @@ Images: `node:22-bookworm` for TypeScript packages; `python:3.12-bookworm` plus 
 
 ## Harness
 
-This repo is used in **Cursor** and **Grok Build**. Shared truth is `AGENTS.md` + `docs/`. Cursor extras: `.cursor/`. Grok extras: `.grok/` (rules as `.md`; skills; agents). Keep those two trees in sync when you edit a skill, rule, or subagent. Do not add `CLAUDE.md`. In Grok Build, run `grok inspect` to confirm discovery.
+This repo is used in **Cursor**, **Grok Build**, and **Claude Code** ([ADR 0024](docs/decisions/0024-claude-code-harness.md)). Shared truth is `AGENTS.md` + `docs/`. Cursor extras: `.cursor/`. Grok extras: `.grok/` (rules as `.md`; skills; agents). Claude Code extras: `.claude/` (`CLAUDE.md` that only imports this file; rules with `paths:` frontmatter; skills; agents; `settings.json`). Keep all three trees in sync when you edit a skill, rule, or subagent. Do not add a root `CLAUDE.md`. In Grok Build, run `grok inspect` to confirm discovery; in Claude Code, `/memory` and `/agents` show what loaded.
 
 ## Where to look
 

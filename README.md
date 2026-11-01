@@ -11,7 +11,7 @@ A backgammon engine split into six packages. **Docker** (Engine + Compose v2) is
 | `replay-player` | Vite web app that steps through GNU Backgammon SGF dumps (dumper or arena) |
 | `battle-arena` | Play any driver against any driver (default: our engine vs the teacher); win summary + SGF ([ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0023](docs/decisions/0023-arena-any-driver.md)) |
 
-Money play includes a doubling cube in the engine and arena. **Dumper dumps are money games without a cube** ([ADR 0020](docs/decisions/0020-dumper-games-no-cube.md)). Players are `p1` / `p2`. Agent instructions: [AGENTS.md](AGENTS.md) and `docs/`. Cursor and Grok Build both use that file; Grok-native copies live under `.grok/`. In a Grok terminal: `grok` then `grok inspect`.
+Money play includes a doubling cube in the engine and arena. **Dumper dumps are money games without a cube** ([ADR 0020](docs/decisions/0020-dumper-games-no-cube.md)). Players are `p1` / `p2`. Agent instructions: [AGENTS.md](AGENTS.md) and `docs/`. Cursor, Grok Build, and Claude Code all use that file; Grok-native copies live under `.grok/`, Claude Code copies under `.claude/` (`.claude/CLAUDE.md` imports `AGENTS.md`). In a Grok terminal: `grok` then `grok inspect`. In Claude Code: `claude` from the repo root.
 
 ## How to run commands
 

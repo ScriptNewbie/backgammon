@@ -29,3 +29,6 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+
+# Claude Code personal settings
+.claude/settings.local.json
