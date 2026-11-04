@@ -3,11 +3,4 @@ paths:
   - "battle-arena/**"
 ---
 
-# battle-arena
-
-TypeScript. Play any driver against any driver at max strength ([ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0023](docs/decisions/0023-arena-any-driver.md)). Default is game-engine vs the bgweb-api teacher.
-
-- Loop: `docs/domain/battle-arena.md`, `ts-core/sim`. Rank checkers by mover MWC (`RankedPlay.rankScore`). Shared infallible cube heuristic (`--no-cube` disables it). Alternate seats (`--a` is p1 on even matches).
-- Drivers: `game-engine` (`POST /evaluate`; re-rank, do not use money-equity order), `teacher` (`getmoves`), `hedgehog` (external sidecar, `docs/domain/hedgehog.md`), and `xg` (eXtreme Gammon 2 GUI sidecar on the host, `docs/domain/xg.md`, [ADR 0025](docs/decisions/0025-xg-gui-sidecar.md)). Do not vendor Hedgehog or its `.ogxf` weights, do not touch the XG binary, memory, or settings, and do not label dumps from either. `xg` plays its own top move and its own cube; every other side keeps the shared heuristic. The same driver may sit on both sides. `ply` is GnuBG 0 or 1 (default 1) per side and hedgehog only; other drivers drop it and warn.
-- SGF under gitignored `battle-arena/replays/`. No training JSONL. Open in `gui` or gnubg.
-- Docker only, from `battle-arena/`. Host commands: [README.md](README.md). Do not run `battle:inner` / `test:inner` on the host. A game-engine side requires `training-ground/checkpoints/cubeless.onnx`.
+Before working on files matching these paths, read and follow [.cursor/rules/battle-arena.mdc](../../.cursor/rules/battle-arena.mdc) (ignore its YAML frontmatter). That file is the source of truth; edit it, not this pointer.

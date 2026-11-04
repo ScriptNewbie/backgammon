@@ -19,3 +19,12 @@ Support Claude Code as a third harness under `.claude/`:
 ## Consequences
 
 Skill, rule, and subagent edits must now be applied to `.cursor/`, `.grok/`, and `.claude/`. `AGENTS.md`, the core rules, and the `record-decision` skill say so.
+
+## Amendment (2026-11-04)
+
+Claude Code now reads `AGENTS.md` natively (v2.1.277+), but only when no `CLAUDE.md`, `.claude/CLAUDE.md`, or `CLAUDE.local.md` exists. See [Claude Code memory docs](https://code.claude.com/docs/en/memory#agents-md).
+
+- `.claude/CLAUDE.md` is removed; its notes moved to the Harness section of `AGENTS.md`. Do not add any `CLAUDE.md` or `CLAUDE.local.md`.
+- `.claude/rules/`, `.claude/skills/`, and `.claude/agents/` are thin pointers into `.cursor/`, keeping the Claude frontmatter (`paths:`, `name`/`description`, `tools:`). Edits go to `.cursor/` and the `.grok/` copy; `.claude/` only changes when something is added or renamed.
+- `.claude/rules/core.md` is removed: `AGENTS.md` already carries it. `board-contract` is scoped with `paths:` to the six packages and `docs/domain/`.
+- Grok reads `.claude/rules/` for compatibility, so it previously loaded the Claude rule copies as well; it now sees only short pointers.

@@ -10,4 +10,4 @@ alwaysApply: true
 - Read `docs/domain/` before inventing board, move, or eval shapes.
 - Open questions: `docs/decisions/0000-open-questions.md`. Do not silently decide them; use the `record-decision` skill and write an ADR.
 - Never commit dumps, arena replays, checkpoints, weights, or `.env` files.
-- Cursor, Grok Build, and Claude Code: keep `.cursor/`, `.grok/`, and `.claude/` skills, rules, and agents in sync. Do not add a root `CLAUDE.md`; `.claude/CLAUDE.md` only imports `AGENTS.md`.
+- Cursor, Grok Build, and Claude Code: keep `.cursor/` and `.grok/` skills, rules, and agents in sync; `.claude/` holds pointers into `.cursor/` (add one when you add a skill, rule, or agent). Do not add any `CLAUDE.md` or `CLAUDE.local.md`; Claude Code reads `AGENTS.md` natively.

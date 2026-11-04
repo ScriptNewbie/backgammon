@@ -33,12 +33,12 @@ Images: `node:22-bookworm` for TypeScript packages; `python:3.12-bookworm` plus 
 
 ## Harness
 
-This repo is used in **Cursor**, **Grok Build**, and **Claude Code** ([ADR 0024](docs/decisions/0024-claude-code-harness.md)). Shared truth is `AGENTS.md` + `docs/`. Cursor extras: `.cursor/`. Grok extras: `.grok/` (rules as `.md`; skills; agents). Claude Code extras: `.claude/` (`CLAUDE.md` that only imports this file; rules with `paths:` frontmatter; skills; agents; `settings.json`). Keep all three trees in sync when you edit a skill, rule, or subagent. Do not add a root `CLAUDE.md`. In Grok Build, run `grok inspect` to confirm discovery; in Claude Code, `/memory` and `/agents` show what loaded.
+This repo is used in **Cursor**, **Grok Build**, and **Claude Code** ([ADR 0024](docs/decisions/0024-claude-code-harness.md)). Shared truth is `AGENTS.md` + `docs/`. Cursor extras: `.cursor/`. Grok extras: `.grok/` (rules as `.md`; skills; agents). Claude Code reads this file natively and has no `CLAUDE.md`; its extras in `.claude/` are thin pointers into `.cursor/` (rules with `paths:` frontmatter, skills, agents) plus `settings.json`, which denies host `node` / `npm` / `npx` / `tsx` / `python` / `pip` and `docker run -v`. Personal Claude overrides go in `.claude/settings.local.json` (gitignored). When you edit a skill, rule, or subagent, edit `.cursor/` and keep the `.grok/` copy in sync; when you add or rename one, add the matching `.claude/` pointer. Do not add a `CLAUDE.md`, `.claude/CLAUDE.md`, or `CLAUDE.local.md`: any of them stops Claude Code from reading this file. In Grok Build, run `grok inspect` to confirm discovery; in Claude Code, `/context all` and `/agents` show what loaded.
 
 ## Where to look
 
 - Host commands: [README.md](README.md)
 - Domain facts: `docs/domain/`
 - Architecture Decision Records: `docs/decisions/`
-- Workflows: `.cursor/skills/` and `.grok/skills/`
-- Standing constraints: `.cursor/rules/` and `.grok/rules/`
+- Workflows: `.cursor/skills/` (copies in `.grok/skills/`, pointers in `.claude/skills/`)
+- Standing constraints: `.cursor/rules/` (copies in `.grok/rules/`, pointers in `.claude/rules/`)

@@ -16,7 +16,7 @@ Do not leave architecture or domain decisions only in chat.
 5. Remove or check off the matching item in `0000-open-questions.md`.
 6. If the decision changes a contract, update the matching file under `docs/domain/` in the same change.
 7. Tell the user the ADR path and what domain docs changed.
-8. If you also changed a skill, rule, or subagent, update **all three** copies: `.cursor/`, `.grok/`, and `.claude/`.
+8. If you also changed a skill, rule, or subagent, edit the `.cursor/` original and the `.grok/` copy. `.claude/` files are pointers; only add or rename one when a skill, rule, or subagent is added or renamed.
 
 Do not implement code unless the user also asked for implementation.
 
