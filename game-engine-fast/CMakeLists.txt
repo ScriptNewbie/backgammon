@@ -35,6 +35,7 @@ add_library(bgcore STATIC
   src/movegen.cpp
   src/position_json.cpp
   src/onnx_mlp.cpp
+  src/search.cpp
   src/evaluate.cpp)
 target_include_directories(bgcore PUBLIC src)
 target_link_libraries(bgcore PUBLIC nlohmann_json::nlohmann_json)
@@ -56,5 +57,6 @@ add_executable(game-engine-fast-tests
   test/movegen_test.cpp
   test/features_test.cpp
   test/evaluate_test.cpp
-  test/net_test.cpp)
+  test/net_test.cpp
+  test/search_test.cpp)
 target_link_libraries(game-engine-fast-tests PRIVATE bggpu doctest::doctest)

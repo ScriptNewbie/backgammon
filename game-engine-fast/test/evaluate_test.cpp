@@ -82,9 +82,9 @@ TEST_CASE("terminal results skip the net: gammon and backgammon") {
   }
 }
 
-TEST_CASE("dance returns no moves; ply above 0 is not implemented yet") {
+TEST_CASE("dance returns no moves; ply above the search limit is not implemented yet") {
   ThrowingNet net;
   const Abs a = pos({{19, -2}, {20, -2}, {21, -2}, {22, -2}, {23, -2}, {24, -2}}, 1, 0, 14, 3);
   CHECK(bg::evaluate(bg::parseEvalRequest(toJson(a, "p1", 6, 5)), 0, net)["moves"].empty());
-  CHECK_THROWS_AS(bg::evaluate(bg::parseEvalRequest(toJson(kOpening, "p1", 3, 1)), 1, net), std::invalid_argument);
+  CHECK_THROWS_AS(bg::evaluate(bg::parseEvalRequest(toJson(kOpening, "p1", 3, 1)), bg::kMaxSearchPly + 1, net), std::invalid_argument);
 }

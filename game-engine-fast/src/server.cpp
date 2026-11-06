@@ -69,11 +69,14 @@ int main() {
     try {
       const bg::EvalRequest eval = bg::parseEvalRequest(body);
       const auto t0 = std::chrono::steady_clock::now();
-      const nlohmann::ordered_json out = bg::evaluate(eval, ply, *net);
+      bg::SearchStats stats;
+      const nlohmann::ordered_json out = bg::evaluate(eval, ply, *net, &stats);
       const double ms =
           std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
-      std::printf("  ply=%d moves=%zu onRoll=%s dice=%d-%d %.2fms\n", ply, out["moves"].size(),
-                  bg::playerName(eval.onRoll), eval.die1, eval.die2, ms);
+      std::printf("  ply=%d moves=%zu onRoll=%s dice=%d-%d nodes=%lld leaves=%lld/%lld %.2fms\n", ply,
+                  out["moves"].size(), bg::playerName(eval.onRoll), eval.die1, eval.die2,
+                  static_cast<long long>(stats.nodes), static_cast<long long>(stats.leaves),
+                  static_cast<long long>(stats.leafVisits), ms);
       res.set_content(out.dump(), "application/json");
     } catch (const std::invalid_argument& e) {
       return sendError(res, e.what());

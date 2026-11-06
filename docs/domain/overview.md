@@ -19,7 +19,7 @@ foochu/bgweb-api (GNU Backgammon nets over HTTP)
                        board + dice → legal moves + cubeful evals
                        shared board/featurizer: ts-core
   game-engine-fast     CUDA C++ GPU ply search, same /evaluate contract
-                       (arena driver only; ADR 0028; 0-ply so far)
+                       (arena driver only; ADR 0028; ply 0-1 so far)
         │
         ▼
   battle-arena         TypeScript — any driver vs any driver (max strength; default engine vs teacher),

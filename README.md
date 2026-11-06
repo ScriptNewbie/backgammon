@@ -139,7 +139,7 @@ http://localhost:3000 — `GET /health` → `{"ok":true}`. `POST /evaluate` with
 
 ## game-engine-fast
 
-CUDA C++ engine on the GPU ([ADR 0028](docs/decisions/0028-game-engine-fast.md)). Same `/evaluate` contract as `game-engine`, plus `?ply=N` (only `0` so far). Needs an NVIDIA GPU (`gpus: all`) and `training-ground/checkpoints/cubeless-fast.onnx` (see training-ground). Port **3001**. Each container start configures and incrementally builds into the `game_engine_fast_build` volume (first build fetches dependencies and takes a few minutes). From `game-engine-fast/`:
+CUDA C++ engine on the GPU ([ADR 0028](docs/decisions/0028-game-engine-fast.md)). Same `/evaluate` contract as `game-engine`, plus `?ply=N` (`0` and `1` so far). Needs an NVIDIA GPU (`gpus: all`) and `training-ground/checkpoints/cubeless-fast.onnx` (see training-ground). Port **3001**. Each container start configures and incrementally builds into the `game_engine_fast_build` volume (first build fetches dependencies and takes a few minutes). From `game-engine-fast/`:
 
 ```sh
 docker compose up

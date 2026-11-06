@@ -4,10 +4,14 @@
 
 #include "onnx_mlp.hpp"
 #include "position_json.hpp"
+#include "search.hpp"
 
 namespace bg {
 
+// Highest ply the API accepts (ADR 0028). Values above kMaxSearchPly are "not implemented yet".
 constexpr int kMaxPly = 4;
+// Highest ply the search runs today: full width, no move filter.
+constexpr int kMaxSearchPly = 1;
 
 struct Cubeless {
   double win, gammon, backgammon, loseGammon, loseBackgammon;
@@ -17,8 +21,9 @@ struct Cubeless {
 // Exact probs for the STM of a finished position, given how the previous mover won.
 Cubeless terminalCubelessForLoser(Result moverWon);
 
-// 0-ply: every legal play, eval of the resulting position (opponent is STM), sorted best-first for
-// the mover by negated cubefulEquity, ties by stepsKey. `ply` > 0 is not implemented yet.
-nlohmann::ordered_json evaluate(const EvalRequest& req, int ply, Net& net);
+// Every legal play with the eval of the resulting position (opponent is STM), searched `ply`
+// plies; sorted best-first for the mover by negated cubefulEquity, ties by stepsKey.
+// Throws std::invalid_argument for ply above kMaxSearchPly. `stats` (optional) gets search counts.
+nlohmann::ordered_json evaluate(const EvalRequest& req, int ply, Net& net, SearchStats* stats = nullptr);
 
 }  // namespace bg

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "features.hpp"
+#include "search.hpp"
 #include "movegen.hpp"
 
 namespace bg {
@@ -17,8 +18,8 @@ Cubeless terminalCubelessForLoser(Result moverWon) {
   return c;
 }
 
-nlohmann::ordered_json evaluate(const EvalRequest& req, int ply, Net& net) {
-  if (ply != 0) {
+nlohmann::ordered_json evaluate(const EvalRequest& req, int ply, Net& net, SearchStats* stats) {
+  if (ply < 0 || ply > kMaxSearchPly) {
     throw std::invalid_argument("ply " + std::to_string(ply) + " is not implemented yet");
   }
   const std::vector<Play> plays = legalPlays(req.board, req.die1, req.die2);
@@ -30,8 +31,9 @@ nlohmann::ordered_json evaluate(const EvalRequest& req, int ply, Net& net) {
     std::string key;
   };
   std::vector<Row> rows(plays.size());
-  std::vector<float> features;
-  std::vector<size_t> needNet;
+  // Every non-terminal play is searched from the opponent's turn (opponent is STM of the result).
+  std::vector<Board> searchBoards;
+  std::vector<size_t> searched;
   for (size_t i = 0; i < plays.size(); i++) {
     rows[i].play = &plays[i];
     rows[i].key = stepsKey(req.onRoll, plays[i].steps, plays[i].count);
@@ -40,17 +42,19 @@ nlohmann::ordered_json evaluate(const EvalRequest& req, int ply, Net& net) {
       rows[i].cubeless = terminalCubelessForLoser(r);
       continue;
     }
-    needNet.push_back(i);
-    features.resize(needNet.size() * kFeatureSize);
-    featurize(flipped(plays[i].result), features.data() + (needNet.size() - 1) * kFeatureSize);
+    searched.push_back(i);
+    searchBoards.push_back(flipped(plays[i].result));
   }
-  if (!needNet.empty()) {
-    std::vector<float> out(needNet.size() * 5);
-    net.infer(features.data(), static_cast<int>(needNet.size()), out.data());
-    for (size_t j = 0; j < needNet.size(); j++) {
-      const float* o = out.data() + j * 5;
-      rows[needNet[j]].cubeless = Cubeless{o[0], o[1], o[2], o[3], o[4]};
+  if (!searchBoards.empty()) {
+    Search search(net);
+    const std::vector<Probs> values = search.evaluate(searchBoards, ply);
+    for (size_t j = 0; j < searched.size(); j++) {
+      const float* o = values[j].p;
+      rows[searched[j]].cubeless = Cubeless{o[0], o[1], o[2], o[3], o[4]};
     }
+    if (stats) *stats = search.stats();
+  } else if (stats) {
+    *stats = SearchStats{};
   }
   for (Row& row : rows) row.cubeful = row.cubeless.equity() * req.cubeValue;
 
