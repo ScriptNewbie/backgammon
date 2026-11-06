@@ -41,13 +41,8 @@ export function featurize(position: Position): Float32Array {
   vec[194] = position.off[stm] / 15;
   vec[195] = position.off[opp] / 15;
 
-  const cube = position.cube;
-  vec[196] = Math.log2(cube.value) / 6;
-  const owner = cube.owner;
-  vec[197] = owner === "centered" ? 1 : 0;
-  vec[198] = owner === stm ? 1 : 0;
-  vec[199] = owner === opp ? 1 : 0;
-  vec[200] = cube.mayDouble[stm] ? 1 : 0;
-  vec[201] = cube.mayDouble[opp] ? 1 : 0;
+  // Cube block is fixed to the dead cube every training sample has (ADR 0029).
+  // position.cube is ignored; 196 and 198-205 stay 0.
+  vec[197] = 1;
   return vec;
 }

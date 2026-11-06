@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 from typing import Any, Mapping
 
 import numpy as np
@@ -47,13 +46,7 @@ def featurize(position: Mapping[str, Any]) -> np.ndarray:
     vec[194] = off[stm] / 15.0
     vec[195] = off[opp] / 15.0
 
-    cube = position["cube"]
-    vec[196] = math.log2(cube["value"]) / 6.0
-    owner = cube["owner"]
-    vec[197] = 1.0 if owner == "centered" else 0.0
-    vec[198] = 1.0 if owner == stm else 0.0
-    vec[199] = 1.0 if owner == opp else 0.0
-    may = cube["mayDouble"]
-    vec[200] = 1.0 if may[stm] else 0.0
-    vec[201] = 1.0 if may[opp] else 0.0
+    # Cube block is fixed to the dead cube every training sample has (ADR 0029).
+    # position["cube"] is ignored; 196 and 198-205 stay 0.
+    vec[197] = 1.0
     return vec
