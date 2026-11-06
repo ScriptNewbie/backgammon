@@ -30,32 +30,43 @@ nlohmann::ordered_json evaluate(const EvalRequest& req, int ply, Net& net, Searc
     double cubeful;
     std::string key;
   };
-  std::vector<Row> rows(plays.size());
-  // Every non-terminal play is searched from the opponent's turn (opponent is STM of the result).
+  std::vector<Row> rows;
+  // Non-terminal plays are searched from the opponent's turn (opponent is STM of the result).
   std::vector<Board> searchBoards;
-  std::vector<size_t> searched;
-  for (size_t i = 0; i < plays.size(); i++) {
-    rows[i].play = &plays[i];
-    rows[i].key = stepsKey(req.onRoll, plays[i].steps, plays[i].count);
-    const Result r = moverResult(plays[i].result);
-    if (r != Result::None) {
-      rows[i].cubeless = terminalCubelessForLoser(r);
+  std::vector<const Play*> open;
+  for (const Play& play : plays) {
+    const Result r = moverResult(play.result);
+    if (r != Result::None) {  // exact: always returned
+      rows.push_back(Row{&play, terminalCubelessForLoser(r), 0, stepsKey(req.onRoll, play.steps, play.count)});
       continue;
     }
-    searched.push_back(i);
-    searchBoards.push_back(flipped(plays[i].result));
+    open.push_back(&play);
+    searchBoards.push_back(flipped(play.result));
+  }
+  Search search(net);
+  if (ply >= 2 && searchBoards.size() > 1) {
+    // Root filter: only plays that survive at 0-ply are searched to full depth and returned.
+    const std::vector<Probs> shallow = search.evaluate(searchBoards, 0);
+    std::vector<double> moverEquity;
+    for (const Probs& p : shallow) moverEquity.push_back(-p.equity());
+    std::vector<Board> keptBoards;
+    std::vector<const Play*> keptPlays;
+    for (int i : applyFilter(moverEquity, kRootFilter)) {
+      keptBoards.push_back(searchBoards[i]);
+      keptPlays.push_back(open[i]);
+    }
+    searchBoards.swap(keptBoards);
+    open.swap(keptPlays);
   }
   if (!searchBoards.empty()) {
-    Search search(net);
     const std::vector<Probs> values = search.evaluate(searchBoards, ply);
-    for (size_t j = 0; j < searched.size(); j++) {
+    for (size_t j = 0; j < open.size(); j++) {
       const float* o = values[j].p;
-      rows[searched[j]].cubeless = Cubeless{o[0], o[1], o[2], o[3], o[4]};
+      rows.push_back(Row{open[j], Cubeless{o[0], o[1], o[2], o[3], o[4]}, 0,
+                         stepsKey(req.onRoll, open[j]->steps, open[j]->count)});
     }
-    if (stats) *stats = search.stats();
-  } else if (stats) {
-    *stats = SearchStats{};
   }
+  if (stats) *stats = search.stats();
   for (Row& row : rows) row.cubeful = row.cubeless.equity() * req.cubeValue;
 
   std::sort(rows.begin(), rows.end(), [](const Row& a, const Row& b) {

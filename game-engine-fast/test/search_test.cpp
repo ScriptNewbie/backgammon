@@ -44,8 +44,11 @@ struct ThrowingNet : bg::Net {
   void infer(const float*, int, float*) override { throw std::logic_error("net must not run"); }
 };
 
-// Plain recursive expectimax: one net call per leaf, no batching, no tree, no dedupe.
-bg::Probs reference(const bg::Board& b, int depth, bg::Net& net) {
+// Plain recursive expectimax with its own copy of the filter rule: one net call per leaf, no
+// batching, no tree, no dedupe, no rounds. Inner filter: keep the 0-ply best, then up to `keep`
+// in total within `threshold`, when the children are searched at depth >= 1 and more than one
+// play stays in the game.
+bg::Probs reference(const bg::Board& b, int depth, bg::Net& net, int keep = 1, double threshold = 0.0) {
   if (depth == 0) {
     float x[bg::kFeatureSize];
     bg::featurize(b, x);
@@ -56,21 +59,35 @@ bg::Probs reference(const bg::Board& b, int depth, bg::Net& net) {
   double sum[5] = {0, 0, 0, 0, 0};
   for (const bg::Roll& roll : bg::allRolls()) {
     const auto plays = bg::legalPlays(b, roll.die1, roll.die2);
+    // Each candidate from the mover's point of view, at a given child depth.
+    auto valueAt = [&](const bg::Play& play, int d) {
+      bg::Probs exact;
+      if (bg::terminalForMover(play.result, exact)) return exact;
+      return bg::flipProbs(reference(bg::flipped(play.result), d, net, keep, threshold));
+    };
+    std::vector<const bg::Play*> candidates;
+    for (const bg::Play& p : plays) candidates.push_back(&p);
+    int open = 0;
+    for (const bg::Play& p : plays) open += bg::moverResult(p.result) == bg::Result::None ? 1 : 0;
+    if (depth - 1 >= 1 && open > 1) {
+      std::vector<std::pair<double, size_t>> ranked;  // (-equity, index): ascending = best first
+      for (size_t i = 0; i < plays.size(); i++) ranked.push_back({-valueAt(plays[i], 0).equity(), i});
+      std::stable_sort(ranked.begin(), ranked.end(),
+                       [](const auto& x, const auto& y) { return x.first < y.first; });
+      candidates.clear();
+      for (size_t i = 0; i < ranked.size(); i++) {
+        if (i > 0 && (static_cast<int>(candidates.size()) >= keep || ranked[i].first - ranked[0].first > threshold)) break;
+        candidates.push_back(&plays[ranked[i].second]);
+      }
+    }
     bg::Probs best{};
     bool have = false;
     auto consider = [&](const bg::Probs& v) {
       if (!have || v.equity() > best.equity()) best = v;
       have = true;
     };
-    if (plays.empty()) consider(bg::flipProbs(reference(bg::flipped(b), depth - 1, net)));
-    for (const bg::Play& play : plays) {
-      bg::Probs exact;
-      if (bg::terminalForMover(play.result, exact)) {
-        consider(exact);
-      } else {
-        consider(bg::flipProbs(reference(bg::flipped(play.result), depth - 1, net)));
-      }
-    }
+    if (plays.empty()) consider(bg::flipProbs(reference(bg::flipped(b), depth - 1, net, keep, threshold)));
+    for (const bg::Play* p : candidates) consider(valueAt(*p, depth - 1));
     for (int k = 0; k < 5; k++) sum[k] += roll.weight * best.p[k];
   }
   bg::Probs out;
@@ -165,15 +182,61 @@ TEST_CASE("batched search equals the plain recursive reference (1-ply, contact p
   CHECK(search.stats().leaves < search.stats().leafVisits);  // transpositions were shared
 }
 
-TEST_CASE("batched search equals the reference at 2-ply (bear-off race)") {
-  FakeNet net;
-  // Small tree: p1 three checkers home, p2 two checkers home, no contact.
-  const bg::Board b = boardOf(pos({{2, 2}, {4, 1}, {22, -1}, {20, -1}}, 0, 0, 12, 13), "p1");
-  bg::Search search(net);
-  checkClose(search.evaluate({b}, 2)[0], reference(b, 2, net));
+TEST_CASE("move filter keeps the best, then up to maxKeep within the threshold") {
+  const std::vector<double> eq = {0.10, 0.30, 0.25, -0.20, 0.30, 0.18};
+  CHECK(bg::applyFilter(eq, {1, 0.0}) == std::vector<int>{1});                 // first of the tied best
+  CHECK(bg::applyFilter(eq, {3, 0.06}) == std::vector<int>{1, 4, 2});           // 0.30, 0.30, 0.25
+  CHECK(bg::applyFilter(eq, {8, 0.10}) == std::vector<int>{1, 4, 2});           // 0.18 is 0.12 behind
+  CHECK(bg::applyFilter(eq, {8, 1.0}) == std::vector<int>{1, 4, 2, 5, 0, 3});
+  CHECK(bg::applyFilter({0.5}, {8, 0.16}) == std::vector<int>{0});
 }
 
-TEST_CASE("evaluate at ply 1 returns every play with searched evals; ply 2 is not implemented yet") {
+namespace {
+// "from/to from/to" from a response move, like game-engine's stepsKey.
+std::string jsonStepsKey(const nlohmann::ordered_json& move) {
+  auto point = [](const nlohmann::ordered_json& v) { return v.is_string() ? v.get<std::string>() : std::to_string(v.get<int>()); };
+  std::string key;
+  for (const auto& s : move["steps"]) {
+    if (!key.empty()) key += ' ';
+    key += point(s["from"]) + "/" + point(s["to"]);
+  }
+  return key;
+}
+
+// p1 three checkers home, p2 two checkers home, no contact: small trees, many game endings.
+const Abs kRace = pos({{2, 2}, {4, 1}, {22, -1}, {20, -1}}, 0, 0, 12, 13);
+// Some contact left: p1 back checker against p2's blots, both sides partly home.
+const Abs kContact = pos({{24, 1}, {6, 3}, {5, 3}, {4, 2}, {3, -1}, {19, -3}, {20, -3}, {21, -2}, {8, -1}}, 0, 0, 6, 5);
+}  // namespace
+
+TEST_CASE("batched search with filters equals the reference: 2-ply and 3-ply race") {
+  FakeNet net;
+  const bg::Board b = boardOf(kRace, "p1");
+  {
+    bg::Search search(net);
+    checkClose(search.evaluate({b}, 2)[0], reference(b, 2, net));
+    CHECK(search.stats().rounds >= 2);  // 0-ply values first, then the survivors
+  }
+  {
+    bg::Search search(net);
+    checkClose(search.evaluate({b, bg::flipped(b)}, 3)[1], reference(bg::flipped(b), 3, net));
+  }
+}
+
+TEST_CASE("batched search with filters equals the reference: 2-ply contact, inner keep 1 and 3") {
+  FakeNet net;
+  const bg::Board b = boardOf(kContact, "p1");
+  {
+    bg::Search search(net);
+    checkClose(search.evaluate({b}, 2)[0], reference(b, 2, net));
+  }
+  {
+    bg::Search search(net, bg::MoveFilter{3, 0.2});
+    checkClose(search.evaluate({b}, 2)[0], reference(b, 2, net, 3, 0.2));
+  }
+}
+
+TEST_CASE("evaluate at ply 1 returns every play with searched evals") {
   FakeNet net;
   const bg::EvalRequest req = bg::parseEvalRequest(toJson(kOpening, "p1", 3, 1));
   bg::SearchStats stats;
@@ -190,5 +253,38 @@ TEST_CASE("evaluate at ply 1 returns every play with searched evals; ply 2 is no
   double minRef = 1e9;
   for (const bg::Play& p : plays) minRef = std::fmin(minRef, reference(bg::flipped(p.result), 1, net).equity());
   CHECK(out["moves"][0]["eval"]["cubeless"]["equity"].get<double>() == doctest::Approx(minRef).epsilon(1e-5));
-  CHECK_THROWS_AS(bg::evaluate(req, 2, net), std::invalid_argument);
+}
+
+TEST_CASE("evaluate at ply 2 returns only root-filter survivors, each searched at 2-ply") {
+  FakeNet net;
+  const bg::EvalRequest req = bg::parseEvalRequest(toJson(kOpening, "p1", 3, 1));
+  const auto plays = bg::legalPlays(req.board, 3, 1);
+  // Expected survivors: mover equity at 0-ply, kRootFilter (independent copy of the rule).
+  std::vector<std::pair<double, size_t>> ranked;
+  for (size_t i = 0; i < plays.size(); i++) ranked.push_back({reference(bg::flipped(plays[i].result), 0, net).equity(), i});
+  std::stable_sort(ranked.begin(), ranked.end(), [](const auto& x, const auto& y) { return x.first < y.first; });
+  std::set<std::string> expected;
+  for (size_t i = 0; i < ranked.size(); i++) {
+    if (i > 0 && (expected.size() >= static_cast<size_t>(bg::kRootFilter.maxKeep) ||
+                  ranked[i].first - ranked[0].first > bg::kRootFilter.threshold)) break;
+    const bg::Play& p = plays[ranked[i].second];
+    expected.insert(bg::stepsKey(req.onRoll, p.steps, p.count));
+  }
+  const auto out = bg::evaluate(req, 2, net);
+  std::set<std::string> got;
+  for (const auto& m : out["moves"]) {
+    got.insert(jsonStepsKey(m));
+  }
+  CHECK(got == expected);
+  CHECK(got.size() <= static_cast<size_t>(bg::kRootFilter.maxKeep));
+  CHECK(got.size() < plays.size());
+  // Each returned eval is the 2-ply value of that play's result.
+  for (const auto& m : out["moves"]) {
+    for (const bg::Play& p : plays) {
+      std::string key = bg::stepsKey(req.onRoll, p.steps, p.count);
+      if (key != jsonStepsKey(m)) continue;
+      CHECK(m["eval"]["cubeless"]["equity"].get<double>() ==
+            doctest::Approx(reference(bg::flipped(p.result), 2, net).equity()).epsilon(1e-5));
+    }
+  }
 }
