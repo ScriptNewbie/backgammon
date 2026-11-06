@@ -1,6 +1,6 @@
 # game-engine-fast
 
-Locked by [ADR 0028](../decisions/0028-game-engine-fast.md). Status: `ply=0` works; ply search and the `battle-arena` driver are not built yet. Bodies: [board-representation.md](board-representation.md), [evaluation.md](evaluation.md). Tensor: [features.md](features.md) (cube block fixed, [ADR 0029](../decisions/0029-fixed-cube-features.md)). Reference engine: [game-engine.md](game-engine.md).
+Locked by [ADR 0028](../decisions/0028-game-engine-fast.md). Status: `ply=0` works and the `battle-arena` driver is wired (`--a game-engine-fast --a-ply N`); ply search is not built yet. Bodies: [board-representation.md](board-representation.md), [evaluation.md](evaluation.md). Tensor: [features.md](features.md) (cube block fixed, [ADR 0029](../decisions/0029-fixed-cube-features.md)). Reference engine: [game-engine.md](game-engine.md).
 
 CUDA C++ ply-search engine on the GPU, used as a `battle-arena` driver. Separate from `game-engine`; both are maintained. Model: `MODEL_PATH` (default `/models/cubeless-fast.onnx`) from `training-ground` (same weights as `cubeless.onnx`, dynamic batch `[N, 206]` → `cubeless` `[N, 5]`). Do not commit weights. Compose port **3001**.
 

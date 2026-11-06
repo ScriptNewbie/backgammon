@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { parseArgs, playersForSeats, seatsForMatch } from "../src/cli.ts";
+import { evaluateUrl } from "../src/drivers/game-engine.ts";
 import type { MatchPlayer } from "ts-core/sim";
 
 test("CLI defaults to game-engine vs teacher", () => {
@@ -87,8 +88,38 @@ test("CLI rejects even match length", () => {
   assert.throws(() => parseArgs(["--length", "2"]), /--length/);
 });
 
-test("CLI rejects ply outside 0 or 1", () => {
-  assert.throws(() => parseArgs(["--a-ply", "2"]), /--a-ply must be 0 or 1/);
+test("CLI rejects ply that is not an integer 0-4", () => {
+  assert.throws(() => parseArgs(["--a-ply", "5"]), /--a-ply must be an integer 0-4/);
+  assert.throws(() => parseArgs(["--b-ply", "1.5"]), /--b-ply must be an integer 0-4/);
+  assert.throws(() => parseArgs(["--a-ply", "-1"]), /--a-ply must be an integer 0-4/);
+});
+
+test("hedgehog ply above 1 is an error, not a warning", () => {
+  assert.throws(() => parseArgs(["--b", "hedgehog", "--b-ply", "2"]), /--b-ply 2 is above hedgehog's maximum 1/);
+});
+
+test("game-engine-fast takes ply 0-4, default 0, own URL", () => {
+  const prev = process.env.FAST_ENGINE_BASE_URL;
+  delete process.env.FAST_ENGINE_BASE_URL;
+  try {
+    const args = parseArgs(["--a", "game-engine-fast", "--b", "game-engine-fast", "--b-ply", "4"]);
+    assert.equal(args.a.driver, "game-engine-fast");
+    assert.equal(args.a.url, "http://127.0.0.1:3001");
+    assert.equal(args.a.ply, 0);
+    assert.equal(args.a.label, "game-engine-fast-ply0");
+    assert.equal(args.b.ply, 4);
+    assert.equal(args.b.label, "game-engine-fast-ply4");
+    assert.deepEqual(args.warnings, []);
+  } finally {
+    if (prev === undefined) delete process.env.FAST_ENGINE_BASE_URL;
+    else process.env.FAST_ENGINE_BASE_URL = prev;
+  }
+});
+
+test("engine evaluate URL carries ply only when set", () => {
+  assert.equal(evaluateUrl("http://game-engine:3000"), "http://game-engine:3000/evaluate");
+  assert.equal(evaluateUrl("http://game-engine-fast:3001/", 2), "http://game-engine-fast:3001/evaluate?ply=2");
+  assert.equal(evaluateUrl("http://game-engine-fast:3001", 0), "http://game-engine-fast:3001/evaluate?ply=0");
 });
 
 test("CLI rejects an unknown driver", () => {

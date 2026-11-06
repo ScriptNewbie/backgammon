@@ -4,9 +4,14 @@ import { pickBestPlay } from "../rank";
 
 export type EngineMoves = { moves: { steps: Step[]; eval: Eval }[] };
 
-export async function evaluateOnEngine(baseUrl: string, position: Position): Promise<EngineMoves> {
+/** `POST /evaluate` URL. game-engine-fast takes `?ply=N` (docs/domain/game-engine-fast.md). */
+export function evaluateUrl(baseUrl: string, ply?: number): string {
   const url = `${baseUrl.replace(/\/$/, "")}/evaluate`;
-  const res = await fetch(url, {
+  return ply === undefined ? url : `${url}?ply=${ply}`;
+}
+
+export async function evaluateOnEngine(baseUrl: string, position: Position, ply?: number): Promise<EngineMoves> {
+  const res = await fetch(evaluateUrl(baseUrl, ply), {
     method: "POST",
     headers: { accept: "application/json", "content-type": "application/json" },
     body: JSON.stringify(position),
@@ -18,19 +23,29 @@ export async function evaluateOnEngine(baseUrl: string, position: Position): Pro
   return (await res.json()) as EngineMoves;
 }
 
-export async function engineHealthCheck(baseUrl: string): Promise<void> {
+export async function engineHealthCheck(baseUrl: string, hint: string): Promise<void> {
   const url = `${baseUrl.replace(/\/$/, "")}/health`;
-  const res = await fetch(url);
+  let res: Response;
+  try {
+    res = await fetch(url);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`engine health check failed at ${url} (${message}). ${hint}`);
+  }
   if (!res.ok) {
-    throw new Error(`game-engine health ${res.status} at ${url}. Is docker compose up -d running with cubeless.onnx?`);
+    throw new Error(`engine health ${res.status} at ${url}. ${hint}`);
   }
 }
 
-export function createGameEngineDriver(baseUrl: string): MatchPlayer {
+/**
+ * game-engine and game-engine-fast share the `/evaluate` contract. Both are re-ranked by mover MWC.
+ * At ply >= 1 game-engine-fast returns only fully searched candidates (ADR 0028).
+ */
+export function createGameEngineDriver(baseUrl: string, ply?: number): MatchPlayer {
   return {
     ...infallibleCube(),
     async chooseChecker(pos, ctx) {
-      const { moves } = await evaluateOnEngine(baseUrl, pos);
+      const { moves } = await evaluateOnEngine(baseUrl, pos, ply);
       const best = pickBestPlay(moves, pos, ctx.phase);
       if (!best) return { steps: [], cubeless: null };
       return { steps: best.steps, cubeless: best.cubeless };

@@ -8,7 +8,7 @@ This is a seven-package monorepo. Do not add other top-level packages.
 | `move-dumper` | TypeScript | Simulate games (no cube); dump labelled checker positions/moves from bgweb-api (GNU Backgammon nets) |
 | `training-ground` | PyTorch → ONNX + ExecuTorch `.pte` | Train the cubeless eval net |
 | `game-engine` | TypeScript + Hono + `onnxruntime-node` | Board + dice → legal moves with cubeful evals |
-| `game-engine-fast` | CUDA C++ | GPU ply search; same `/evaluate` contract; arena driver only ([ADR 0028](docs/decisions/0028-game-engine-fast.md)). 0-ply so far; ply search and the arena driver are next |
+| `game-engine-fast` | CUDA C++ | GPU ply search; same `/evaluate` contract; arena driver only ([ADR 0028](docs/decisions/0028-game-engine-fast.md)). 0-ply so far; ply search is next |
 | `gui` | Vite + TypeScript + Tailwind CSS | Web UI: play a match against `game-engine`; replay GNU SGF dumps |
 | `battle-arena` | TypeScript | Play any driver against any driver (default: our engine vs teacher); win summary + SGF |
 

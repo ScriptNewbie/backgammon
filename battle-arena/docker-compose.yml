@@ -17,6 +17,23 @@ services:
     ports:
       - "3000:3000"
 
+  # GPU engine (ADR 0028). Opt-in: `docker compose up -d game-engine-fast`. Shares the build
+  # volume with game-engine-fast/ so it does not recompile from scratch.
+  game-engine-fast:
+    build: ../game-engine-fast
+    gpus: all
+    working_dir: /repo/game-engine-fast
+    environment:
+      MODEL_PATH: /models/cubeless-fast.onnx
+      PORT: "3001"
+    volumes:
+      - ..:/repo
+      - game_engine_fast_build:/build
+      - ../training-ground/checkpoints:/models:ro
+    ports:
+      - "3001:3001"
+    profiles: ["fast"]
+
   arena:
     build: .
     working_dir: /repo/battle-arena
@@ -28,6 +45,7 @@ services:
     environment:
       BGWEB_BASE_URL: http://bgweb-api:8080
       ENGINE_BASE_URL: http://game-engine:3000
+      FAST_ENGINE_BASE_URL: http://game-engine-fast:3001
     depends_on:
       - bgweb-api
       - game-engine
@@ -54,3 +72,5 @@ services:
 volumes:
   battle_arena_node_modules:
   game_engine_node_modules:
+  game_engine_fast_build:
+    name: game-engine-fast_game_engine_fast_build

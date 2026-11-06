@@ -8,7 +8,7 @@ A backgammon engine split into seven packages. **Docker** (Engine + Compose v2) 
 | `move-dumper` | Simulates money games (no cube) and dumps labelled checker plays from [bgweb-api](https://github.com/foochu/bgweb-api) (GNU Backgammon nets over HTTP) |
 | `training-ground` | PyTorch training of the cubeless eval net; exports ONNX and ExecuTorch `.pte` ([ADR 0014](docs/decisions/0014-export-onnx-and-pte.md)). CUDA image ([ADR 0013](docs/decisions/0013-training-cuda.md)) |
 | `game-engine` | TypeScript HTTP API (Hono): board + dice → legal moves with evaluations; infers the net via ONNX Runtime |
-| `game-engine-fast` | CUDA C++ HTTP API on the GPU: same `/evaluate` contract plus ply search; arena driver, not wired yet ([ADR 0028](docs/decisions/0028-game-engine-fast.md)) |
+| `game-engine-fast` | CUDA C++ HTTP API on the GPU: same `/evaluate` contract plus ply search; arena driver ([ADR 0028](docs/decisions/0028-game-engine-fast.md)) |
 | `gui` | Vite + Tailwind web app: play a match against `game-engine`, or step through GNU Backgammon SGF dumps (dumper or arena) ([ADR 0027](docs/decisions/0027-gui-play-vs-engine.md)) |
 | `battle-arena` | Play any driver against any driver (default: our engine vs the teacher); win summary + SGF ([ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0023](docs/decisions/0023-arena-any-driver.md)) |
 
@@ -179,9 +179,15 @@ docker compose --profile arena run --rm arena npm run battle:inner -- --matches 
 docker compose --profile arena run --rm arena npm run battle:inner -- --a game-engine --b hedgehog --b-ply 0 --matches 1 --seed 1
 docker compose --profile arena run --rm -e XG_BASE_URL=http://host.docker.internal:8091 arena npm run battle:inner -- --a game-engine --b xg --matches 1 --seed 1 --length 1
 
+# GPU engine side (opt-in service; needs an NVIDIA GPU and cubeless-fast.onnx)
+docker compose up -d game-engine-fast
+docker compose --profile arena run --rm arena npm run battle:inner -- --a game-engine-fast --a-ply 0 --b game-engine --matches 1 --seed 1
+
 docker compose down
 docker compose --profile install-host run --rm install-host
 ```
+
+`game-engine-fast` shares its build volume with `game-engine-fast/`; Compose warns that the volume was created by the other project. That is expected.
 
 Battle flags (after `--`):
 
@@ -191,10 +197,10 @@ Battle flags (after `--`):
 | `--seed N` | `1` | RNG seed |
 | `--length N` | `7` | Match length `1,3,5,7,9,11,13,15` |
 | `--no-cube` | (off) | Checker-only; never offer, take, or drop |
-| `--a DRIVER` | `game-engine` | Side a: `game-engine`, `teacher`, `hedgehog`, or `xg` |
+| `--a DRIVER` | `game-engine` | Side a: `game-engine`, `game-engine-fast`, `teacher`, `hedgehog`, or `xg` |
 | `--b DRIVER` | `teacher` | Side b. Same driver on both sides is allowed |
-| `--a-url URL` / `--b-url URL` | by driver | `ENGINE_BASE_URL` / `BGWEB_BASE_URL` / `HEDGEHOG_BASE_URL` / `XG_BASE_URL`, or `http://127.0.0.1:3000` / `:8080` / `:8090` / `:8091` |
-| `--a-ply N` / `--b-ply N` | `1` for hedgehog | GnuBG ply 0 (net) or 1 (one opponent roll). Other drivers ignore it and warn |
+| `--a-url URL` / `--b-url URL` | by driver | `ENGINE_BASE_URL` / `FAST_ENGINE_BASE_URL` / `BGWEB_BASE_URL` / `HEDGEHOG_BASE_URL` / `XG_BASE_URL`, or `http://127.0.0.1:3000` / `:3001` / `:8080` / `:8090` / `:8091` |
+| `--a-ply N` / `--b-ply N` | `1` hedgehog, `0` game-engine-fast | GnuBG ply (0 = net, 1 = one opponent roll). hedgehog 0–1, game-engine-fast 0–4. Other drivers ignore it and warn |
 
 An `xg` side needs eXtreme Gammon 2 and its host sidecar running first ([docs/domain/xg.md](docs/domain/xg.md)).
 
