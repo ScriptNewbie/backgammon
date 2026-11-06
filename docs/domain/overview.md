@@ -18,6 +18,8 @@ foochu/bgweb-api (GNU Backgammon nets over HTTP)
   game-engine          TypeScript HTTP (Hono) + onnxruntime-node
                        board + dice → legal moves + cubeful evals
                        shared board/featurizer: ts-core
+  game-engine-fast     CUDA C++ GPU ply search, same /evaluate contract
+                       (arena driver only; ADR 0028, not implemented yet)
         │
         ▼
   battle-arena         TypeScript — any driver vs any driver (max strength; default engine vs teacher),
@@ -34,6 +36,7 @@ Canonical specs:
 - Position JSON + XGID: [board-representation.md](board-representation.md)
 - Feature tensor: [features.md](features.md)
 - Evaluations: [evaluation.md](evaluation.md)
+- GPU ply-search engine: [game-engine-fast.md](game-engine-fast.md)
 - Dump files: [dump-format.md](dump-format.md)
 - Teacher (bgweb-api): [gnubg.md](gnubg.md)
 - Hedgehog arena opponent: [hedgehog.md](hedgehog.md)

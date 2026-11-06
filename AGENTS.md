@@ -1,6 +1,6 @@
 # Agent instructions
 
-This is a six-package monorepo. Do not add other top-level packages.
+This is a seven-package monorepo. Do not add other top-level packages.
 
 | Package | Stack | Job |
 | --- | --- | --- |
@@ -8,6 +8,7 @@ This is a six-package monorepo. Do not add other top-level packages.
 | `move-dumper` | TypeScript | Simulate games (no cube); dump labelled checker positions/moves from bgweb-api (GNU Backgammon nets) |
 | `training-ground` | PyTorch → ONNX + ExecuTorch `.pte` | Train the cubeless eval net |
 | `game-engine` | TypeScript + Hono + `onnxruntime-node` | Board + dice → legal moves with cubeful evals |
+| `game-engine-fast` | CUDA C++ | GPU ply search; same `/evaluate` contract; arena driver only ([ADR 0028](docs/decisions/0028-game-engine-fast.md)). Not implemented yet |
 | `gui` | Vite + TypeScript + Tailwind CSS | Web UI: play a match against `game-engine`; replay GNU SGF dumps |
 | `battle-arena` | TypeScript | Play any driver against any driver (default: our engine vs teacher); win summary + SGF |
 
@@ -19,7 +20,7 @@ Host commands: [README.md](README.md). Do not wrap Compose in host npm. `*:inner
 
 `install-host` writes IDE files onto the host bind-mount (TypeScript: `node_modules`; Python: `.venv` once `pyproject.toml` or `requirements.txt` exists). Do not run dumps, tests, Vite, or training against that host tree.
 
-Images: `node:22-bookworm` for TypeScript packages; `python:3.12-bookworm` plus a cu130 PyTorch wheel for `training-ground` ([ADR 0013](docs/decisions/0013-training-cuda.md)). Do not use `docker run -v "${PWD}:/app"` as the workflow.
+Images: `node:22-bookworm` for TypeScript packages; `python:3.12-bookworm` plus a cu130 PyTorch wheel for `training-ground` ([ADR 0013](docs/decisions/0013-training-cuda.md)); an NVIDIA CUDA image with `gpus: all` for `game-engine-fast` ([ADR 0028](docs/decisions/0028-game-engine-fast.md)). Do not use `docker run -v "${PWD}:/app"` as the workflow.
 
 ## Hard rules
 

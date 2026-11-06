@@ -34,15 +34,16 @@ STM’s 1-point is JSON point 1 when `onRoll == "p1"`, and JSON point 24 when `o
 
 ### Cube — 10 floats
 
+Fixed constants ([ADR 0029](../decisions/0029-fixed-cube-features.md)). The featurizer **ignores `position.cube`** and always writes the dead-cube values that every training sample has. The net is cubeless; the real cube is used only by the cube wrap and the arena ([evaluation.md](evaluation.md)).
+
 | Index | Value |
 | --- | --- |
-| 196 | `log2(cube.value) / 6` (`value` is 1 ⇒ 0; **64** ⇒ 1). `cube.value` never exceeds 64. |
-| 197 | 1 if owner is centered else 0 |
-| 198 | 1 if owner is STM else 0 |
-| 199 | 1 if owner is opponent else 0 |
-| 200 | 1 if STM `mayDouble` else 0 |
-| 201 | 1 if opponent `mayDouble` else 0 |
-| 202–205 | reserved `0` (keep length stable). Match score and Jacoby are **not** net inputs yet; MWC is derived outside the net ([match-play.md](match-play.md)). |
+| 196 | `0` |
+| 197 | `1` |
+| 198–201 | `0` |
+| 202–205 | `0` |
+
+The block keeps the length at 206 so exported nets keep their input shape. Cube state, match score, and Jacoby are **not** net inputs; MWC is derived outside the net ([match-play.md](match-play.md)).
 
 ## Output of the net
 
@@ -56,7 +57,7 @@ Cubeless outcome probabilities for **STM** (see [evaluation.md](evaluation.md)),
 | 3 | `loseGammon` |
 | 4 | `loseBackgammon` |
 
-Do not emit `equity` as a sixth head; derive it from the five probs. Cube equity is not a net output; it is wrapped from these probs + cube features.
+Do not emit `equity` as a sixth head; derive it from the five probs. Cube equity is not a net output; it is wrapped from these probs + the position's cube state.
 
 ## Tests
 
