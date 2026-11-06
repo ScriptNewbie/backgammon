@@ -1,6 +1,6 @@
 # Backgammon
 
-A backgammon engine split into six packages. **Docker** (Engine + Compose v2) is the only supported runtime — do not install Python or a Node toolchain on the host ([ADR 0011](docs/decisions/0011-docker-only.md)). Run every command from that package’s directory.
+A backgammon engine split into seven packages. **Docker** (Engine + Compose v2) is the only supported runtime — do not install Python or a Node toolchain on the host ([ADR 0011](docs/decisions/0011-docker-only.md)). Run every command from that package’s directory.
 
 | Package | Role |
 | --- | --- |
@@ -8,6 +8,7 @@ A backgammon engine split into six packages. **Docker** (Engine + Compose v2) is
 | `move-dumper` | Simulates money games (no cube) and dumps labelled checker plays from [bgweb-api](https://github.com/foochu/bgweb-api) (GNU Backgammon nets over HTTP) |
 | `training-ground` | PyTorch training of the cubeless eval net; exports ONNX and ExecuTorch `.pte` ([ADR 0014](docs/decisions/0014-export-onnx-and-pte.md)). CUDA image ([ADR 0013](docs/decisions/0013-training-cuda.md)) |
 | `game-engine` | TypeScript HTTP API (Hono): board + dice → legal moves with evaluations; infers the net via ONNX Runtime |
+| `game-engine-fast` | CUDA C++ HTTP API on the GPU: same `/evaluate` contract plus ply search; arena driver, not wired yet ([ADR 0028](docs/decisions/0028-game-engine-fast.md)) |
 | `gui` | Vite + Tailwind web app: play a match against `game-engine`, or step through GNU Backgammon SGF dumps (dumper or arena) ([ADR 0027](docs/decisions/0027-gui-play-vs-engine.md)) |
 | `battle-arena` | Play any driver against any driver (default: our engine vs the teacher); win summary + SGF ([ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0023](docs/decisions/0023-arena-any-driver.md)) |
 
@@ -135,6 +136,20 @@ docker compose --profile install-host run --rm install-host
 ```
 
 http://localhost:3000 — `GET /health` → `{"ok":true}`. `POST /evaluate` with a position JSON (dice required) returns legal checker plays ranked for the mover. Contract: [docs/domain/game-engine.md](docs/domain/game-engine.md).
+
+## game-engine-fast
+
+CUDA C++ engine on the GPU ([ADR 0028](docs/decisions/0028-game-engine-fast.md)). Same `/evaluate` contract as `game-engine`, plus `?ply=N` (only `0` so far). Needs an NVIDIA GPU (`gpus: all`) and `training-ground/checkpoints/cubeless-fast.onnx` (see training-ground). Port **3001**. Each container start configures and incrementally builds into the `game_engine_fast_build` volume (first build fetches dependencies and takes a few minutes). From `game-engine-fast/`:
+
+```sh
+docker compose up
+docker compose down
+
+docker compose --profile test run --rm test
+docker compose --profile gpu-info run --rm gpu-info
+```
+
+http://localhost:3001 — `GET /health`, `POST /evaluate?ply=0`. Contract: [docs/domain/game-engine-fast.md](docs/domain/game-engine-fast.md).
 
 ## gui
 

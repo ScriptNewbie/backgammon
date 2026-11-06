@@ -1,0 +1,41 @@
+services:
+  game-engine-fast:
+    build: .
+    gpus: all
+    working_dir: /repo/game-engine-fast
+    environment:
+      MODEL_PATH: /models/cubeless-fast.onnx
+      PORT: "3001"
+    volumes:
+      - ..:/repo
+      - game_engine_fast_build:/build
+      - ../training-ground/checkpoints:/models:ro
+    ports:
+      - "3001:3001"
+
+  test:
+    build: .
+    gpus: all
+    working_dir: /repo/game-engine-fast
+    environment:
+      MODEL_PATH: /models/cubeless-fast.onnx
+      FEATURES_FIXTURE: /repo/training-ground/fixtures/features.json
+    volumes:
+      - ..:/repo
+      - game_engine_fast_build:/build
+      - ../training-ground/checkpoints:/models:ro
+    command: ["game-engine-fast-tests"]
+    profiles: ["test"]
+
+  gpu-info:
+    build: .
+    gpus: all
+    working_dir: /repo/game-engine-fast
+    volumes:
+      - ..:/repo
+      - game_engine_fast_build:/build
+    command: ["gpu-info"]
+    profiles: ["gpu-info"]
+
+volumes:
+  game_engine_fast_build:
