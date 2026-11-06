@@ -1,6 +1,6 @@
 # game-engine-fast
 
-Locked by [ADR 0028](../decisions/0028-game-engine-fast.md). Status: `ply=0`–`4` work (move filters from 2-ply) and the `battle-arena` driver is wired (`--a game-engine-fast --a-ply N`). Search runs single-threaded on the CPU with batched GPU leaf evaluation; multithreading and GPU move generation are not built yet. Bodies: [board-representation.md](board-representation.md), [evaluation.md](evaluation.md). Tensor: [features.md](features.md) (cube block fixed, [ADR 0029](../decisions/0029-fixed-cube-features.md)). Reference engine: [game-engine.md](game-engine.md).
+Locked by [ADR 0028](../decisions/0028-game-engine-fast.md). Status: `ply=0`–`4` work (move filters from 2-ply) and the `battle-arena` driver is wired (`--a game-engine-fast --a-ply N`). Tree expansion and featurizing run on all CPU threads; the net runs on the GPU. Move generation on the GPU is not built yet. Bodies: [board-representation.md](board-representation.md), [evaluation.md](evaluation.md). Tensor: [features.md](features.md) (cube block fixed, [ADR 0029](../decisions/0029-fixed-cube-features.md)). Reference engine: [game-engine.md](game-engine.md).
 
 CUDA C++ ply-search engine on the GPU, used as a `battle-arena` driver. Separate from `game-engine`; both are maintained. Model: `MODEL_PATH` (default `/models/cubeless-fast.onnx`) from `training-ground` (same weights as `cubeless.onnx`, dynamic batch `[N, 206]` → `cubeless` `[N, 5]`). Do not commit weights. Compose port **3001**.
 
@@ -41,19 +41,11 @@ Move filters (`src/search.hpp`) keep the 0-ply best and then up to `maxKeep` in 
 | Root | which root plays are searched to full depth at `ply >= 2` | 8 within 0.16 |
 | Inner | replies kept per roll at depth `>= 2` | 1 (the 0-ply best, as gnubg) |
 
-A request runs in rounds: expand the tree on the CPU, evaluate every pending leaf in one GPU batch (deduplicated; chunks of 65,536), apply the filters that were waiting on those values, expand the survivors, repeat; then back the values up. The server log shows `nodes` and `leaves=<distinct>/<visits>` per request.
+A request runs in rounds: expand the tree, featurize every new leaf and send it to the GPU (chunks of 65,536), apply the filters that were waiting on those values, expand the survivors, repeat; then back the values up.
 
-Opening position on an RTX 5070 (single-threaded search):
-
-| ply | distinct leaves | time per request |
-| --- | --- | --- |
-| 1 | 3k–21k | 4–37 ms |
-| 2 | 12k–62k | 45–100 ms |
-| 3 | 0.2M–1.0M | 0.2–1.4 s |
-| 4 | 4M–10.6M | 6–18 s (about 1.8 GB RAM) |
-
-At 3–4 ply the GPU part is about a second; the rest is CPU move generation, featurizing, and deduplication.
+- **Threads.** Each round's work (root boards, then pending filter entries) is split into contiguous chunks run on a pool of `SEARCH_THREADS` threads (default: all hardware threads). A chunk builds into its own arena with its own leaf dedupe; arenas are appended to the tree in chunk order, so the result does not depend on the thread count. Leaves are deduplicated within a chunk only.
+- **Log.** The server log shows `nodes`, `leaves=<distinct>/<visits>`, `rounds`, and the time in expand, merge, featurize, net, and backup per request.
 
 ## Tests
 
-doctest suite (`docker compose --profile test run --rm test`). Hand-written edge cases for the C++ board and move generation (bar entry and dancing, the higher-die rule, using both dice, partial doubles, bearing off, hits); expected plays are JSON step strings applied by an independent test helper. The featurizer must pass `training-ground/fixtures/features.json`. With the model mounted, the GPU forward pass must match the CPU reference within `1e-5`. The batched search must match a plain recursive reference with its own copy of the filter rule (one net call per leaf, no tree storage, dedupe, or rounds) at 1-ply and 2-ply on contact positions (inner keep 1 and 3) and 2- and 3-ply on a race, using an asymmetric fake net so perspective flips are checked. At `ply=2` the returned plays must be exactly the root-filter survivors.
+doctest suite (`docker compose --profile test run --rm test`). Hand-written edge cases for the C++ board and move generation (bar entry and dancing, the higher-die rule, using both dice, partial doubles, bearing off, hits); expected plays are JSON step strings applied by an independent test helper. The featurizer must pass `training-ground/fixtures/features.json`. With the model mounted, the GPU forward pass must match the CPU reference within `1e-5`. The batched search must match a plain recursive reference with its own copy of the filter rule (one net call per leaf, no tree storage, dedupe, or rounds) at 1-ply and 2-ply on contact positions (inner keep 1 and 3) and 2- and 3-ply on a race, using an asymmetric fake net so perspective flips are checked. At `ply=2` the returned plays must be exactly the root-filter survivors. Results must be bit-identical with 1 and 8 threads.

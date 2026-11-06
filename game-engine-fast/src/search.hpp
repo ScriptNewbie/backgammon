@@ -10,14 +10,19 @@
 //   "Best" = highest cubeless money equity for the mover. Game-ending plays use exact probs;
 //   a roll with no legal play passes the turn. Probabilities (not equity) are averaged.
 //
-// Runs in rounds: expand, evaluate all pending leaves in one batch (deduplicated), apply the
-// filters that were waiting on those values, expand the survivors, repeat. Then back up.
+// Runs in rounds: expand, evaluate all new leaves in one batch, apply the filters that were
+// waiting on those values, expand the survivors, repeat. Then back up.
+//
+// Each round's work is split into chunks run on a thread pool. A chunk builds into its own
+// Store (private arena with its own leaf dedupe); the stores are then appended to the global tree
+// in chunk order, so the tree and the result do not depend on thread count or timing.
 #include <cstdint>
-#include <unordered_map>
 #include <vector>
 
 #include "board.hpp"
+#include "movegen.hpp"
 #include "onnx_mlp.hpp"
+#include "thread_pool.hpp"
 
 namespace bg {
 
@@ -60,14 +65,25 @@ std::vector<int> applyFilter(const std::vector<double>& equities, const MoveFilt
 
 struct SearchStats {
   int64_t nodes = 0;       // positions expanded over all 21 rolls
-  int64_t leaves = 0;      // distinct boards sent to the net
+  int64_t leaves = 0;      // boards sent to the net (deduplicated within each chunk)
   int64_t leafVisits = 0;  // leaf references before deduplication
   int64_t rounds = 0;      // net batches (filter rounds)
+  int threads = 1;
+  double expandMs = 0;     // move generation + tree building + filtering (parallel)
+  double mergeMs = 0;      // appending chunk stores to the tree (offsets serial, copies parallel)
+
+  double featurizeMs = 0;  // (parallel)
+  double netMs = 0;        // GPU forward pass incl. copies
+  double backupMs = 0;
 };
+
+// Deepest search the per-depth scratch supports.
+constexpr int kMaxDepth = 8;
 
 class Search {
  public:
-  explicit Search(Net& net, MoveFilter inner = kInnerFilter) : net_(net), inner_(inner) {}
+  explicit Search(Net& net, MoveFilter inner = kInnerFilter, ThreadPool* pool = &ThreadPool::shared())
+      : net_(net), inner_(inner), pool_(*pool) {}
 
   // Values of `boards` (each: side to move about to roll), searched `depth` plies, from that
   // side's point of view. Stats accumulate over calls on the same Search.
@@ -78,46 +94,67 @@ class Search {
  private:
   enum class Kind : uint8_t { Leaf, Node, Exact };
   struct Ref {
+    int32_t index;  // into leaves, nodes, or exact
     Kind kind;
-    int32_t index;  // into leaves_, nodes_, or exact_
   };
   struct Child {
-    Ref ref;       // from the CHILD's side-to-move point of view
-    Board board;   // child position (opponent to roll), kept for expansion after filtering
-    bool active;   // false once the filter drops it
+    int32_t index;   // Ref of the child, from the CHILD's side-to-move point of view
+    Kind kind;
+    uint8_t active;  // 0 once the filter drops it
+    Ref ref() const { return Ref{index, kind}; }
   };
   struct RollEntry {
-    int32_t childBegin;  // children_[childBegin, childEnd): one per legal play, or one pass
+    int32_t childBegin;  // children[childBegin, childEnd): one per legal play, or one pass
     int32_t childEnd;
     int8_t childDepth;   // depth the children are searched at
   };
   struct Node {
-    int32_t rollBegin;  // rolls_[rollBegin, rollBegin + 21)
+    int32_t rollBegin;  // rolls[rollBegin, rollBegin + 21)
   };
-  struct BoardHash {
-    size_t operator()(const Board& b) const;
-  };
-  struct BoardEq {
-    bool operator()(const Board& a, const Board& b) const { return sameBoard(a, b); }
+  // A global child whose provisional leaf a chunk replaced with a deeper subtree.
+  struct Fixup {
+    int32_t child;  // global index
+    Ref ref;        // in the chunk's store
   };
 
-  Ref expand(const Board& board, int depth);
-  Ref leaf(const Board& board);
+  struct Store {
+    std::vector<Board> leafBoards;
+    std::vector<uint64_t> leafHashes;
+    std::vector<int32_t> table;  // open addressing over leaf indices, -1 = empty
+    std::vector<Node> nodes;
+    std::vector<RollEntry> rolls;
+    std::vector<Child> children;
+    std::vector<Probs> exact;
+    std::vector<int32_t> pending;  // roll entries waiting for 0-ply values to filter
+    std::vector<Fixup> fixups;
+    std::vector<Ref> roots;
+    int64_t nodesExpanded = 0;
+    int64_t leafVisits = 0;
+    std::vector<Play> plays[kMaxDepth + 1];   // move-gen scratch per depth (expand recurses)
+    std::vector<Child> local[kMaxDepth + 1];  // children of one roll, per depth
+
+    void clear();
+    Ref leaf(const Board& board);
+    Ref expand(const Board& board, int depth);
+
+   private:
+    void growTable();
+  };
+
+  void filterEntry(int32_t entry, Store& chunk);
+  void mergeChunks(int chunks, std::vector<Ref>* roots);
+  // Run `items` work items in chunks on the pool, then merge the chunk stores in order.
+  void parallelRound(int items, const std::function<void(int item, Store& chunk)>& work, std::vector<Ref>* roots);
   void flushLeaves();
-  void filterEntry(int32_t entry);
   Probs value(const Ref& ref) const;
 
   Net& net_;
   MoveFilter inner_;
+  ThreadPool& pool_;
   SearchStats stats_;
-  std::vector<Board> leafBoards_;
-  std::vector<Probs> leafValues_;  // valid for [0, leafValues_.size())
-  std::unordered_map<Board, int32_t, BoardHash, BoardEq> leafIndex_;
-  std::vector<Node> nodes_;
-  std::vector<RollEntry> rolls_;
-  std::vector<Child> children_;
-  std::vector<Probs> exact_;
-  std::vector<int32_t> pending_;  // roll entries waiting for 0-ply values to filter
+  Store tree_;                      // global tree (its table and fixups are unused)
+  std::vector<Probs> leafValues_;   // valid for [0, leafValues_.size())
+  std::vector<Store> chunks_;
 };
 
 }  // namespace bg

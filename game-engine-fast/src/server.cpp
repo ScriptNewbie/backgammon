@@ -73,10 +73,14 @@ int main() {
       const nlohmann::ordered_json out = bg::evaluate(eval, ply, *net, &stats);
       const double ms =
           std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
-      std::printf("  ply=%d moves=%zu onRoll=%s dice=%d-%d nodes=%lld leaves=%lld/%lld %.2fms\n", ply,
-                  out["moves"].size(), bg::playerName(eval.onRoll), eval.die1, eval.die2,
-                  static_cast<long long>(stats.nodes), static_cast<long long>(stats.leaves),
-                  static_cast<long long>(stats.leafVisits), ms);
+      std::printf(
+          "  ply=%d moves=%zu onRoll=%s dice=%d-%d nodes=%lld leaves=%lld/%lld rounds=%lld %.2fms "
+          "(threads %d: expand %.0f, merge %.0f, featurize %.0f, net %.0f, backup %.0f)\n",
+          ply, out["moves"].size(), bg::playerName(eval.onRoll), eval.die1, eval.die2,
+          static_cast<long long>(stats.nodes), static_cast<long long>(stats.leaves),
+          static_cast<long long>(stats.leafVisits), static_cast<long long>(stats.rounds), ms, stats.threads,
+          stats.expandMs, stats.mergeMs,
+          stats.featurizeMs, stats.netMs, stats.backupMs);
       res.set_content(out.dump(), "application/json");
     } catch (const std::invalid_argument& e) {
       return sendError(res, e.what());

@@ -10,6 +10,7 @@
 #include "features.hpp"
 #include "helpers.hpp"
 #include "search.hpp"
+#include "thread_pool.hpp"
 
 using namespace bgtest;
 
@@ -287,4 +288,19 @@ TEST_CASE("evaluate at ply 2 returns only root-filter survivors, each searched a
             doctest::Approx(reference(bg::flipped(p.result), 2, net).equity()).epsilon(1e-5));
     }
   }
+}
+
+TEST_CASE("result does not depend on the thread count") {
+  FakeNet net;
+  const std::vector<bg::Board> boards = {boardOf(kOpening, "p1"), boardOf(kContact, "p2"), boardOf(kRace, "p1")};
+  bg::ThreadPool one(1), eight(8);
+  bg::Search a(net, bg::kInnerFilter, &one), b(net, bg::kInnerFilter, &eight);
+  const auto va = a.evaluate(boards, 2);
+  const auto vb = b.evaluate(boards, 2);
+  REQUIRE(va.size() == vb.size());
+  for (size_t i = 0; i < va.size(); i++) {
+    for (int k = 0; k < 5; k++) CHECK(va[i].p[k] == vb[i].p[k]);  // bit-identical, not just close
+  }
+  CHECK(a.stats().nodes == b.stats().nodes);
+  CHECK(b.stats().threads == 8);
 }
