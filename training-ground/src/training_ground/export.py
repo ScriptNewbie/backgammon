@@ -9,7 +9,7 @@ from training_ground.cubeless import CUBELESS_OUTPUT_SIZE
 from training_ground.features import FEATURE_SIZE
 from training_ground.log import info
 
-__all__ = ["CUBELESS_OUTPUT_SIZE", "export_onnx_and_pte"]
+__all__ = ["CUBELESS_OUTPUT_SIZE", "export_fast_onnx", "export_onnx_and_pte", "fast_onnx_path"]
 
 
 def export_onnx_and_pte(
@@ -65,3 +65,70 @@ def export_onnx_and_pte(
     info(f"  wrote {pte_path} ({pte_path.stat().st_size:,} bytes)")
 
     return onnx_path, pte_path
+
+
+def fast_onnx_path(dest_stem: Path | str) -> Path:
+    """`checkpoints/cubeless` → `checkpoints/cubeless-fast.onnx` (ADR 0028)."""
+    stem = Path(dest_stem)
+    return stem.with_name(f"{stem.name}-fast.onnx")
+
+
+def export_fast_onnx(model: torch.nn.Module, dest_stem: Path | str) -> Path:
+    """Write `<stem>-fast.onnx` for game-engine-fast (ADR 0028).
+
+    Same module and weights as `export_onnx_and_pte`, but the batch dimension
+    is dynamic: input `features` `[N, 206]`, output `cubeless` `[N, 5]`.
+    The batch-1 `<stem>.onnx` / `<stem>.pte` contract is untouched.
+    """
+    path = fast_onnx_path(dest_stem)
+    model = model.eval().cpu()
+    # Batch 2, not 1: torch.export specializes a dimension traced as 1.
+    example = torch.zeros(2, FEATURE_SIZE, dtype=torch.float32)
+
+    info(f"exporting dynamic-batch ONNX → {path}")
+    sidecar = path.with_name(f"{path.name}.data")
+    if sidecar.is_file():
+        sidecar.unlink()
+    torch.onnx.export(
+        model,
+        (example,),
+        str(path),
+        input_names=["features"],
+        output_names=["cubeless"],
+        opset_version=18,
+        external_data=False,
+        dynamic_shapes=({0: torch.export.Dim("batch")},),
+    )
+    if sidecar.exists():
+        raise RuntimeError(f"ONNX export wrote external data at {sidecar}")
+    info(f"  wrote {path} ({path.stat().st_size:,} bytes)")
+    return path
+
+
+def _load_checkpoint_model(checkpoint: Path) -> torch.nn.Module:
+    from training_ground.model import CubelessNet
+
+    ckpt = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    model = CubelessNet(hidden_size=int(ckpt["hidden_size"]), layers=int(ckpt["layers"]))
+    model.load_state_dict(ckpt["model"])
+    return model
+
+
+def main(argv: list[str] | None = None) -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Write <stem>-fast.onnx (dynamic batch, ADR 0028) from a training checkpoint. "
+            "Does not touch <stem>.onnx or <stem>.pte."
+        )
+    )
+    parser.add_argument("--checkpoint", type=Path, default=Path("checkpoints/best.pt"))
+    parser.add_argument("--stem", type=Path, default=Path("checkpoints/cubeless"))
+    args = parser.parse_args(argv)
+    info(f"loading checkpoint {args.checkpoint}")
+    export_fast_onnx(_load_checkpoint_model(args.checkpoint), args.stem)
+
+
+if __name__ == "__main__":
+    main()

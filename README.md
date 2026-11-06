@@ -90,6 +90,9 @@ docker compose run --rm train python -m training_ground.train --dumps /data/dump
 # train and export ONNX + ExecuTorch .pte for the engine (writes checkpoints/cubeless.onnx)
 docker compose run --rm train python -m training_ground.train --dumps /data/dumps --epochs 20 --batch-size 1024 --checkpoint-dir checkpoints --export-stem checkpoints/cubeless
 
+# write only checkpoints/cubeless-fast.onnx from an existing checkpoint (no training)
+docker compose run --rm train python -m training_ground.export --checkpoint checkpoints/best.pt --stem checkpoints/cubeless
+
 # continue from a checkpoint
 docker compose run --rm train python -m training_ground.train --dumps /data/dumps --epochs 40 --batch-size 1024 --checkpoint-dir checkpoints --resume checkpoints/best.pt --export-stem checkpoints/cubeless
 
@@ -109,7 +112,7 @@ Train flags:
 | `--hidden-size` | `512` | Hidden layer width |
 | `--layers` | `3` | Hidden Linear+ReLU count |
 | `--checkpoint-dir` | `checkpoints` | Writes `best.pt` |
-| `--export-stem` | (off) | Write `<stem>.onnx` and `<stem>.pte` after training |
+| `--export-stem` | (off) | Write `<stem>.onnx` and `<stem>.pte` (batch 1) plus `<stem>-fast.onnx` (dynamic batch, [ADR 0028](docs/decisions/0028-game-engine-fast.md)) after training |
 | `--resume` | (off) | Load a `.pt` checkpoint and continue |
 | `--seed` | `1` | RNG seed |
 | `--num-workers` | `0` | DataLoader workers |

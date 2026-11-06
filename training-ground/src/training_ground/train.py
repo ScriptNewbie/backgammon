@@ -18,7 +18,7 @@ from training_ground.dataset import (
     dump_batch_dirs,
     ensure_feature_cache,
 )
-from training_ground.export import export_onnx_and_pte
+from training_ground.export import export_fast_onnx, export_onnx_and_pte
 from training_ground.features import FEATURE_SIZE
 from training_ground.log import info
 from training_ground.model import CubelessNet
@@ -291,6 +291,7 @@ def main(argv: list[str] | None = None) -> None:
         stem.parent.mkdir(parents=True, exist_ok=True)
         example = torch.zeros(1, FEATURE_SIZE, dtype=torch.float32)
         export_onnx_and_pte(model, example, stem)
+        export_fast_onnx(model, stem)
 
 
 if __name__ == "__main__":

@@ -15,7 +15,8 @@ RUN pip install --no-cache-dir torch==2.13.0 --index-url https://download.pytorc
 
 # ONNX + ExecuTorch 1.4.1 (matches torch 2.13). --no-deps so it cannot pull a PyPI torch (ADR 0014).
 # onnxscript is required by torch 2.13's dynamo ONNX exporter.
-RUN pip install --no-cache-dir onnx onnxscript pyyaml flatbuffers packaging "ruamel.yaml" tabulate \
+# onnxruntime (CPU) checks exported graphs against PyTorch in tests; it does not pull torch.
+RUN pip install --no-cache-dir onnx onnxscript onnxruntime pyyaml flatbuffers packaging "ruamel.yaml" tabulate \
  && pip install --no-cache-dir --no-deps executorch==1.4.1
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
