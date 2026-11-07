@@ -188,10 +188,11 @@ test("cube actions map to offer and take", () => {
 test("unrecognised XG text fails instead of guessing", () => {
   const cube = fixture("cube-no-double.txt");
   assert.throws(() => parseXgCubeText(cube.replace("No double / Take", "No double / Beaver")), /not recognised/);
-  assert.throws(() => parseXgCubeText(cube.replace(/Best Cube action:.*\n/, "")), /no Best Cube action/);
+  // \r?\n: fixtures are CRLF on a Windows checkout (core.autocrlf), and `.` does not match \r.
+  assert.throws(() => parseXgCubeText(cube.replace(/Best Cube action:.*\r?\n/, "")), /no Best Cube action/);
   const checker = fixture("checker-p1-hit.txt");
   assert.throws(() => parseXgCheckerText(checker.replace("8/5 6/5", "eight to five")), /not recognised/);
-  assert.throws(() => parseXgCheckerText(checker.replace(/^XGID=.*\n/, "")), /no XGID/);
+  assert.throws(() => parseXgCheckerText(checker.replace(/^XGID=.*\r?\n/, "")), /no XGID/);
   assert.throws(() => parseXgCheckerText(checker.replace(/Player: {3}53,34%/, "Player:   x")), /Player \/ Opponent/);
 
   const pos = positionFromXgid(parseXgCheckerText(checker).xgid);
