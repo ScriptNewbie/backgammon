@@ -8,7 +8,7 @@ fi
 python -m venv --copies .venv
 if [[ -f pyproject.toml ]]; then
   .venv/bin/pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cu130
-  .venv/bin/pip install onnx onnxscript pyyaml flatbuffers packaging "ruamel.yaml" tabulate
+  .venv/bin/pip install onnx onnxscript onnxruntime pyyaml flatbuffers packaging "ruamel.yaml" tabulate
   .venv/bin/pip install --no-deps executorch==1.4.1
   .venv/bin/pip install -e .
 else

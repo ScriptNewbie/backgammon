@@ -19,5 +19,8 @@ RUN pip install --no-cache-dir torch==2.13.0 --index-url https://download.pytorc
 RUN pip install --no-cache-dir onnx onnxscript onnxruntime pyyaml flatbuffers packaging "ruamel.yaml" tabulate \
  && pip install --no-cache-dir --no-deps executorch==1.4.1
 
+# The entrypoint skips reinstalling while the bind-mounted pyproject.toml still matches this one.
+RUN sha256sum /app/pyproject.toml > /opt/pyproject.sha256
+
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["python", "--version"]
