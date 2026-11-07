@@ -72,8 +72,7 @@ struct SearchStats {
   double expandMs = 0;     // move generation + tree building + filtering (parallel)
   double mergeMs = 0;      // appending chunk stores to the tree (offsets serial, copies parallel)
 
-  double featurizeMs = 0;  // (parallel)
-  double netMs = 0;        // GPU forward pass incl. copies
+  double netMs = 0;        // net calls: copy boards, featurize + forward on the GPU, copy results
   double backupMs = 0;
 };
 

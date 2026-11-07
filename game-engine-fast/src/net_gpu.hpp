@@ -16,6 +16,7 @@ class GpuNet : public Net {
   GpuNet& operator=(const GpuNet&) = delete;
 
   void infer(const float* in, int n, float* out) override;
+  void inferBoards(const Board* boards, int n, float* out) override;
 
  private:
   struct Impl;

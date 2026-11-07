@@ -7,6 +7,8 @@
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 
+#include "features.hpp"
+
 namespace bg {
 namespace {
 
@@ -18,6 +20,13 @@ void check(cublasStatus_t st, const char* what) {
   if (st != CUBLAS_STATUS_SUCCESS) {
     throw std::runtime_error(std::string(what) + ": cuBLAS status " + std::to_string(static_cast<int>(st)));
   }
+}
+
+// One thread per board: STM board → 206 features, row-major [n, 206]. Same code as the CPU.
+__global__ void featurizeBoards(const Board* boards, int n, float* features) {
+  const int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i >= n) return;
+  featurize(boards[i], features + static_cast<size_t>(i) * kFeatureSize);
 }
 
 // y is row-major [n, out]: add bias, then ReLU or sigmoid.
@@ -42,9 +51,10 @@ struct GpuNet::Impl {
   cublasHandle_t handle = nullptr;
   std::vector<DeviceLayer> layers;
   int maxWidth = 0;
-  int capacity = 0;  // rows the activation buffers can hold
+  int capacity = 0;  // rows the buffers can hold
   float* bufA = nullptr;
   float* bufB = nullptr;
+  Board* boards = nullptr;
 
   ~Impl() {
     for (DeviceLayer& L : layers) {
@@ -53,6 +63,7 @@ struct GpuNet::Impl {
     }
     cudaFree(bufA);
     cudaFree(bufB);
+    cudaFree(boards);
     if (handle) cublasDestroy(handle);
   }
 
@@ -60,11 +71,36 @@ struct GpuNet::Impl {
     if (n <= capacity) return;
     cudaFree(bufA);
     cudaFree(bufB);
+    cudaFree(boards);
     bufA = bufB = nullptr;
+    boards = nullptr;
     const size_t bytes = sizeof(float) * static_cast<size_t>(n) * maxWidth;
     check(cudaMalloc(&bufA, bytes), "cudaMalloc activations");
     check(cudaMalloc(&bufB, bytes), "cudaMalloc activations");
+    check(cudaMalloc(&boards, sizeof(Board) * static_cast<size_t>(n)), "cudaMalloc boards");
     capacity = n;
+  }
+
+  // Runs the layers on the n input rows in bufA and copies [n, out] to the host.
+  void forward(int n, float* out) {
+    const float one = 1.0f, zero = 0.0f;
+    float* x = bufA;
+    float* y = bufB;
+    for (const DeviceLayer& L : layers) {
+      // Row-major Y[n,out] = X[n,in] · W[out,in]^T. cuBLAS is column-major, so compute
+      // Y^T[out,n] = W · X^T: W (row-major [out,in]) is column-major [in,out] → transpose it.
+      check(cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, L.out, n, L.in, &one, L.weight, L.in, x, L.in, &zero,
+                        y, L.out),
+            "cublasSgemm");
+      const int total = n * L.out;
+      biasActivation<<<(total + 255) / 256, 256>>>(y, L.bias, n, L.out, L.relu);
+      check(cudaGetLastError(), "biasActivation");
+      float* t = x;
+      x = y;
+      y = t;
+    }
+    check(cudaMemcpy(out, x, sizeof(float) * static_cast<size_t>(n) * layers.back().out, cudaMemcpyDeviceToHost),
+          "copy output");
   }
 };
 
@@ -94,28 +130,23 @@ void GpuNet::infer(const float* in, int n, float* out) {
   Impl& m = *impl_;
   m.reserve(n);
   const int inSize = m.layers.front().in;
-  const int outSize = m.layers.back().out;
   check(cudaMemcpy(m.bufA, in, sizeof(float) * static_cast<size_t>(n) * inSize, cudaMemcpyHostToDevice),
         "copy input");
+  m.forward(n, out);
+}
 
-  const float one = 1.0f, zero = 0.0f;
-  float* x = m.bufA;
-  float* y = m.bufB;
-  for (const DeviceLayer& L : m.layers) {
-    // Row-major Y[n,out] = X[n,in] · W[out,in]^T. cuBLAS is column-major, so compute
-    // Y^T[out,n] = W · X^T: W (row-major [out,in]) is column-major [in,out] → transpose it.
-    check(cublasSgemm(m.handle, CUBLAS_OP_T, CUBLAS_OP_N, L.out, n, L.in, &one, L.weight, L.in, x, L.in,
-                      &zero, y, L.out),
-          "cublasSgemm");
-    const int total = n * L.out;
-    biasActivation<<<(total + 255) / 256, 256>>>(y, L.bias, n, L.out, L.relu);
-    check(cudaGetLastError(), "biasActivation");
-    float* t = x;
-    x = y;
-    y = t;
-  }
-  check(cudaMemcpy(out, x, sizeof(float) * static_cast<size_t>(n) * outSize, cudaMemcpyDeviceToHost),
-        "copy output");
+void GpuNet::inferBoards(const Board* boards, int n, float* out) {
+  if (n <= 0) return;
+  std::lock_guard<std::mutex> lock(mutex_);
+  Impl& m = *impl_;
+  if (m.layers.front().in != kFeatureSize) throw std::runtime_error("net input is not the 206-float tensor");
+  m.reserve(n);
+  // 52 bytes per board over PCIe instead of 824 bytes of features.
+  check(cudaMemcpy(m.boards, boards, sizeof(Board) * static_cast<size_t>(n), cudaMemcpyHostToDevice),
+        "copy boards");
+  featurizeBoards<<<(n + 255) / 256, 256>>>(m.boards, n, m.bufA);
+  check(cudaGetLastError(), "featurizeBoards");
+  m.forward(n, out);
 }
 
 bool cudaAvailable() {

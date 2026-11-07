@@ -265,26 +265,15 @@ void Search::flushLeaves() {
   if (begin == total) return;
   stats_.rounds++;
   leafValues_.resize(total);
-  constexpr size_t kChunk = 1 << 16;  // rows per net call
-  std::vector<float> features;
-  std::vector<float> out;
+  static_assert(sizeof(Probs) == 5 * sizeof(float), "Probs is the net's 5-float output row");
+  constexpr size_t kChunk = 1 << 17;  // rows per net call
+  const auto t = Clock::now();
   for (size_t at = begin; at < total; at += kChunk) {
     const size_t n = std::min(kChunk, total - at);
-    features.resize(n * kFeatureSize);
-    out.resize(n * 5);
-    auto t = Clock::now();
-    constexpr size_t kSlice = 2048;
-    const int slices = static_cast<int>((n + kSlice - 1) / kSlice);
-    pool_.run(slices, [&](int s) {
-      const size_t lo = s * kSlice, hi = std::min(n, lo + kSlice);
-      for (size_t i = lo; i < hi; i++) featurize(tree_.leafBoards[at + i], features.data() + i * kFeatureSize);
-    });
-    stats_.featurizeMs += msSince(t);
-    t = Clock::now();
-    net_.infer(features.data(), static_cast<int>(n), out.data());
-    stats_.netMs += msSince(t);
-    for (size_t i = 0; i < n; i++) std::memcpy(leafValues_[at + i].p, out.data() + i * 5, sizeof(float) * 5);
+    // Boards go to the net as-is; GpuNet featurizes on the GPU. Output lands in leafValues_.
+    net_.inferBoards(&tree_.leafBoards[at], static_cast<int>(n), leafValues_[at].p);
   }
+  stats_.netMs += msSince(t);
   stats_.leaves = static_cast<int64_t>(total);
 }
 

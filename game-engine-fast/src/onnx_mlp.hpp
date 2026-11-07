@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "board.hpp"
+
 namespace bg {
 
 struct DenseLayer {
@@ -29,6 +31,9 @@ class Net {
  public:
   virtual ~Net() = default;
   virtual void infer(const float* in, int n, float* out) = 0;
+  // Same, from boards (side to move = `me`). Default: featurize on the CPU, then infer().
+  // GpuNet overrides it to copy the 52-byte boards and featurize on the GPU.
+  virtual void inferBoards(const Board* boards, int n, float* out);
 };
 
 // Reference implementation on the CPU (tests, and a fallback without a GPU).

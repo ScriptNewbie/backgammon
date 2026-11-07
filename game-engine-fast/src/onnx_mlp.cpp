@@ -8,6 +8,8 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "features.hpp"
+
 namespace bg {
 namespace {
 
@@ -334,6 +336,16 @@ void CpuNet::infer(const float* in, int n, float* out) {
     std::memcpy(out + static_cast<size_t>(row) * mlp_.outputSize(), a.data(),
                 sizeof(float) * mlp_.outputSize());
   }
+}
+
+}  // namespace bg
+
+namespace bg {
+
+void Net::inferBoards(const Board* boards, int n, float* out) {
+  std::vector<float> features(static_cast<size_t>(n) * kFeatureSize);
+  for (int i = 0; i < n; i++) featurize(boards[i], features.data() + static_cast<size_t>(i) * kFeatureSize);
+  infer(features.data(), n, out);
 }
 
 }  // namespace bg
