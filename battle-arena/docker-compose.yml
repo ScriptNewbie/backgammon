@@ -26,6 +26,11 @@ services:
     environment:
       MODEL_PATH: /models/cubeless-fast.onnx
       PORT: "3001"
+      # Tuning (empty = engine default, see docs/domain/game-engine-fast.md).
+      SEARCH_MAX_LEAF_VISITS: ${SEARCH_MAX_LEAF_VISITS:-}
+      SEARCH_THREADS: ${SEARCH_THREADS:-}
+      GPU_SUBBATCH: ${GPU_SUBBATCH:-}
+      GPU_LANES: ${GPU_LANES:-}
     volumes:
       - ..:/repo
       - game_engine_fast_build:/build
