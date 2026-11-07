@@ -45,8 +45,13 @@ target_compile_options(bgcore PRIVATE -Wall -Wextra)
 add_library(bggpu STATIC src/net_gpu.cu)
 target_link_libraries(bggpu PUBLIC bgcore CUDA::cudart CUDA::cublas)
 
+# HTTP routes (shared by the server and the tests).
+add_library(bghttp STATIC src/http.cpp)
+target_link_libraries(bghttp PUBLIC bgcore httplib::httplib)
+target_compile_options(bghttp PRIVATE -Wall -Wextra)
+
 add_executable(game-engine-fast src/server.cpp)
-target_link_libraries(game-engine-fast PRIVATE bggpu httplib::httplib)
+target_link_libraries(game-engine-fast PRIVATE bggpu bghttp)
 
 add_executable(gpu-info src/gpu_info.cu)
 target_link_libraries(gpu-info PRIVATE CUDA::cudart)
@@ -58,5 +63,6 @@ add_executable(game-engine-fast-tests
   test/features_test.cpp
   test/evaluate_test.cpp
   test/net_test.cpp
-  test/search_test.cpp)
-target_link_libraries(game-engine-fast-tests PRIVATE bggpu doctest::doctest)
+  test/search_test.cpp
+  test/http_test.cpp)
+target_link_libraries(game-engine-fast-tests PRIVATE bggpu bghttp doctest::doctest)

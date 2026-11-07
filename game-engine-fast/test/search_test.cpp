@@ -304,3 +304,29 @@ TEST_CASE("result does not depend on the thread count") {
   CHECK(a.stats().nodes == b.stats().nodes);
   CHECK(b.stats().threads == 8);
 }
+
+TEST_CASE("leaf budget: over the limit throws SearchTooLarge, under it searches normally") {
+  FakeNet net;
+  const std::vector<bg::Board> boards = {boardOf(kOpening, "p1"), boardOf(kContact, "p2")};
+  {
+    bg::Search search(net, bg::kInnerFilter, &bg::ThreadPool::shared(), 1000);
+    try {
+      search.evaluate(boards, 2);
+      FAIL("expected SearchTooLarge");
+    } catch (const bg::SearchTooLarge& e) {
+      CHECK(e.limit() == 1000);
+      CHECK(std::string(e.what()) == "search too large: more than 1000 leaf positions; use a lower ply");
+    }
+  }
+  bg::Search unlimited(net);
+  const auto want = unlimited.evaluate(boards, 2);
+  const int64_t visits = unlimited.stats().leafVisits;
+  // A budget at exactly the visits needed must pass and give the same values.
+  bg::Search exact(net, bg::kInnerFilter, &bg::ThreadPool::shared(), visits);
+  const auto got = exact.evaluate(boards, 2);
+  for (size_t i = 0; i < want.size(); i++) {
+    for (int k = 0; k < 5; k++) CHECK(got[i].p[k] == want[i].p[k]);
+  }
+  bg::Search oneShort(net, bg::kInnerFilter, &bg::ThreadPool::shared(), visits - 1);
+  CHECK_THROWS_AS(oneShort.evaluate(boards, 2), bg::SearchTooLarge);
+}

@@ -149,7 +149,7 @@ docker compose --profile test run --rm test
 docker compose --profile gpu-info run --rm gpu-info
 ```
 
-http://localhost:3001 — `GET /health`, `POST /evaluate?ply=0`. Contract: [docs/domain/game-engine-fast.md](docs/domain/game-engine-fast.md).
+http://localhost:3001 — `GET /health`, `POST /evaluate?ply=N`. Contract: [docs/domain/game-engine-fast.md](docs/domain/game-engine-fast.md). Optional tuning from the host environment, for example `SEARCH_MAX_LEAF_VISITS=40000000 docker compose up` (leaf budget per request; heavy 4-ply positions over it get a `400`). All variables: the domain doc, section Limits.
 
 ## gui
 

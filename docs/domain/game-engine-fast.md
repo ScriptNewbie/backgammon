@@ -23,7 +23,8 @@ Body and response shape are the same as `game-engine` `POST /evaluate`.
 - `eval.source` is `"model"`. `cubefulEquity = cubeless.equity * cube.value`. `cubeAction` is always `null`.
 - The search ignores the cube (fixed tensor constants) and `position.match`. Inner nodes maximise cubeless money equity. The arena ranks the returned candidates by mover MWC.
 - FP32. Determinism is best effort.
-- `400` on invalid JSON / position / dice / `ply`.
+- `400` on invalid JSON / position / dice / `ply`, and when the search would exceed its leaf budget (`{"error": "search too large: more than N leaf positions; use a lower ply"}`, see Limits).
+- `500` with `{"error": "internal error: ..."}` on anything else (for example a CUDA failure).
 
 ## Search
 
@@ -60,6 +61,21 @@ At 4-ply the net is about half of the time (opening 4-4: net 2.7 s, merge 1.4 s,
 
 The net is compute-bound in the matrix multiplies. Measured with CUDA events on one 16,384-row sub-batch (RTX 5070, strict FP32): the GEMMs take about 1.30 ms (206→512 0.23 ms, each 512→512 0.50 ms at 17 TFLOPS, 512→5 0.07 ms), the bias and activation kernels about 0.15 ms, and everything else (featurize, copies, launches) about 0.3 ms; the end-to-end figure is about 1.8 ms. Overlapping copies therefore gained about 9% on the net, not more. The same GEMMs with TF32 tensor ops would take about 0.8 ms in total, but TF32 rounds the inputs and is not used (FP32 only, [ADR 0028](../decisions/0028-game-engine-fast.md)).
 
+## Limits
+
+Memory grows with the number of leaf visits, about 90–113 bytes per visit at 4-ply. The opening is far from the worst case: of 400 positions from random-play games, the heaviest needed 68M distinct leaves / 94M visits at 4-ply (18.7 s, 10.6 GB peak), on a Docker VM with 15.4 GB.
+
+Each request therefore has a **leaf-visit budget**, `SEARCH_MAX_LEAF_VISITS` (default 80,000,000, roughly 7–9 GB). Chunks report their visits to a shared counter every 4,096 leaves; once the total passes the budget, expansion stops and the request returns `400` (see above), with no partial result. The check happens during expansion, so a rejected request has still spent most of its time (the heaviest test position was rejected after 10.8 s at 6.8 GB peak instead of finishing at 10.6 GB). The `battle-arena` driver treats that `400` like any other error and stops the run.
+
+Tuning variables (all optional; empty means the default, and both Compose files pass them through from the host environment):
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `SEARCH_MAX_LEAF_VISITS` | 80,000,000 | Leaf-visit budget per request |
+| `SEARCH_THREADS` | all hardware threads | Search thread pool size |
+| `GPU_SUBBATCH` | 16,384 | Rows per GPU sub-batch |
+| `GPU_LANES` | 2 | CUDA streams the sub-batches rotate over |
+
 ## Tests
 
-doctest suite (`docker compose --profile test run --rm test`). Hand-written edge cases for the C++ board and move generation (bar entry and dancing, the higher-die rule, using both dice, partial doubles, bearing off, hits); expected plays are JSON step strings applied by an independent test helper. The featurizer must pass `training-ground/fixtures/features.json`. With the model mounted, the GPU forward pass must match the CPU reference within `1e-5`. The batched search must match a plain recursive reference with its own copy of the filter rule (one net call per leaf, no tree storage, dedupe, or rounds) at 1-ply and 2-ply on contact positions (inner keep 1 and 3) and 2- and 3-ply on a race, using an asymmetric fake net so perspective flips are checked. At `ply=2` the returned plays must be exactly the root-filter survivors. Results must be bit-identical with 1 and 8 threads, and the GPU featurize path must match the CPU reference on about 7k real positions, also when the call is split over many sub-batches and 1–4 lanes.
+doctest suite (`docker compose --profile test run --rm test`). Hand-written edge cases for the C++ board and move generation (bar entry and dancing, the higher-die rule, using both dice, partial doubles, bearing off, hits); expected plays are JSON step strings applied by an independent test helper. The featurizer must pass `training-ground/fixtures/features.json`. With the model mounted, the GPU forward pass must match the CPU reference within `1e-5`. The HTTP routes are served on a local port with a fake net: `/health`, ply 0 and 1 responses, every `ply` rejection, invalid JSON and position, the budget `400` (the server keeps serving afterwards), and a `500` from a failing net. A leaf budget one visit short of what a search needs must throw; exactly enough must give identical values. The batched search must match a plain recursive reference with its own copy of the filter rule (one net call per leaf, no tree storage, dedupe, or rounds) at 1-ply and 2-ply on contact positions (inner keep 1 and 3) and 2- and 3-ply on a race, using an asymmetric fake net so perspective flips are checked. At `ply=2` the returned plays must be exactly the root-filter survivors. Results must be bit-identical with 1 and 8 threads, and the GPU featurize path must match the CPU reference on about 7k real positions, also when the call is split over many sub-batches and 1–4 lanes.

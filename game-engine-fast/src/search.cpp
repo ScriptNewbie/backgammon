@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <cstring>
 #include <numeric>
 #include <stdexcept>
@@ -32,6 +33,12 @@ const std::vector<Roll>& allRolls() {
     return r;
   }();
   return rolls;
+}
+
+int64_t defaultMaxLeafVisits() {
+  const char* env = std::getenv("SEARCH_MAX_LEAF_VISITS");
+  const long long n = env ? std::atoll(env) : 0;
+  return n > 0 ? static_cast<int64_t>(n) : 80'000'000;
 }
 
 std::vector<int> applyFilter(const std::vector<double>& equities, const MoveFilter& filter) {
@@ -68,6 +75,17 @@ void Search::Store::clear() {
   roots.clear();
   nodesExpanded = 0;
   leafVisits = 0;
+  unreported = 0;
+}
+
+bool Search::Store::overBudget() {
+  if (budget == nullptr) return false;
+  if (unreported > 0) {
+    const int64_t total = budget->used.fetch_add(unreported) + unreported;
+    unreported = 0;
+    if (total > budget->limit) budget->exceeded = true;
+  }
+  return budget->exceeded.load(std::memory_order_relaxed);
 }
 
 void Search::Store::growTable() {
@@ -82,6 +100,7 @@ void Search::Store::growTable() {
 
 Search::Ref Search::Store::leaf(const Board& board) {
   leafVisits++;
+  if (budget != nullptr && ++unreported >= 4096) overBudget();  // batched: no per-leaf atomic
   const uint64_t h = boardHash(board);
   const size_t mask = table.size() - 1;
   size_t i = h & mask;
@@ -98,6 +117,8 @@ Search::Ref Search::Store::leaf(const Board& board) {
 }
 
 Search::Ref Search::Store::expand(const Board& board, int depth) {
+  // Over budget: stop building. The tree is thrown away (evaluate throws), so a placeholder is fine.
+  if (budget != nullptr && budget->exceeded.load(std::memory_order_relaxed)) return Ref{0, Kind::Leaf};
   if (depth == 0) return leaf(board);
   nodesExpanded++;
   const int32_t node = static_cast<int32_t>(nodes.size());
@@ -249,11 +270,14 @@ void Search::parallelRound(int items, const std::function<void(int, Store&)>& wo
   pool_.run(chunks, [&](int k) {
     Store& chunk = chunks_[k];
     chunk.clear();
+    chunk.budget = &budget_;
     const int begin = static_cast<int>(static_cast<int64_t>(items) * k / chunks);
     const int end = static_cast<int>(static_cast<int64_t>(items) * (k + 1) / chunks);
     for (int i = begin; i < end; i++) work(i, chunk);
+    chunk.overBudget();  // report the rest
   });
   stats_.expandMs += msSince(t);
+  if (budget_.exceeded) throw SearchTooLarge(budget_.limit);
   t = Clock::now();
   mergeChunks(chunks, roots);
   stats_.mergeMs += msSince(t);
