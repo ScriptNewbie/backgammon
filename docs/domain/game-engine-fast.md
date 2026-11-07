@@ -44,7 +44,7 @@ Move filters (`src/search.hpp`) keep the 0-ply best and then up to `maxKeep` in 
 A request runs in rounds: expand the tree, send every new leaf board to the GPU (chunks of 131,072), apply the filters that were waiting on those values, expand the survivors, repeat; then back the values up.
 
 - **Threads.** Each round's work (root boards, then pending filter entries) is split into contiguous chunks run on a pool of `SEARCH_THREADS` threads (default: all hardware threads). A chunk builds into its own arena with its own leaf dedupe; arenas are appended to the tree in chunk order, so the result does not depend on the thread count. Leaves are deduplicated within a chunk only.
-- **GPU.** The net receives 52-byte boards, not 824-byte feature vectors; a kernel featurizes them (the same `featurize` code as the CPU), then one cuBLAS SGEMM per layer.
+- **GPU.** The net receives 52-byte boards, not 824-byte feature vectors; a kernel featurizes them (the same `featurize` code as the CPU), then one cuBLAS SGEMM per layer. A call is split into sub-batches of 16,384 rows (`GPU_SUBBATCH`) that rotate over 2 CUDA streams (`GPU_LANES`); each lane has its own cuBLAS handle, device buffers, and pinned staging, so copies of one sub-batch overlap the compute of another. Values may differ in the last bits between sub-batch sizes; they do not depend on the lane count.
 - **Log.** The server log shows `nodes`, `leaves=<distinct>/<visits>`, `rounds`, and the time in expand, merge, net, and backup per request.
 
 Opening position on an RTX 5070 and 12 CPU threads:
@@ -53,11 +53,13 @@ Opening position on an RTX 5070 and 12 CPU threads:
 | --- | --- | --- |
 | 1 | 3k–21k | 1–7 ms |
 | 2 | 12k–66k | 10–21 ms |
-| 3 | 0.2M–1.2M | 47–240 ms |
-| 4 | 4.9M–25M | 1.4–7 s (about 1.2 GB RAM) |
+| 3 | 0.2M–1.2M | 40–250 ms |
+| 4 | 4.9M–25M | 0.9–6 s (about 1.2 GB RAM) |
 
-At 4-ply the net (strict FP32 plus synchronous copies, about 100 batches in a row) is about half the time and merging the arenas about a fifth.
+At 4-ply the net is about half of the time (opening 4-4: net 2.7 s, merge 1.4 s, expand 0.8 s of 5.8 s).
+
+The net is compute-bound in the matrix multiplies. Measured with CUDA events on one 16,384-row sub-batch (RTX 5070, strict FP32): the GEMMs take about 1.30 ms (206→512 0.23 ms, each 512→512 0.50 ms at 17 TFLOPS, 512→5 0.07 ms), the bias and activation kernels about 0.15 ms, and everything else (featurize, copies, launches) about 0.3 ms; the end-to-end figure is about 1.8 ms. Overlapping copies therefore gained about 9% on the net, not more. The same GEMMs with TF32 tensor ops would take about 0.8 ms in total, but TF32 rounds the inputs and is not used (FP32 only, [ADR 0028](../decisions/0028-game-engine-fast.md)).
 
 ## Tests
 
-doctest suite (`docker compose --profile test run --rm test`). Hand-written edge cases for the C++ board and move generation (bar entry and dancing, the higher-die rule, using both dice, partial doubles, bearing off, hits); expected plays are JSON step strings applied by an independent test helper. The featurizer must pass `training-ground/fixtures/features.json`. With the model mounted, the GPU forward pass must match the CPU reference within `1e-5`. The batched search must match a plain recursive reference with its own copy of the filter rule (one net call per leaf, no tree storage, dedupe, or rounds) at 1-ply and 2-ply on contact positions (inner keep 1 and 3) and 2- and 3-ply on a race, using an asymmetric fake net so perspective flips are checked. At `ply=2` the returned plays must be exactly the root-filter survivors. Results must be bit-identical with 1 and 8 threads, and the GPU featurize path must match the CPU reference on about 7k real positions.
+doctest suite (`docker compose --profile test run --rm test`). Hand-written edge cases for the C++ board and move generation (bar entry and dancing, the higher-die rule, using both dice, partial doubles, bearing off, hits); expected plays are JSON step strings applied by an independent test helper. The featurizer must pass `training-ground/fixtures/features.json`. With the model mounted, the GPU forward pass must match the CPU reference within `1e-5`. The batched search must match a plain recursive reference with its own copy of the filter rule (one net call per leaf, no tree storage, dedupe, or rounds) at 1-ply and 2-ply on contact positions (inner keep 1 and 3) and 2- and 3-ply on a race, using an asymmetric fake net so perspective flips are checked. At `ply=2` the returned plays must be exactly the root-filter survivors. Results must be bit-identical with 1 and 8 threads, and the GPU featurize path must match the CPU reference on about 7k real positions, also when the call is split over many sub-batches and 1–4 lanes.
