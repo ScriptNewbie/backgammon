@@ -1,6 +1,6 @@
 # 0006 Teacher engine is foochu/bgweb-api
 
-- Status: accepted
+- Status: superseded by [0031](0031-gnubg-cli-sidecar.md)
 - Date: 2026-08-20
 
 ## Context

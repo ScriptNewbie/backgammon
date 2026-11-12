@@ -34,6 +34,7 @@ export type {
   CubeActionFlag,
   Cubeless,
   Eval,
+  LegalPlay,
   MatchInfo,
   MatchPhase,
   Player,

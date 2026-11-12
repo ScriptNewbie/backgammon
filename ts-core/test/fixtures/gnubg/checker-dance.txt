@@ -1,0 +1,54 @@
+XGID=------E-C---Fc-----bbbbbbA:0:0:1:66:0:0:0:0:10
+
+`eval' and `hint' chequerplay will use 0 ply evaluation.
+`eval' and `hint' cube decisions will use 0 ply evaluation.
+The dice have been set to 6 and 6.
+ GNU Backgammon  Position ID: 4HPwATDgc/ABMA
+                 Match ID   : cAkbAAAAAAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ | X           O    |   | O              X |     0 points
+ | X           O    |   | O              X |     
+ | X           O    |   | O                |     
+ | X                |   | O                |     
+ | X                |   | O                |    
+v|                  |BAR|                  |     (Cube: 1)
+ | O                |   | X                |    
+ | O                |   | X                |     
+ | O           X    |   | X                |     
+ | O           X    |   | X              O |     Rolled 66
+ | O           X    |   | X              O |     0 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg
+
+ GNU Backgammon  Position ID: 4HPwATDgc/ABMA
+                 Match ID   : cAkbAAAAAAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ | X           O    |   | O              X |     0 points
+ | X           O    |   | O              X |     
+ | X           O    |   | O                |     
+ | X                |   | O                |     
+ | X                |   | O                |    
+v|                  |BAR|                  |     (Cube: 1)
+ | O                |   | X                |    
+ | O                |   | X                |     
+ | O           X    |   | X                |     
+ | O           X    |   | X              O |     Rolled 66
+ | O           X    |   | X              O |     0 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg
+
+ GNU Backgammon  Position ID: 27aBAwDgc/gBQA
+                 Match ID   : cAkbAAAAAAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ | O                |   | O  O  O  O  O  O |     0 points
+ | O                |   | O  O  O  O  O  O |     
+ | O                |   |                  |     
+ |                  |   |                  |     
+ |                  |   |                  |    
+v|                  |BAR|                  |     (Cube: 1)
+ | 6                |   | X                |    
+ | X                |   | X                |     
+ | X           X    |   | X                |     
+ | X           X    |   | X                |     Rolled 66
+ | X           X    | X | X                |     0 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg
+
+There are no legal moves.

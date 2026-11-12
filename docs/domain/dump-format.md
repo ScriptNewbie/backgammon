@@ -1,6 +1,6 @@
 # Dump format
 
-Locked by [ADR 0005](../decisions/0005-dump-file-format.md), [ADR 0006](../decisions/0006-teacher-bgweb-api.md), [ADR 0007](../decisions/0007-skill-levels-and-pairing.md), [ADR 0009](../decisions/0009-dump-metadata-and-sgf.md), [ADR 0012](../decisions/0012-training-data-layout.md), [ADR 0020](../decisions/0020-dumper-games-no-cube.md), and [ADR 0021](../decisions/0021-featurized-tensor-cache.md). Change only via a new ADR.
+Locked by [ADR 0005](../decisions/0005-dump-file-format.md), [ADR 0006](../decisions/0006-teacher-bgweb-api.md) (superseded by [ADR 0031](../decisions/0031-gnubg-cli-sidecar.md)), [ADR 0007](../decisions/0007-skill-levels-and-pairing.md), [ADR 0009](../decisions/0009-dump-metadata-and-sgf.md), [ADR 0012](../decisions/0012-training-data-layout.md), [ADR 0020](../decisions/0020-dumper-games-no-cube.md), and [ADR 0021](../decisions/0021-featurized-tensor-cache.md). Change only via a new ADR.
 
 On-disk output of `move-dumper`. Position and eval field shapes are not redefined here — use [board-representation.md](board-representation.md) and [evaluation.md](evaluation.md). Teacher conversion: [gnubg.md](gnubg.md). Simulation: [move-dumper.md](move-dumper.md).
 
@@ -19,7 +19,7 @@ move-dumper/fixtures/             # git-tracked, tiny
   replay.example.sgf
 ```
 
-`<batch-id>` is UTC `YYYY-MM-DDTHHMMSSZ` plus engine name, e.g. `2026-08-20T204600Z-bgweb-api`.
+`<batch-id>` is UTC `YYYY-MM-DDTHHMMSSZ` plus engine name, e.g. `2026-11-12T204600Z-gnubg` (`-bgweb-api` before ADR 0031).
 
 UTF-8. Real dumps: gzip JSONL, one JSON object per line, no pretty-print. Fixtures: uncompressed `.jsonl` so diffs stay readable.
 
@@ -30,18 +30,19 @@ Do not use a JSON array of all records, Parquet, or SQLite as the dumper’s for
 ```json
 {
   "v": 1,
-  "batchId": "2026-08-20T204600Z-bgweb-api",
-  "createdAt": "2026-08-20T20:46:00Z",
+  "batchId": "2026-11-12T204600Z-gnubg",
+  "createdAt": "2026-11-12T20:46:00Z",
   "recordsFile": "records.jsonl.gz",
   "recordCount": 0,
   "engine": {
-    "name": "bgweb-api",
-    "version": "foochu/bgweb-api:latest",
+    "name": "gnubg",
+    "version": "GNU Backgammon 1.07.001 20230103",
     "settings": {
       "play": "game",
       "baseUrl": "http://127.0.0.1:8080",
       "cubefulLabels": true,
-      "plies": 1,
+      "ply": 2,
+      "labelFilter": "gnubg",
       "seed": 1,
       "levels": ["noob", "beginner", "midwit", "genius", "infallible"],
       "pairingWeights": {
@@ -59,9 +60,9 @@ Do not use a JSON array of all records, Parquet, or SQLite as the dumper’s for
 }
 ```
 
-- `engine.name` is `"bgweb-api"`. `version` is the Docker image tag (or digest if pinned).
+- `engine.name` is `"gnubg"` and `version` is gnubg's own banner. `settings.ply` is the GnuBG ply and `settings.labelFilter` is `gnubg` (its own move filter: top plays at `ply`, the rest shallower, as bgweb-api labelled) or `all` (every play at `ply`) ([gnubg.md](gnubg.md)). Batches written before [ADR 0031](../decisions/0031-gnubg-cli-sidecar.md) say `"bgweb-api"`, with the image tag as `version` and bgweb's `plies` (its 3 is GnuBG 2-ply, its 1 is 0-ply; it reports only the last play).
 - `play` is `"game"` ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)). Do not emit `matchLengths` or `met`. `position.match` is `null`.
-- Extra keys under `engine.settings` are allowed (`plies` from `evaluation.info`). Do not remove `play` / `cubefulLabels`.
+- Extra keys under `engine.settings` are allowed. Do not remove `play` / `cubefulLabels`.
 - Update `recordCount` after **each committed game** (and again when the batch finishes) so a crash still has a usable count. If a run dies mid-game, count the JSONL lines; do not trust a stale manifest. Gzip is concatenated members, one per finished game — `gunzip` still yields one JSONL stream.
 
 ## Record (`v: 1`)
@@ -101,9 +102,9 @@ One line = one checker decision. Additive fields from ADR 0009; keep `"v": 1`. [
 | `players` | Level names for `p1` and `p2` ([move-dumper.md](move-dumper.md)). |
 | `chosen` | `{ "steps": [...] }` for the sampled checker play. |
 | `position` | Full position JSON. Cube is always dead (`value` 1, centered, `mayDouble` both false). `match` is **`null`**. **Do not train on the dead cube as live cube state.** `dice` is `[d1, d2]`. |
-| `eval` | Eval of this checker position for STM, or **`null`**. bgweb-api scores **plays**, not the static pre-move board; leave `null` and train from `moves[]`. |
-| `moves` | All legal plays, each with `steps` and teacher `eval` of the **result** (result STM). `source` is `"bgweb-api"`. `cubeAction` is `null`. |
-| `xgid` | Optional debug string. bgweb-api does not return it — use `null`. **Training must ignore it.** |
+| `eval` | Eval of this checker position for STM, or **`null`**. The teacher scores **plays**, not the static pre-move board; leave `null` and train from `moves[]`. |
+| `moves` | All legal plays, each with `steps` and teacher `eval` of the **result** (result STM). `source` is `"gnubg"` (`"bgweb-api"` in older batches). `cubeAction` is `null`. |
+| `xgid` | Optional debug string. The dumper writes `null`. **Training must ignore it.** |
 
 Do not write cube-decision rows. Teacher `eval.cubeAction` stays `null`.
 
@@ -116,7 +117,7 @@ GNU Backgammon files: `FF[4]`, `GM[6]`, UTF-8. One **game** per `replay/<gameId>
 ## Training use
 
 - Value net: `decision == "checker"` only. Apply each move’s `steps` to `position`, then `moves[].eval.cubeless` (STM of the result). Ignore `position.match` (`null` on new dumps) and `position.cube` (dead) except as schema.
-- Cube wrapper: `moves[].eval.cubefulEquity` when present (money eq from the teacher). Do not expect `cubeAction` from bgweb-api.
+- Cube wrapper: `moves[].eval.cubefulEquity` when present (money eq from the teacher). Do not expect `cubeAction` from the teacher.
 - Move ranking in new dumps is by negated result cubeless equity ([move-dumper.md](move-dumper.md)). The stored labels remain cubeless probs + money `cubefulEquity`.
 
 ## Training layout
@@ -138,4 +139,4 @@ New dumps write only `gameId`. Cubeless training still ignores `decision == "cub
 - Pretty-printed multi-line records in `dumps/`.
 - Committing `move-dumper/dumps/`.
 - A second dump schema “for Python.”
-- Treating `xgid`, SGF, or bgweb `x`/`o` boards as a training input.
+- Treating `xgid`, SGF, gnubg text, or bgweb `x`/`o` boards as a training input.

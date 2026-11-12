@@ -55,19 +55,24 @@ test("SGF is GNU Backgammon GM[6] with PW=p1", () => {
 test("batch stamp matches dump-format compact UTC", () => {
   const { batchId, createdAt } = batchStamp(new Date("2026-08-20T20:46:00Z"));
   assert.equal(createdAt, "2026-08-20T20:46:00Z");
-  assert.equal(batchId, "2026-08-20T204600Z-bgweb-api");
+  assert.equal(batchId, "2026-08-20T204600Z-gnubg");
 });
 
-test("manifest engine is bgweb-api game play", () => {
+test("manifest engine is gnubg game play with its ply", () => {
   const manifest = buildManifest({
     batchId: "example",
     createdAt: "2026-08-20T20:46:00Z",
     seed: 1,
     baseUrl: "http://127.0.0.1:8080",
     recordCount: 0,
-    plies: 1,
+    ply: 2,
+    labelFilter: "gnubg",
+    version: "GNU Backgammon 1.07.001",
   });
-  assert.equal(manifest.engine.name, "bgweb-api");
+  assert.equal(manifest.engine.settings.labelFilter, "gnubg");
+  assert.equal(manifest.engine.name, "gnubg");
+  assert.equal(manifest.engine.version, "GNU Backgammon 1.07.001");
+  assert.equal(manifest.engine.settings.ply, 2);
   assert.equal(manifest.engine.settings.play, "game");
   assert.equal(manifest.engine.settings.cubefulLabels, true);
   assert.equal("met" in manifest.engine.settings, false);
@@ -80,27 +85,29 @@ test("CLI rejects match flags", () => {
 });
 
 test("CLI defaults", () => {
-  const prev = process.env.BGWEB_BASE_URL;
-  delete process.env.BGWEB_BASE_URL;
+  const prev = process.env.GNUBG_BASE_URL;
+  delete process.env.GNUBG_BASE_URL;
   try {
     const args = parseArgs([]);
     assert.equal(args.games, 1);
     assert.equal(args.seed, 1);
     assert.equal(args.baseUrl, "http://127.0.0.1:8080");
+    assert.equal(args.ply, 2);
+    assert.equal(args.labelFilter, "gnubg");
   } finally {
-    if (prev === undefined) delete process.env.BGWEB_BASE_URL;
-    else process.env.BGWEB_BASE_URL = prev;
+    if (prev === undefined) delete process.env.GNUBG_BASE_URL;
+    else process.env.GNUBG_BASE_URL = prev;
   }
 });
 
-test("CLI reads BGWEB_BASE_URL", () => {
-  const prev = process.env.BGWEB_BASE_URL;
-  process.env.BGWEB_BASE_URL = "http://bgweb-api:8080";
+test("CLI reads GNUBG_BASE_URL", () => {
+  const prev = process.env.GNUBG_BASE_URL;
+  process.env.GNUBG_BASE_URL = "http://gnubg:8080";
   try {
-    assert.equal(parseArgs([]).baseUrl, "http://bgweb-api:8080");
+    assert.equal(parseArgs([]).baseUrl, "http://gnubg:8080");
   } finally {
-    if (prev === undefined) delete process.env.BGWEB_BASE_URL;
-    else process.env.BGWEB_BASE_URL = prev;
+    if (prev === undefined) delete process.env.GNUBG_BASE_URL;
+    else process.env.GNUBG_BASE_URL = prev;
   }
 });
 
@@ -112,4 +119,12 @@ test("opening dice are never doubles; higher player is on roll", () => {
     assert.ok(roll.dice[0] > roll.dice[1]);
     if (roll.onRoll === "p1") assert.ok(roll.dice[0] >= 1);
   }
+});
+
+test("CLI reads --ply and --label-filter, and rejects unknown flags", () => {
+  assert.equal(parseArgs(["--ply", "0"]).ply, 0);
+  assert.equal(parseArgs(["--label-filter", "all"]).labelFilter, "all");
+  assert.throws(() => parseArgs(["--label-filter", "some"]), /gnubg or all/);
+  assert.throws(() => parseArgs(["--labelfilter", "all"]), /unknown argument/);
+  assert.throws(() => parseArgs(["--ply", "5"]), /--ply must be an integer 0-4/);
 });

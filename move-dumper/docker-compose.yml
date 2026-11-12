@@ -1,6 +1,11 @@
 services:
-  bgweb-api:
-    image: foochu/bgweb-api:latest
+  # GNU Backgammon CLI sidecar (ADR 0031). gnubg is installed from Debian inside the
+  # image; no GPL code lives in this repo.
+  gnubg:
+    build: ../docs/integrations/gnubg
+    image: backgammon-gnubg
+    environment:
+      GNUBG_WORKERS: ${GNUBG_WORKERS:-}
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -12,9 +17,9 @@ services:
       - ..:/repo
       - move_dumper_node_modules:/repo/move-dumper/node_modules
     environment:
-      BGWEB_BASE_URL: http://bgweb-api:8080
+      GNUBG_BASE_URL: http://gnubg:8080
     depends_on:
-      - bgweb-api
+      - gnubg
     profiles: ["dumper"]
 
   test:

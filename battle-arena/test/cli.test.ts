@@ -4,11 +4,11 @@ import { parseArgs, playersForSeats, seatsForMatch } from "../src/cli.ts";
 import { evaluateUrl } from "../src/drivers/game-engine.ts";
 import type { MatchPlayer } from "ts-core/sim";
 
-test("CLI defaults to game-engine vs teacher", () => {
-  const prevT = process.env.BGWEB_BASE_URL;
+test("CLI defaults to game-engine vs gnubg at 2-ply", () => {
+  const prevT = process.env.GNUBG_BASE_URL;
   const prevE = process.env.ENGINE_BASE_URL;
   const prevH = process.env.HEDGEHOG_BASE_URL;
-  delete process.env.BGWEB_BASE_URL;
+  delete process.env.GNUBG_BASE_URL;
   delete process.env.ENGINE_BASE_URL;
   delete process.env.HEDGEHOG_BASE_URL;
   try {
@@ -21,13 +21,14 @@ test("CLI defaults to game-engine vs teacher", () => {
     assert.equal(args.a.url, "http://127.0.0.1:3000");
     assert.equal(args.a.ply, undefined);
     assert.equal(args.a.label, "game-engine");
-    assert.equal(args.b.driver, "teacher");
+    assert.equal(args.b.driver, "gnubg");
     assert.equal(args.b.url, "http://127.0.0.1:8080");
-    assert.equal(args.b.label, "teacher");
+    assert.equal(args.b.ply, 2);
+    assert.equal(args.b.label, "gnubg-ply2");
     assert.deepEqual(args.warnings, []);
   } finally {
-    if (prevT === undefined) delete process.env.BGWEB_BASE_URL;
-    else process.env.BGWEB_BASE_URL = prevT;
+    if (prevT === undefined) delete process.env.GNUBG_BASE_URL;
+    else process.env.GNUBG_BASE_URL = prevT;
     if (prevE === undefined) delete process.env.ENGINE_BASE_URL;
     else process.env.ENGINE_BASE_URL = prevE;
     if (prevH === undefined) delete process.env.HEDGEHOG_BASE_URL;
@@ -69,14 +70,22 @@ test("hedgehog ply defaults to 1", () => {
 });
 
 test("ply on a driver that does not support it is dropped", () => {
-  const args = parseArgs(["--a-ply", "0", "--b", "teacher", "--b-ply", "1"]);
+  const args = parseArgs(["--a-ply", "0", "--b", "xg", "--b-ply", "1"]);
   assert.equal(args.a.driver, "game-engine");
   assert.equal(args.a.ply, undefined);
-  assert.equal(args.b.driver, "teacher");
+  assert.equal(args.b.driver, "xg");
   assert.equal(args.b.ply, undefined);
   assert.equal(args.warnings.length, 2);
   assert.match(args.warnings[0]!, /a \(game-engine\) does not support ply/);
-  assert.match(args.warnings[1]!, /b \(teacher\) does not support ply/);
+  assert.match(args.warnings[1]!, /b \(xg\) does not support ply/);
+});
+
+test("gnubg takes ply 0-4; teacher is an old name for it", () => {
+  const args = parseArgs(["--a", "gnubg", "--a-ply", "3", "--b", "teacher"]);
+  assert.equal(args.a.label, "gnubg-ply3");
+  assert.equal(args.b.driver, "gnubg");
+  assert.equal(args.b.ply, 2);
+  assert.match(args.warnings[0]!, /--b teacher is now gnubg/);
 });
 
 test("CLI --no-cube disables cube", () => {
@@ -123,7 +132,7 @@ test("engine evaluate URL carries ply only when set", () => {
 });
 
 test("CLI rejects an unknown driver", () => {
-  assert.throws(() => parseArgs(["--a", "gnubg"]), /--a/);
+  assert.throws(() => parseArgs(["--a", "bgweb"]), /--a/);
 });
 
 test("removed opponent flags name the replacement", () => {

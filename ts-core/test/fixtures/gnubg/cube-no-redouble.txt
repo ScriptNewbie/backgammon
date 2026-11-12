@@ -1,0 +1,63 @@
+XGID=-b----E-C---eE---c-e----B-:1:1:1:00:0:0:0:0:10
+
+`eval' and `hint' chequerplay will use 0 ply evaluation.
+`eval' and `hint' cube decisions will use 0 ply evaluation.
+The cube has been set to 2.
+ GNU Backgammon  Position ID: 4HPwATDgc/ABMA
+                 Match ID   : UQkAAAAAAAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ | X           O    |   | O              X |     0 points
+ | X           O    |   | O              X |     
+ | X           O    |   | O                |     
+ | X                |   | O                |     
+ | X                |   | O                |    
+v|                  |BAR|                  |     
+ | O                |   | X                |    
+ | O                |   | X                |     
+ | O           X    |   | X                |     
+ | O           X    |   | X              O |     On roll
+ | O           X    |   | X              O |     0 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg (Cube: 2)
+
+ GNU Backgammon  Position ID: 4HPwATDgc/ABMA
+                 Match ID   : UQkAAAAAAAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ | X           O    |   | O              X |     0 points
+ | X           O    |   | O              X |     
+ | X           O    |   | O                |     
+ | X                |   | O                |     
+ | X                |   | O                |    
+v|                  |BAR|                  |     
+ | O                |   | X                |    
+ | O                |   | X                |     
+ | O           X    |   | X                |     
+ | O           X    |   | X              O |     On roll
+ | O           X    |   | X              O |     0 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg (Cube: 2)
+
+ GNU Backgammon  Position ID: 4HPwATDgc/ABMA
+                 Match ID   : UQkAAAAAAAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ | X           O    |   | O              X |     0 points
+ | X           O    |   | O              X |     
+ | X           O    |   | O                |     
+ | X                |   | O                |     
+ | X                |   | O                |    
+v|                  |BAR|                  |     
+ | O                |   | X                |    
+ | O                |   | X                |     
+ | O           X    |   | X                |     
+ | O           X    |   | X              O |     On roll
+ | O           X    |   | X              O |     0 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg (Cube: 2)
+
+
+Cube analysis
+0-ply cubeless equity +0.067119
+  0.521514 0.153921 0.007563 - 0.478486 0.129847 0.007546
+Cubeful equities:
+1. No double           +0.244434
+2. Double, pass        +1.000000  (+0.755566)
+3. Double, take        -0.191132  (-0.435566)
+Proper cube action: No redouble, take (36.6%)
+

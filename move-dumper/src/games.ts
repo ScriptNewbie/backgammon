@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { clonePosition, stepsKey, type Cubeless, type Position, type Step } from "ts-core";
-import { BgwebClient, type LegalPlay } from "ts-core/bgweb";
+import type { LegalPlay } from "ts-core";
+import type { GnubgClient } from "ts-core/gnubg";
 import { renderMatchSgf } from "ts-core/sgf";
 import {
   playGame,
@@ -35,15 +36,14 @@ function checkerRecord(
 
 class DumpingTeacher implements MatchPlayer {
   constructor(
-    readonly client: BgwebClient,
+    readonly client: GnubgClient,
     readonly rng: Rng,
     readonly writer: DumpWriter,
     readonly levels: { p1: Level; p2: Level },
   ) {}
 
   async chooseChecker(pos: Position, ctx: TurnContext): Promise<{ steps: Step[]; cubeless: Cubeless | null }> {
-    const { plays, plies } = await this.client.getMoves(pos);
-    if (plies !== undefined && this.writer.plies === undefined) this.writer.plies = plies;
+    const { plays } = await this.client.getMoves(pos);
 
     const ranked: RankedPlay[] = plays.map((play) => ({
       rankScore: -play.eval.cubeless.equity,
@@ -80,7 +80,7 @@ class DumpingTeacher implements MatchPlayer {
 }
 
 export async function playDumpedGame(
-  client: BgwebClient,
+  client: GnubgClient,
   rng: Rng,
   writer: DumpWriter,
   players: { p1: Level; p2: Level },
@@ -126,7 +126,7 @@ export async function playDumpedGame(
 export { rollOpening } from "ts-core/sim";
 
 export async function dumpGames(
-  client: BgwebClient,
+  client: GnubgClient,
   rng: Rng,
   writer: DumpWriter,
   gameCount: number,

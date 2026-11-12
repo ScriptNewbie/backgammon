@@ -1,5 +1,5 @@
 ---
-description: Shared board and eval encoding. Use when representing positions, moves, dice, XGID, bgweb-api dumps, training tensors, or game-engine request/response bodies.
+description: Shared board and eval encoding. Use when representing positions, moves, dice, XGID, gnubg-labelled dumps, training tensors, or game-engine request/response bodies.
 alwaysApply: false
 ---
 

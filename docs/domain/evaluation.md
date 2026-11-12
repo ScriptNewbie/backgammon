@@ -44,13 +44,13 @@ Store the probabilities **and** `equity`; do not store equity alone. The trained
     "double": false,
     "take": true
   },
-  "source": "bgweb-api"
+  "source": "gnubg"
 }
 ```
 
-- `source`: `"bgweb-api"` | `"hedgehog"` | `"model"` | `"heuristic"` | `"unknown"`. `"hedgehog"` is an arena opponent eval and stays out of training dumps; those plays leave `cubefulEquity` at 0 ([hedgehog.md](hedgehog.md)).
-- `cubefulEquity`: expected **money** points per game **for STM**, with the cube in its current state. Teacher dumps match bgweb-api `eq` after the mover→STM flip in [gnubg.md](gnubg.md). The engine uses dead-cube money `cubeless.equity * cube.value` ([ADR 0018](../decisions/0018-cube-wrap-formula.md)). This is **not** match-winning chance.
-- `cubeAction`: STM’s double decision and opponent’s take/drop if STM doubled. Use `null` when unknown or not applicable. **bgweb-api does not emit cube actions** — teacher evals leave this `null`. The engine fills this from the dead-cube MWC heuristic when `position.match` is set and STM may double ([ADR 0018](../decisions/0018-cube-wrap-formula.md)). `null` when `match` is null ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)). The dumper does not simulate cube actions.
+- `source`: `"gnubg"` | `"bgweb-api"` | `"hedgehog"` | `"model"` | `"heuristic"` | `"unknown"`. `"gnubg"` is the teacher ([gnubg.md](gnubg.md)); `"bgweb-api"` marks teacher evals in batches written before [ADR 0031](../decisions/0031-gnubg-cli-sidecar.md). `"hedgehog"` is an arena opponent eval and stays out of training dumps; those plays leave `cubefulEquity` at 0 ([hedgehog.md](hedgehog.md)).
+- `cubefulEquity`: expected **money** points per game **for STM**, with the cube in its current state. Teacher dumps hold gnubg's cubeful money `Eq.` (live centered cube) after the mover→STM flip in [gnubg.md](gnubg.md). The engine uses dead-cube money `cubeless.equity * cube.value` ([ADR 0018](../decisions/0018-cube-wrap-formula.md)). This is **not** match-winning chance.
+- `cubeAction`: STM’s double decision and opponent’s take/drop if STM doubled. Use `null` when unknown or not applicable. **Teacher labels never carry cube actions** — teacher evals leave this `null`. The engine fills this from the dead-cube MWC heuristic when `position.match` is set and STM may double ([ADR 0018](../decisions/0018-cube-wrap-formula.md)). `null` when `match` is null ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)). The dumper does not simulate cube actions.
 
 Dumps store cubeless probabilities (and cubeful `eq` when requested). Training the net uses `cubeless.*`. The cube wrapper uses `cubefulEquity` for ranking and the MWC formula for `cubeAction`; it cannot use teacher `cubeAction`.
 

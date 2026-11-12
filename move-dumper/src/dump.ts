@@ -5,6 +5,7 @@ import { promisify } from "node:util";
 import { finished } from "node:stream/promises";
 import { createGzip, type Gzip } from "node:zlib";
 import { once } from "node:events";
+import type { GnubgFilter } from "ts-core/gnubg";
 import type { DumpRecord, Manifest } from "./types";
 import { LEVELS, PAIRING_WEIGHTS, TEMPERATURES } from "./levels";
 
@@ -13,7 +14,7 @@ const fsync = promisify(fsyncCb);
 export function batchStamp(now = new Date()): { batchId: string; createdAt: string } {
   const createdAt = now.toISOString().replace(/\.\d{3}Z$/, "Z");
   const compact = createdAt.replace(/:(\d{2}):(\d{2})Z$/, "$1$2Z");
-  return { batchId: `${compact}-bgweb-api`, createdAt };
+  return { batchId: `${compact}-gnubg`, createdAt };
 }
 
 export function buildManifest(opts: {
@@ -22,18 +23,22 @@ export function buildManifest(opts: {
   seed: number;
   baseUrl: string;
   recordCount: number;
-  plies?: number;
+  ply: number;
+  labelFilter: GnubgFilter;
+  version: string;
 }): Manifest {
   const settings: Manifest["engine"]["settings"] = {
     play: "game",
     baseUrl: opts.baseUrl,
     cubefulLabels: true,
+    ply: opts.ply,
+    labelFilter: opts.labelFilter,
     seed: opts.seed,
     levels: [...LEVELS],
     pairingWeights: { ...PAIRING_WEIGHTS },
     temperatures: { ...TEMPERATURES },
   };
-  if (opts.plies !== undefined) settings.plies = opts.plies;
+
   return {
     v: 1,
     batchId: opts.batchId,
@@ -41,8 +46,8 @@ export function buildManifest(opts: {
     recordsFile: "records.jsonl.gz",
     recordCount: opts.recordCount,
     engine: {
-      name: "bgweb-api",
-      version: "foochu/bgweb-api:latest",
+      name: "gnubg",
+      version: opts.version,
       settings,
     },
   };
@@ -54,7 +59,6 @@ export class DumpWriter {
   private pending: string[] = [];
   private committed = 0;
   private closed = false;
-  plies: number | undefined;
 
   private constructor(
     readonly dir: string,
@@ -62,6 +66,9 @@ export class DumpWriter {
     readonly createdAt: string,
     readonly seed: number,
     readonly baseUrl: string,
+    readonly ply: number,
+    readonly labelFilter: GnubgFilter,
+    readonly version: string,
   ) {
     this.file = createWriteStream(path.join(dir, "records.jsonl.gz"));
   }
@@ -70,12 +77,15 @@ export class DumpWriter {
     dumpsRoot: string;
     seed: number;
     baseUrl: string;
+    ply: number;
+    labelFilter: GnubgFilter;
+    version: string;
     now?: Date;
   }): Promise<DumpWriter> {
     const { batchId, createdAt } = batchStamp(opts.now);
     const dir = path.join(opts.dumpsRoot, batchId);
     await mkdir(path.join(dir, "replay"), { recursive: true });
-    const writer = new DumpWriter(dir, batchId, createdAt, opts.seed, opts.baseUrl);
+    const writer = new DumpWriter(dir, batchId, createdAt, opts.seed, opts.baseUrl, opts.ply, opts.labelFilter, opts.version);
     if (writer.file.fd == null) await once(writer.file, "open");
     await writer.writeManifest(0);
     return writer;
@@ -119,7 +129,9 @@ export class DumpWriter {
       seed: this.seed,
       baseUrl: this.baseUrl,
       recordCount,
-      plies: this.plies,
+      ply: this.ply,
+      labelFilter: this.labelFilter,
+      version: this.version,
     });
     await writeFile(
       path.join(this.dir, "manifest.json"),

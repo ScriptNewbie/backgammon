@@ -6,7 +6,7 @@ Three representations only:
 
 1. **Position JSON** — source of truth (this file)
 2. **Feature tensor** — train/infer input ([features.md](features.md))
-3. **XGID** — optional human/gnubg interchange; not produced by bgweb-api. Never the net’s input.
+3. **XGID** — wire format for the gnubg and XG sidecars, built from the JSON and never stored. Never the net’s input.
 
 ## Players and geometry
 
@@ -60,7 +60,7 @@ Checker counts must sum to 15 per player (points + bar + off).
 
 Ordered checker steps: `{ "from": <1-24|"bar">, "to": <1-24|"off"> }`. Hits are implied (blot to bar).
 
-Convert bgweb-api `play` (and XGID, if used) at the dumper boundary only. See [gnubg.md](gnubg.md). Hedgehog OGID is an arena wire encoding ([hedgehog.md](hedgehog.md)). Do not store it. XGID is also the eXtreme Gammon sidecar's wire ([xg.md](xg.md)): built in `ts-core/xg`, never stored.
+XGID is the gnubg sidecar's wire ([gnubg.md](gnubg.md)): built in `ts-core/xg`, and gnubg's moves come back as notation matched onto our legal plays. Hedgehog OGID is an arena wire encoding ([hedgehog.md](hedgehog.md)). Do not store it. XGID is also the eXtreme Gammon sidecar's wire ([xg.md](xg.md)): built in `ts-core/xg`, never stored.
 
 ## Forbidden
 

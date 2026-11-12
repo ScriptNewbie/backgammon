@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { gunzipSync } from "node:zlib";
 import { test } from "node:test";
-import { fetchWithRetry } from "ts-core/bgweb";
+import { fetchWithRetry } from "ts-core/http";
 import { DumpWriter } from "../src/dump.ts";
 import type { DumpRecord } from "../src/types.ts";
 
@@ -44,6 +44,9 @@ test("commitGame leaves a gunzippable file before finish", async () => {
       dumpsRoot: root,
       seed: 1,
       baseUrl: "http://127.0.0.1:8080",
+      ply: 2,
+      labelFilter: "gnubg",
+      version: "GNU Backgammon 1.07.001",
       now: new Date("2026-08-22T12:00:00Z"),
     });
     await writer.writeRecord(checkerRecord("a"));
@@ -70,6 +73,9 @@ test("two commits concatenate as one gzip JSONL", async () => {
       dumpsRoot: root,
       seed: 1,
       baseUrl: "http://127.0.0.1:8080",
+      ply: 2,
+      labelFilter: "gnubg",
+      version: "GNU Backgammon 1.07.001",
       now: new Date("2026-08-22T12:00:01Z"),
     });
     await writer.writeRecord(checkerRecord("a"));
@@ -139,6 +145,6 @@ test("fetchWithRetry does not retry 4xx", async () => {
           fetch: async () => new Response("nope", { status: 400 }),
         },
       ),
-    /getmoves 400/,
+    /sidecar 400/,
   );
 });

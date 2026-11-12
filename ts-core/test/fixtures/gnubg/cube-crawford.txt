@@ -1,0 +1,53 @@
+XGID=-b----E-C---eE---c-e----B-:0:0:1:00:6:4:1:7:10
+
+`eval' and `hint' chequerplay will use 0 ply evaluation.
+`eval' and `hint' cube decisions will use 0 ply evaluation.
+ GNU Backgammon  Position ID: +L4PAAD4vg8AAA
+                 Match ID   : 8AngAEAAMAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ |                  |   | O  O  O          |     4 points
+ |                  |   | O  O  O          |     
+ |                  |   | O  O  O          |     
+ |                  |   | O  O  O          |     
+ |                  |   | O  O  O          |    
+v|                  |BAR|                  |     7 points match (Crawford game)
+ |                  |   | X  X  X          |    
+ |                  |   | X  X  X          |     
+ |                  |   | X  X  X          |     
+ |                  |   | X  X  X          |     On roll
+ |                  |   | X  X  X          |     6 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg
+
+ GNU Backgammon  Position ID: +L4PAAD4vg8AAA
+                 Match ID   : 8AngAEAAMAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ |                  |   | O  O  O          |     4 points
+ |                  |   | O  O  O          |     
+ |                  |   | O  O  O          |     
+ |                  |   | O  O  O          |     
+ |                  |   | O  O  O          |    
+v|                  |BAR|                  |     7 points match (Crawford game)
+ |                  |   | X  X  X          |    
+ |                  |   | X  X  X          |     
+ |                  |   | X  X  X          |     
+ |                  |   | X  X  X          |     On roll
+ |                  |   | X  X  X          |     6 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg
+
+ GNU Backgammon  Position ID: 4HPwATDgc/ABMA
+                 Match ID   : 8AngAEAAMAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ | X           O    |   | O              X |     4 points
+ | X           O    |   | O              X |     
+ | X           O    |   | O                |     
+ | X                |   | O                |     
+ | X                |   | O                |    
+v|                  |BAR|                  |     7 points match (Crawford game)
+ | O                |   | X                |    
+ | O                |   | X                |     
+ | O           X    |   | X                |     
+ | O           X    |   | X              O |     On roll
+ | O           X    |   | X              O |     6 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg
+
+You cannot double.

@@ -9,7 +9,9 @@
     ".": "./src/index.ts",
     "./match": "./src/match.ts",
     "./sim": "./src/sim.ts",
-    "./bgweb": "./src/bgweb.ts",
+    "./gnubg": "./src/gnubg.ts",
+    "./http": "./src/http.ts",
+    "./notation": "./src/notation.ts",
     "./hedgehog": "./src/hedgehog.ts",
     "./xg": "./src/xg.ts",
     "./sgf": "./src/sgf.ts"

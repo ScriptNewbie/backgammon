@@ -1,0 +1,56 @@
+XGID=-c-----N----------bbbbbb-A:0:0:1:61:0:0:0:0:10
+
+`eval' and `hint' chequerplay will use 1 ply evaluation.
+`eval' and `hint' cube decisions will use 1 ply evaluation.
+The dice have been set to 6 and 1.
+ GNU Backgammon  Position ID: tm0DADjA/w8AQA
+                 Match ID   : cAkHAAAAAAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ |                O |   | O  O  O  O  O    |     0 points
+ |                O |   | O  O  O  O  O    |     
+ |                  |   |                  |     
+ |                  |   |                  |     
+ |                  |   |                  |    
+v|                  |BAR|                  |     (Cube: 1)
+ |                E |   |                  |    
+ |                X |   |                  |     
+ |                X |   |                O |     
+ |                X |   |                O |     Rolled 61
+ |                X | X |                O |     0 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg
+
+ GNU Backgammon  Position ID: tm0DADjA/w8AQA
+                 Match ID   : cAkHAAAAAAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ |                O |   | O  O  O  O  O    |     0 points
+ |                O |   | O  O  O  O  O    |     
+ |                  |   |                  |     
+ |                  |   |                  |     
+ |                  |   |                  |    
+v|                  |BAR|                  |     (Cube: 1)
+ |                E |   |                  |    
+ |                X |   |                  |     
+ |                X |   |                O |     
+ |                X |   |                O |     Rolled 61
+ |                X | X |                O |     0 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg
+
+ GNU Backgammon  Position ID: tm0DADjA/w8AQA
+                 Match ID   : cAkHAAAAAAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ |                O |   | O  O  O  O  O    |     0 points
+ |                O |   | O  O  O  O  O    |     
+ |                  |   |                  |     
+ |                  |   |                  |     
+ |                  |   |                  |    
+v|                  |BAR|                  |     (Cube: 1)
+ |                E |   |                  |    
+ |                X |   |                  |     
+ |                X |   |                O |     
+ |                X |   |                O |     Rolled 61
+ |                X | X |                O |     0 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg
+
+    1. Cubeful 0-ply    bar/24                       Eq.: -1.393094
+       0.093574 0.016291 0.000318 - 0.906426 0.531994 0.001198
+        0-ply cubeful prune [expert]

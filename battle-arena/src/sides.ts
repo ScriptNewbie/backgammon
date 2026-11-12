@@ -1,4 +1,7 @@
-export const DRIVER_NAMES = ["game-engine", "game-engine-fast", "teacher", "hedgehog", "xg"] as const;
+export const DRIVER_NAMES = ["game-engine", "game-engine-fast", "gnubg", "hedgehog", "xg"] as const;
+
+/** Old driver names still accepted on the CLI. */
+export const DRIVER_ALIASES: Record<string, DriverName> = { teacher: "gnubg" };
 
 export type DriverName = (typeof DRIVER_NAMES)[number];
 
@@ -12,6 +15,7 @@ export const MAX_PLY = 4;
  * the value used when the side does not set one. Every other driver drops `ply` with a warning.
  */
 const PLY: Partial<Record<DriverName, { max: number; default: number }>> = {
+  gnubg: { max: 4, default: 2 },
   hedgehog: { max: 1, default: 1 },
   "game-engine-fast": { max: MAX_PLY, default: 0 },
 };
@@ -39,8 +43,8 @@ export function defaultDriverUrl(driver: DriverName): string {
       return process.env.ENGINE_BASE_URL ?? "http://127.0.0.1:3000";
     case "game-engine-fast":
       return process.env.FAST_ENGINE_BASE_URL ?? "http://127.0.0.1:3001";
-    case "teacher":
-      return process.env.BGWEB_BASE_URL ?? "http://127.0.0.1:8080";
+    case "gnubg":
+      return process.env.GNUBG_BASE_URL ?? "http://127.0.0.1:8080";
     case "hedgehog":
       return process.env.HEDGEHOG_BASE_URL ?? "http://127.0.0.1:8090";
     case "xg":

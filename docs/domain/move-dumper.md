@@ -1,8 +1,8 @@
 # move-dumper simulation
 
-Locked by [ADR 0007](../decisions/0007-skill-levels-and-pairing.md), [ADR 0009](../decisions/0009-dump-metadata-and-sgf.md), and [ADR 0020](../decisions/0020-dumper-games-no-cube.md). Teacher: [gnubg.md](gnubg.md). Files: [dump-format.md](dump-format.md). Battle-arena / engine match math (not dumper policy): [match-play.md](match-play.md).
+Locked by [ADR 0007](../decisions/0007-skill-levels-and-pairing.md), [ADR 0009](../decisions/0009-dump-metadata-and-sgf.md), [ADR 0020](../decisions/0020-dumper-games-no-cube.md), and [ADR 0031](../decisions/0031-gnubg-cli-sidecar.md). Teacher: [gnubg.md](gnubg.md). Files: [dump-format.md](dump-format.md). Battle-arena / engine match math (not dumper policy): [match-play.md](match-play.md).
 
-Simulates independent money games, labels every checker play from bgweb-api, and writes JSONL plus GNU Backgammon SGF. The game loop lives in `ts-core/sim` (`playGame`); this package adds skill sampling and dump I/O. There is **no doubling-cube policy**.
+Simulates independent money games, labels every checker play with GNU Backgammon (the `gnubg` sidecar), and writes JSONL plus GNU Backgammon SGF. The game loop lives in `ts-core/sim` (`playGame`); this package adds skill sampling and dump I/O. There is **no doubling-cube policy**.
 
 From `move-dumper/` ([ADR 0011](../decisions/0011-docker-only.md)). Host commands: [README.md](../../README.md).
 
@@ -10,6 +10,7 @@ From `move-dumper/` ([ADR 0011](../decisions/0011-docker-only.md)). Host command
 docker compose up -d
 docker compose --profile test run --rm test
 docker compose --profile dumper run --rm dumper npm run dump:inner -- --games 1 --seed 1
+docker compose --profile dumper run --rm dumper npm run dump:inner -- --games 1 --seed 1 --ply 1 --label-filter all
 docker compose down
 docker compose --profile install-host run --rm install-host
 ```
@@ -22,7 +23,7 @@ docker compose --profile install-host run --rm install-host
 2. Play one game to bear-off via `playGame({ allowCube: false })`. No match score, no Crawford cycle, no cube offer/take/drop.
 3. Write `replay/<gameId>.sgf`. Records for that game are committed to `records.jsonl.gz` first (one gzip member per game) so a crash keeps finished games readable.
 
-Teacher `getmoves` retries on disconnect / 5xx until the API returns. SIGINT/SIGTERM finish after the current game (`gzip.end` + manifest). Do not kill `-9` if you want the last member closed.
+Teacher queries retry on disconnect / 5xx until the sidecar returns. SIGINT/SIGTERM finish after the current game (`gzip.end` + manifest). Do not kill `-9` if you want the last member closed.
 
 Seed the RNG; store `seed` on the batch manifest.
 
@@ -34,10 +35,10 @@ Later turns: roll both dice. Never consult cube.
 
 ## Checker ply
 
-1. `POST /api/v1/getmoves` with `score-moves: true`, **no** `max-moves`. Cubeless and cubeful-equity passes as in [gnubg.md](gnubg.md).
+1. One gnubg `hint` for every legal play at `--ply` (default 2) with `--label-filter` (default `gnubg`, GnuBG world class as bgweb-api labelled; `all` searches every play at `--ply`), priced as a money game with a live centered cube ([gnubg.md](gnubg.md)). A dance skips the query.
 2. Append a `decision: "checker"` record with **all** legal plays and teacher evals.
 3. Sample `chosen` with the on-roll level (below). Rank by **negated result cubeless equity** (`-eval.cubeless.equity` of the teacher result, which is STM of the result). Store that as `RankedPlay.rankScore` (higher is better). Do not rank by MWC or cubeful equity. Do not import `ts-core/match`. Loop: `src/games.ts`.
-4. Apply `chosen.steps` to the position JSON (hits implied). Do not re-generate the legal list; the teacher list is source.
+4. Apply `chosen.steps` to the position JSON (hits implied). The dumped move list is gnubg's, matched one-to-one onto our legal plays.
 5. If a player has 15 off: the game is over (single / gammon / backgammon for SGF `RE` only). Next game is independent.
 
 Gammon: loser has 0 off. Backgammon: loser has 0 off **and** a checker on the bar or in the winner’s home (p1 home 1–6, p2 home 19–24).
@@ -80,7 +81,7 @@ Unordered pair keys, names sorted alphabetically. Sample proportional to weight,
 
 ## Apply moves
 
-The dumper owns dice and applying `steps`. Legality comes from getmoves. Have the `backgammon-rules` subagent check samples (bar, hits, bear-off).
+The dumper owns dice and applying `steps`. Legality comes from our `generateLegalPlays`; every gnubg line must match one of those plays and gnubg must list them all. Have the `backgammon-rules` subagent check samples (bar, hits, bear-off).
 
 ## Replay
 

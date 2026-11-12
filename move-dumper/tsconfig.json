@@ -13,7 +13,9 @@
     "paths": {
       "ts-core": ["../ts-core/src/index.ts"],
       "ts-core/sim": ["../ts-core/src/sim.ts"],
-      "ts-core/bgweb": ["../ts-core/src/bgweb.ts"],
+      "ts-core/gnubg": ["../ts-core/src/gnubg.ts"],
+      "ts-core/http": ["../ts-core/src/http.ts"],
+      "ts-core/notation": ["../ts-core/src/notation.ts"],
       "ts-core/sgf": ["../ts-core/src/sgf.ts"]
     }
   },

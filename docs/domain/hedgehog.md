@@ -1,6 +1,6 @@
 # Hedgehog
 
-Arena opponent for `battle-arena`. Locked by [ADR 0022](../decisions/0022-hedgehog-external.md). Decisions are the engine's own ([ADR 0030](../decisions/0030-hedgehog-plays-itself.md)). Position JSON stays the stored form ([board-representation.md](board-representation.md)). OGID exists only on this wire. Training dumps stay on bgweb-api.
+Arena opponent for `battle-arena`. Locked by [ADR 0022](../decisions/0022-hedgehog-external.md). Decisions are the engine's own ([ADR 0030](../decisions/0030-hedgehog-plays-itself.md)). Position JSON stays the stored form ([board-representation.md](board-representation.md)). OGID exists only on this wire. Training dumps stay on the gnubg teacher ([gnubg.md](gnubg.md)).
 
 ## Licensing
 

@@ -52,5 +52,14 @@ export type Eval = {
   cubeless: Cubeless;
   cubefulEquity: number;
   cubeAction: CubeActionFlag | null;
-  source: "bgweb-api" | "hedgehog" | "model" | "heuristic" | "unknown";
+  /** `"bgweb-api"` is the teacher of dumps written before ADR 0031; new teacher labels are `"gnubg"`. */
+  source: "gnubg" | "bgweb-api" | "hedgehog" | "model" | "heuristic" | "unknown";
+};
+
+/** One legal checker play with the eval of the resulting position (opponent is STM there). */
+export type LegalPlay = {
+  steps: Step[];
+  eval: Eval;
+  /** Teacher's cubeless equity gap to its best play, mover side (0 for the best, else negative). */
+  teacherDiff: number;
 };

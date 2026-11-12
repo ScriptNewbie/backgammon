@@ -5,12 +5,14 @@
   "recordsFile": "records.example.jsonl",
   "recordCount": 1,
   "engine": {
-    "name": "bgweb-api",
-    "version": "foochu/bgweb-api:latest",
+    "name": "gnubg",
+    "version": "GNU Backgammon 1.07.001 20230103",
     "settings": {
       "play": "game",
       "baseUrl": "http://127.0.0.1:8080",
       "cubefulLabels": true,
+      "ply": 2,
+      "labelFilter": "gnubg",
       "seed": 1,
       "levels": ["noob", "beginner", "midwit", "genius", "infallible"]
     }

@@ -1,8 +1,8 @@
 # Battle-arena
 
-Locked by [ADR 0019](../decisions/0019-battle-arena.md), [ADR 0023](../decisions/0023-arena-any-driver.md), [ADR 0025](../decisions/0025-xg-gui-sidecar.md), and [ADR 0028](../decisions/0028-game-engine-fast.md). Match math: [match-play.md](match-play.md). Teacher conversion: [gnubg.md](gnubg.md). Engine HTTP: [game-engine.md](game-engine.md), [game-engine-fast.md](game-engine-fast.md). Shared loop: `ts-core/sim`.
+Locked by [ADR 0019](../decisions/0019-battle-arena.md), [ADR 0023](../decisions/0023-arena-any-driver.md), [ADR 0025](../decisions/0025-xg-gui-sidecar.md), [ADR 0028](../decisions/0028-game-engine-fast.md), [ADR 0030](../decisions/0030-hedgehog-plays-itself.md), and [ADR 0031](../decisions/0031-gnubg-cli-sidecar.md). Match math: [match-play.md](match-play.md). GNU Backgammon sidecar: [gnubg.md](gnubg.md). Engine HTTP: [game-engine.md](game-engine.md), [game-engine-fast.md](game-engine-fast.md). Shared loop: `ts-core/sim`.
 
-TypeScript tool that plays match-play between two drivers, both at **max strength**. Default is our `game-engine` vs the bgweb-api teacher. Either side may be `game-engine`, `game-engine-fast`, `teacher`, `hedgehog`, or `xg`, including the same driver on both sides.
+TypeScript tool that plays match-play between two drivers, both at **max strength**. Default is our `game-engine` vs GNU Backgammon (`gnubg`). Either side may be `game-engine`, `game-engine-fast`, `gnubg`, `hedgehog`, or `xg` (`teacher` is accepted as an old name for `gnubg`, with a warning), including the same driver on both sides.
 
 From `battle-arena/` ([ADR 0011](../decisions/0011-docker-only.md)). Host commands: [README.md](../../README.md).
 
@@ -26,23 +26,23 @@ docker compose --profile install-host run --rm install-host
 
 1. Two sides, `a` (`--a`) and `b` (`--b`). Even index: a=`p1`, b=`p2`. Odd index: swapped.
 2. Play games until a player’s score `>= length` (CLI `--length`, default 7; allowed `{1,3,5,7,9,11,13,15}`).
-3. Both sides always pick the best checker play by **mover MWC** (tie-break: teacher `diff` when present, then stable `stepsKey`). An `xg` side instead plays XG's top move. Cube (default): infallible dead-cube action from `evaluateCube`; an `xg` side offers and takes as XG's cube analysis says. Skip cube on the opening roll of a game; skip at cube 64. **`--no-cube`:** never offer, take, or drop; `mayDouble` is false and the cube stays 1 (games play to bear-off / gammon / backgammon).
-4. Write `battle-arena/replays/<batch-id>/<matchId>.sgf`. The batch id names both sides (`game-engine-vs-teacher`, `hedgehog-ply0-vs-hedgehog-ply1`). Print a summary of match wins (overall and by seat), games, and points when the batch finishes.
+3. `game-engine` and `game-engine-fast` sides pick the best checker play by **mover MWC** (tie-break: stable `stepsKey`). A `gnubg`, `hedgehog`, or `xg` side plays its engine's own top move. Cube (default): infallible dead-cube action from `evaluateCube`; a `gnubg`, `hedgehog`, or `xg` side offers and takes as its engine's cube analysis says. Skip cube on the opening roll of a game; skip at cube 64. **`--no-cube`:** never offer, take, or drop; `mayDouble` is false and the cube stays 1 (games play to bear-off / gammon / backgammon).
+4. Write `battle-arena/replays/<batch-id>/<matchId>.sgf`. The batch id names both sides (`game-engine-vs-gnubg-ply2`, `hedgehog-ply0-vs-hedgehog-ply1`). Print a summary of match wins (overall and by seat), games, and points when the batch finishes.
 
 No skill levels. No training JSONL. Never commit `replays/`.
 
 ## Drivers
 
-Each side has its own URL (`--a-url`, `--b-url`). Defaults: `ENGINE_BASE_URL` or `http://127.0.0.1:3000`, `FAST_ENGINE_BASE_URL` or `http://127.0.0.1:3001`, `BGWEB_BASE_URL` or `http://127.0.0.1:8080`, `HEDGEHOG_BASE_URL` or `http://127.0.0.1:8090`, `XG_BASE_URL` or `http://127.0.0.1:8091`. Health-check only the sides that play (one check per driver and URL).
+Each side has its own URL (`--a-url`, `--b-url`). Defaults: `ENGINE_BASE_URL` or `http://127.0.0.1:3000`, `FAST_ENGINE_BASE_URL` or `http://127.0.0.1:3001`, `GNUBG_BASE_URL` or `http://127.0.0.1:8080`, `HEDGEHOG_BASE_URL` or `http://127.0.0.1:8090`, `XG_BASE_URL` or `http://127.0.0.1:8091`. Health-check only the sides that play (one check per driver and URL).
 
-- **Teacher:** `POST /api/v1/getmoves` as in [gnubg.md](gnubg.md). Rank the returned list by mover MWC.
+- **GNU Backgammon (`gnubg`):** the CLI sidecar in [gnubg.md](gnubg.md) ([ADR 0031](../decisions/0031-gnubg-cli-sidecar.md)), the `gnubg` Compose service. gnubg's top checker play with its own move filter at the real cube, score, and Crawford state (not re-ranked), and gnubg's own offer and take. `ply` is GnuBG 0-4 (default 2, GnuBG world class, the depth bgweb-api effectively played at) for checker play and cube. Labels dumps too, through `move-dumper`.
 - **Hedgehog:** the sidecar in [hedgehog.md](hedgehog.md) ([ADR 0030](../decisions/0030-hedgehog-plays-itself.md)). Hedgehog's top checker play at the cube and score (not re-ranked), and Hedgehog's own offer and take. `ply` is GnuBG 0 or 1 (default 1), for checker play and cube. Not a dump source.
 - **Game-engine:** `POST /evaluate` with the full position JSON (dice set). Re-rank by mover MWC; do not use the API’s money-equity order for match play.
 - **Game-engine-fast:** the GPU engine in [game-engine-fast.md](game-engine-fast.md). Same `POST /evaluate` as game-engine plus `?ply=N`, re-ranked by mover MWC. `ply` is GnuBG 0–4 (default 0). At `ply >= 1` the engine returns only fully searched candidates, so the re-rank compares evals of the same depth.
 - **XG:** eXtreme Gammon 2 through the host GUI sidecar in [xg.md](xg.md). XG's top checker play (not re-ranked), and XG's own offer and take. Analysis level is whatever is set in XG. Not a dump source.
 
-Parameters are per side. A driver applies a parameter only when it supports it. `ply` is hedgehog (0–1) and game-engine-fast (0–4); the CLI accepts integers 0–4 and a value above the side's driver maximum is an error. Setting `--a-ply` or `--b-ply` on `game-engine`, `teacher`, or `xg` drops that value and prints a warning. Cube is not asked of any HTTP API except the `xg` and `hedgehog` sidecars, and only for that side. Every other side uses the shared infallible heuristic.
+Parameters are per side. A driver applies a parameter only when it supports it. `ply` is gnubg (0–4), hedgehog (0–1), and game-engine-fast (0–4); the CLI accepts integers 0–4 and a value above the side's driver maximum is an error. Setting `--a-ply` or `--b-ply` on `game-engine` or `xg` drops that value and prints a warning. Cube is not asked of any HTTP API except the `gnubg`, `hedgehog`, and `xg` sidecars, and only for that side. Every other side uses the shared infallible heuristic.
 
 ## Replay SGF
 
-Same GNU Backgammon encoding as [dump-format.md](dump-format.md) (`FF[4]`, `GM[6]`). `PW`/`PB` are `p1-<label>` / `p2-<label>`, where the label is the driver (`game-engine`, `teacher`, `hedgehog-ply1`, `game-engine-fast-ply2`). `AP[battle-arena:1]`. Open in `gui` (file picker) or gnubg. Training ignores these files.
+Same GNU Backgammon encoding as [dump-format.md](dump-format.md) (`FF[4]`, `GM[6]`). `PW`/`PB` are `p1-<label>` / `p2-<label>`, where the label is the driver (`game-engine`, `gnubg-ply2`, `hedgehog-ply1`, `game-engine-fast-ply2`). `AP[battle-arena:1]`. Open in `gui` (file picker) or gnubg. Training ignores these files.

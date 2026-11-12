@@ -7,7 +7,7 @@ import { openingPosition, stepsKey, type Position } from "ts-core";
 import type { CubeEval } from "ts-core/sim";
 import { XgClient } from "ts-core/xg";
 import { parseArgs } from "../src/cli.ts";
-import { createCheckerDriver } from "../src/drivers/checker.ts";
+import { createGameEngineDriver } from "../src/drivers/game-engine.ts";
 import { createXgDriver } from "../src/drivers/xg.ts";
 
 const FIXTURES = new URL("../../ts-core/test/fixtures/xg/", import.meta.url);
@@ -103,8 +103,8 @@ test("xg offer and take come from XG and ignore the infallible heuristic", async
   assert.deepEqual(queries, [{ xgid: "XGID=-CCCCBA------------ccccc--:0:0:1:00:0:0:0:7:6", kind: "cube" }]);
 });
 
-test("a non-xg opponent still uses the infallible cube", async () => {
-  const other = createCheckerDriver({ getMoves: async () => ({ plays: [] }) });
+test("a side without its own cube uses the infallible cube", async () => {
+  const other = createGameEngineDriver("http://127.0.0.1:9");
   assert.equal(await other.chooseOffer(racePosition(), cubeEval("no-double", "take"), ctx), "no-double");
   assert.equal(await other.chooseTake(racePosition(), cubeEval("double", "take"), ctx), "take");
 });

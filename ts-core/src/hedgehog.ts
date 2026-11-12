@@ -1,9 +1,8 @@
 import { applySteps } from "./board";
-import { fetchWithRetry } from "./bgweb";
+import { fetchWithRetry } from "./http";
 import { flipStmCubeless, makeCubeless } from "./eval";
 import { generateLegalPlays } from "./moves";
-import type { LegalPlay } from "./bgweb";
-import type { Cubeless, Player, Position, SearchPly, Step } from "./types";
+import type { Cubeless, LegalPlay, Player, Position, SearchPly, Step } from "./types";
 
 /**
  * Wire encoding for the external Hedgehog getmoves server.
@@ -289,8 +288,8 @@ export class HedgehogClient {
     const url = `${this.baseUrl.replace(/\/$/, "")}/health`;
     const res = await fetchWithRetry(
       url,
-      { method: "GET", headers: { accept: "application/json" }, signal: AbortSignal.timeout(HEDGEHOG_TIMEOUT_MS) },
-      { log: hedgehogLog },
+      { method: "GET", headers: { accept: "application/json" } },
+      { name: "hedgehog", timeoutMs: HEDGEHOG_TIMEOUT_MS },
     );
     const body = (await res.json()) as { ok?: boolean; model?: string; api?: number };
     if (!body.ok) throw new Error("hedgehog /health did not return ok");
@@ -310,16 +309,11 @@ export class HedgehogClient {
         method: "POST",
         headers: { accept: "application/json", "content-type": "application/json" },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(HEDGEHOG_TIMEOUT_MS),
       },
-      { log: hedgehogLog },
+      { name: "hedgehog", timeoutMs: HEDGEHOG_TIMEOUT_MS },
     );
     return res.json();
   }
-}
-
-function hedgehogLog(msg: string): void {
-  console.error(msg.replace("bgweb-api", "hedgehog").replace("getmoves", "hedgehog"));
 }
 
 export function hedgehogOnRoll(onRoll: Player): "W" | "B" {

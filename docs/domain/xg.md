@@ -1,6 +1,6 @@
 # eXtreme Gammon
 
-Arena opponent for `battle-arena`. Locked by [ADR 0025](../decisions/0025-xg-gui-sidecar.md). Position JSON stays the stored form ([board-representation.md](board-representation.md)). XGID exists only on this wire. Training dumps stay on bgweb-api.
+Arena opponent for `battle-arena`. Locked by [ADR 0025](../decisions/0025-xg-gui-sidecar.md). Position JSON stays the stored form ([board-representation.md](board-representation.md)). XGID exists only on this wire. Training dumps stay on the gnubg teacher ([gnubg.md](gnubg.md)).
 
 eXtreme Gammon 2 (XG) is a licensed Windows program. Its licence forbids reverse engineering, so the sidecar uses it the way a person does: import a position, run Analyze, and copy the analysis text. It never reads XG's binary, memory, files, settings, or registry, and nothing from the install goes into this repo or into Docker. Do not label dumps from XG.
 

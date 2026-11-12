@@ -4,13 +4,13 @@ A backgammon engine split into seven packages. **Docker** (Engine + Compose v2) 
 
 | Package | Role |
 | --- | --- |
-| `ts-core` | Shared TypeScript: board, legal moves, featurizer; Node match/MWC/cube, sim, teacher client, hedgehog client, XG sidecar client, SGF writer ([ADR 0016](docs/decisions/0016-ts-core.md), [ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0022](docs/decisions/0022-hedgehog-external.md), [ADR 0030](docs/decisions/0030-hedgehog-plays-itself.md), [ADR 0025](docs/decisions/0025-xg-gui-sidecar.md)) |
-| `move-dumper` | Simulates money games (no cube) and dumps labelled checker plays from [bgweb-api](https://github.com/foochu/bgweb-api) (GNU Backgammon nets over HTTP) |
+| `ts-core` | Shared TypeScript: board, legal moves, featurizer; Node match/MWC/cube, sim, gnubg sidecar client, hedgehog client, XG sidecar client, SGF writer ([ADR 0016](docs/decisions/0016-ts-core.md), [ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0022](docs/decisions/0022-hedgehog-external.md), [ADR 0030](docs/decisions/0030-hedgehog-plays-itself.md), [ADR 0031](docs/decisions/0031-gnubg-cli-sidecar.md), [ADR 0025](docs/decisions/0025-xg-gui-sidecar.md)) |
+| `move-dumper` | Simulates money games (no cube) and dumps checker plays labelled by GNU Backgammon (the `gnubg` CLI sidecar, [ADR 0031](docs/decisions/0031-gnubg-cli-sidecar.md)) |
 | `training-ground` | PyTorch training of the cubeless eval net; exports ONNX and ExecuTorch `.pte` ([ADR 0014](docs/decisions/0014-export-onnx-and-pte.md)). CUDA image ([ADR 0013](docs/decisions/0013-training-cuda.md)) |
 | `game-engine` | TypeScript HTTP API (Hono): board + dice → legal moves with evaluations; infers the net via ONNX Runtime |
 | `game-engine-fast` | CUDA C++ HTTP API on the GPU: same `/evaluate` contract plus ply search; arena driver ([ADR 0028](docs/decisions/0028-game-engine-fast.md)) |
 | `gui` | Vite + Tailwind web app: play a match against `game-engine`, or step through GNU Backgammon SGF dumps (dumper or arena) ([ADR 0027](docs/decisions/0027-gui-play-vs-engine.md)) |
-| `battle-arena` | Play any driver against any driver (default: our engine vs the teacher); win summary + SGF ([ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0023](docs/decisions/0023-arena-any-driver.md)) |
+| `battle-arena` | Play any driver against any driver (default: our engine vs GNU Backgammon); win summary + SGF ([ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0023](docs/decisions/0023-arena-any-driver.md)) |
 
 Money play includes a doubling cube in the engine and arena. **Dumper dumps are money games without a cube** ([ADR 0020](docs/decisions/0020-dumper-games-no-cube.md)). Players are `p1` / `p2`. Agent instructions: [AGENTS.md](AGENTS.md) and `docs/`. Cursor, Grok Build, and Claude Code all use that file; Grok-native copies live under `.grok/`, Claude Code reads `AGENTS.md` natively and `.claude/` holds pointers into `.cursor/`. In a Grok terminal: `grok` then `grok inspect`. In Claude Code: `claude` from the repo root.
 
@@ -29,9 +29,9 @@ Runtime TypeScript `node_modules` live in a Compose volume (Linux binaries). Do 
 
 Typical path from labelled games to a battling engine:
 
-1. Dump games with the teacher (`move-dumper`).
+1. Dump games labelled by GNU Backgammon (`move-dumper`).
 2. Train the cubeless net and export `cubeless.onnx` (`training-ground`).
-3. Serve the engine (`game-engine`) or play any driver against any driver (`battle-arena`; default is the engine vs the teacher).
+3. Serve the engine (`game-engine`) or play any driver against any driver (`battle-arena`; default is the engine vs GNU Backgammon).
 4. Play the engine in `gui`, or open GNU SGF there (or in gnubg).
 
 `game-engine` needs `training-ground/checkpoints/cubeless.onnx`. Training needs dumps under `move-dumper/dumps/` (Compose mounts them at `/data/dumps`).
@@ -54,13 +54,15 @@ Writes `move-dumper/dumps/<batch>/` (`manifest.json` + gzip JSONL + `replay/*.sg
 From `move-dumper/`:
 
 ```sh
-# teacher API (http://127.0.0.1:8080 on the host; dumper uses http://bgweb-api:8080)
+# gnubg sidecar (builds on first run; http://127.0.0.1:8080 on the host, http://gnubg:8080 for the dumper)
 docker compose up -d
 
 docker compose --profile test run --rm test
 
-# labelled games (Compose sets BGWEB_BASE_URL)
+# labelled games (Compose sets GNUBG_BASE_URL); default GnuBG world class (2-ply, gnubg filter)
 docker compose --profile dumper run --rm dumper npm run dump:inner -- --games 1 --seed 1
+# every play searched at 1-ply
+docker compose --profile dumper run --rm dumper npm run dump:inner -- --games 1 --seed 1 --ply 1 --label-filter all
 
 docker compose down
 docker compose --profile install-host run --rm install-host
@@ -72,7 +74,9 @@ Dumper flags (after `--`):
 | --- | --- | --- |
 | `--games N` | `1` | Number of independent money games (no cube) |
 | `--seed N` | `1` | RNG seed stored on the batch manifest |
-| `--base-url URL` | `BGWEB_BASE_URL` or `http://127.0.0.1:8080` | Teacher origin (set by Compose) |
+| `--ply N` | `2` | GnuBG ply of the labels, 0–4 |
+| `--label-filter F` | `gnubg` | `gnubg`: GnuBG's own move filter (top plays at `--ply`, the rest shallower; how bgweb-api labelled). `all`: every play at `--ply` |
+| `--base-url URL` | `GNUBG_BASE_URL` or `http://127.0.0.1:8080` | gnubg sidecar origin (set by Compose) |
 
 There is no `--matches` / `--length`. Help: add `--help` after `--`.
 
@@ -167,7 +171,7 @@ http://localhost:5173 — **Play**: pick a match length, New match, click checke
 
 ## battle-arena
 
-Starts teacher + game-engine, then plays matches. A `game-engine` side needs `training-ground/checkpoints/cubeless.onnx`. Writes gitignored `battle-arena/replays/`. From `battle-arena/`:
+Starts the gnubg sidecar + game-engine, then plays matches. A `game-engine` side needs `training-ground/checkpoints/cubeless.onnx`. Writes gitignored `battle-arena/replays/`. From `battle-arena/`:
 
 ```sh
 docker compose up -d
@@ -197,10 +201,10 @@ Battle flags (after `--`):
 | `--seed N` | `1` | RNG seed |
 | `--length N` | `7` | Match length `1,3,5,7,9,11,13,15` |
 | `--no-cube` | (off) | Checker-only; never offer, take, or drop |
-| `--a DRIVER` | `game-engine` | Side a: `game-engine`, `game-engine-fast`, `teacher`, `hedgehog`, or `xg` |
-| `--b DRIVER` | `teacher` | Side b. Same driver on both sides is allowed |
-| `--a-url URL` / `--b-url URL` | by driver | `ENGINE_BASE_URL` / `FAST_ENGINE_BASE_URL` / `BGWEB_BASE_URL` / `HEDGEHOG_BASE_URL` / `XG_BASE_URL`, or `http://127.0.0.1:3000` / `:3001` / `:8080` / `:8090` / `:8091` |
-| `--a-ply N` / `--b-ply N` | `1` hedgehog, `0` game-engine-fast | GnuBG ply (0 = net, 1 = one opponent roll). hedgehog 0–1, game-engine-fast 0–4. Other drivers ignore it and warn |
+| `--a DRIVER` | `game-engine` | Side a: `game-engine`, `game-engine-fast`, `gnubg`, `hedgehog`, or `xg` (`teacher` still works as an old name for `gnubg`) |
+| `--b DRIVER` | `gnubg` | Side b. Same driver on both sides is allowed |
+| `--a-url URL` / `--b-url URL` | by driver | `ENGINE_BASE_URL` / `FAST_ENGINE_BASE_URL` / `GNUBG_BASE_URL` / `HEDGEHOG_BASE_URL` / `XG_BASE_URL`, or `http://127.0.0.1:3000` / `:3001` / `:8080` / `:8090` / `:8091` |
+| `--a-ply N` / `--b-ply N` | `2` gnubg, `1` hedgehog, `0` game-engine-fast | GnuBG ply (0 = net, 1 = one opponent roll). gnubg 0–4, hedgehog 0–1, game-engine-fast 0–4. Other drivers ignore it and warn |
 
 An `xg` side needs eXtreme Gammon 2 and its host sidecar running first ([docs/domain/xg.md](docs/domain/xg.md)).
 

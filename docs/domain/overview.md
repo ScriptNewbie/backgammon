@@ -3,8 +3,8 @@
 Pipeline:
 
 ```
-foochu/bgweb-api (GNU Backgammon nets over HTTP)
-        │  getmoves: legal plays + cubeless / money cubeful eq
+gnubg sidecar (GNU Backgammon 1.07 CLI over HTTP, ADR 0031)
+        │  hint: every legal play + cubeless probs / money cubeful eq, cube decisions
         ▼
   move-dumper          TypeScript — simulate games (no cube), dump labelled JSON + SGF
         │
@@ -22,7 +22,7 @@ foochu/bgweb-api (GNU Backgammon nets over HTTP)
                        (arena driver only; ADR 0028; ply 0-4, move filters)
         │
         ▼
-  battle-arena         TypeScript — any driver vs any driver (max strength; default engine vs teacher),
+  battle-arena         TypeScript — any driver vs any driver (max strength; default engine vs gnubg),
                        win summary + GNU SGF replays
                        shared match loop: ts-core/sim
 ```
@@ -38,7 +38,7 @@ Canonical specs:
 - Evaluations: [evaluation.md](evaluation.md)
 - GPU ply-search engine: [game-engine-fast.md](game-engine-fast.md)
 - Dump files: [dump-format.md](dump-format.md)
-- Teacher (bgweb-api): [gnubg.md](gnubg.md)
+- Teacher (GNU Backgammon CLI sidecar): [gnubg.md](gnubg.md)
 - Hedgehog arena opponent: [hedgehog.md](hedgehog.md)
 - eXtreme Gammon arena opponent: [xg.md](xg.md)
 - Simulation: [move-dumper.md](move-dumper.md)

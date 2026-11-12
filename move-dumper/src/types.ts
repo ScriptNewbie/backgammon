@@ -1,5 +1,5 @@
 import type { Eval, Position, Step } from "ts-core";
-import type { LegalPlay } from "ts-core/bgweb";
+import type { LegalPlay } from "ts-core";
 
 export type {
   Cube,
@@ -38,13 +38,17 @@ export type Manifest = {
   recordsFile: "records.jsonl.gz";
   recordCount: number;
   engine: {
-    name: "bgweb-api";
+    /** Teacher. Batches written before ADR 0031 say "bgweb-api" (its plies 1 = GnuBG 0-ply). */
+    name: "gnubg";
     version: string;
     settings: {
       play: "game";
       baseUrl: string;
       cubefulLabels: true;
-      plies?: number;
+      /** GnuBG ply of the labels (the top plays' depth under `labelFilter: "gnubg"`). */
+      ply: number;
+      /** `gnubg`: GnuBG's own move filter (top plays at `ply`, the rest shallower). `all`: every play at `ply`. */
+      labelFilter: "gnubg" | "all";
       seed: number;
       levels: Level[];
       pairingWeights: Record<string, number>;

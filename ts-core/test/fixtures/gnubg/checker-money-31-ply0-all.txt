@@ -1,0 +1,101 @@
+XGID=-b----E-C---eE---c-e----B-:0:0:1:31:0:0:0:0:10
+
+`eval' and `hint' chequerplay will use 0 ply evaluation.
+`eval' and `hint' cube decisions will use 0 ply evaluation.
+The dice have been set to 3 and 1.
+ GNU Backgammon  Position ID: 4HPwATDgc/ABMA
+                 Match ID   : cIkFAAAAAAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ | X           O    |   | O              X |     0 points
+ | X           O    |   | O              X |     
+ | X           O    |   | O                |     
+ | X                |   | O                |     
+ | X                |   | O                |    
+v|                  |BAR|                  |     (Cube: 1)
+ | O                |   | X                |    
+ | O                |   | X                |     
+ | O           X    |   | X                |     
+ | O           X    |   | X              O |     Rolled 31
+ | O           X    |   | X              O |     0 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg
+
+ GNU Backgammon  Position ID: 4HPwATDgc/ABMA
+                 Match ID   : cIkFAAAAAAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ | X           O    |   | O              X |     0 points
+ | X           O    |   | O              X |     
+ | X           O    |   | O                |     
+ | X                |   | O                |     
+ | X                |   | O                |    
+v|                  |BAR|                  |     (Cube: 1)
+ | O                |   | X                |    
+ | O                |   | X                |     
+ | O           X    |   | X                |     
+ | O           X    |   | X              O |     Rolled 31
+ | O           X    |   | X              O |     0 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg
+
+ GNU Backgammon  Position ID: 4HPwATDgc/ABMA
+                 Match ID   : cIkFAAAAAAAE
+ +13-14-15-16-17-18------19-20-21-22-23-24-+     O: node
+ | X           O    |   | O              X |     0 points
+ | X           O    |   | O              X |     
+ | X           O    |   | O                |     
+ | X                |   | O                |     
+ | X                |   | O                |    
+v|                  |BAR|                  |     (Cube: 1)
+ | O                |   | X                |    
+ | O                |   | X                |     
+ | O           X    |   | X                |     
+ | O           X    |   | X              O |     Rolled 31
+ | O           X    |   | X              O |     0 points
+ +12-11-10--9--8--7-------6--5--4--3--2--1-+     X: gnubg
+
+    1. Cubeful 0-ply    8/5 6/5                      Eq.: +0.218154
+       0.550952 0.173708 0.012809 - 0.449048 0.124388 0.005021
+        0-ply cubeful prune [expert]
+    2. Cubeful 0-ply    24/23 13/10                  Eq.: -0.012006 (-0.230160)
+       0.496973 0.136872 0.007713 - 0.503027 0.140396 0.006805
+        0-ply cubeful prune [expert]
+    3. Cubeful 0-ply    24/20                        Eq.: -0.020462 (-0.238616)
+       0.496747 0.125083 0.005388 - 0.503253 0.135087 0.004358
+        0-ply cubeful prune [expert]
+    4. Cubeful 0-ply    24/23 24/21                  Eq.: -0.025618 (-0.243772)
+       0.495532 0.123005 0.005467 - 0.504468 0.134602 0.004167
+        0-ply cubeful prune [expert]
+    5. Cubeful 0-ply    13/9                         Eq.: -0.026163 (-0.244317)
+       0.490872 0.142578 0.009320 - 0.509128 0.143324 0.008273
+        0-ply cubeful prune [expert]
+    6. Cubeful 0-ply    24/21 6/5                    Eq.: -0.048724 (-0.266878)
+       0.492609 0.124510 0.006768 - 0.507391 0.146018 0.007467
+        0-ply cubeful prune [expert]
+    7. Cubeful 0-ply    13/10 6/5                    Eq.: -0.052552 (-0.270706)
+       0.489311 0.138231 0.009630 - 0.510689 0.153650 0.011724
+        0-ply cubeful prune [expert]
+    8. Cubeful 0-ply    24/23 6/3                    Eq.: -0.107601 (-0.325755)
+       0.477327 0.124572 0.007011 - 0.522673 0.157301 0.008276
+        0-ply cubeful prune [expert]
+    9. Cubeful 0-ply    24/23 8/5                    Eq.: -0.109367 (-0.327521)
+       0.476827 0.124109 0.007279 - 0.523173 0.156427 0.009208
+        0-ply cubeful prune [expert]
+   10. Cubeful 0-ply    24/21 8/7                    Eq.: -0.112861 (-0.331015)
+       0.473083 0.118318 0.005928 - 0.526917 0.145460 0.007011
+        0-ply cubeful prune [expert]
+   11. Cubeful 0-ply    13/10 8/7                    Eq.: -0.114329 (-0.332483)
+       0.471724 0.132952 0.008674 - 0.528276 0.156675 0.011151
+        0-ply cubeful prune [expert]
+   12. Cubeful 0-ply    8/4                          Eq.: -0.154146 (-0.372300)
+       0.462384 0.127150 0.008368 - 0.537616 0.160958 0.011089
+        0-ply cubeful prune [expert]
+   13. Cubeful 0-ply    6/2                          Eq.: -0.184789 (-0.402943)
+       0.456993 0.121069 0.006862 - 0.543007 0.165809 0.010859
+        0-ply cubeful prune [expert]
+   14. Cubeful 0-ply    6/5 6/3                      Eq.: -0.193751 (-0.411905)
+       0.459275 0.121373 0.007835 - 0.540725 0.175990 0.014666
+        0-ply cubeful prune [expert]
+   15. Cubeful 0-ply    8/7 6/3                      Eq.: -0.211767 (-0.429921)
+       0.453148 0.120683 0.007526 - 0.546852 0.175835 0.013993
+        0-ply cubeful prune [expert]
+   16. Cubeful 0-ply    8/7 8/5                      Eq.: -0.313873 (-0.532027)
+       0.430403 0.114183 0.008090 - 0.569597 0.194073 0.019159
+        0-ply cubeful prune [expert]
