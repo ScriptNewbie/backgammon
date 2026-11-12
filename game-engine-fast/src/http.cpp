@@ -66,6 +66,40 @@ void registerRoutes(httplib::Server& server, Net& net, bool log) {
       return sendError(res, 500, std::string("internal error: ") + e.what());
     }
   });
+  server.Post("/cube", [&net, log](const httplib::Request& req, httplib::Response& res) {
+    int ply = 0;
+    if (!parsePly(req, ply)) return sendError(res, 400, "ply must be an integer 0-" + std::to_string(kMaxPly));
+    nlohmann::json body;
+    try {
+      body = nlohmann::json::parse(req.body);
+    } catch (const std::exception&) {
+      return sendError(res, 400, "invalid json");
+    }
+    try {
+      const EvalRequest cube = parseCubeRequest(body);
+      const auto t0 = std::chrono::steady_clock::now();
+      SearchStats stats;
+      const nlohmann::ordered_json out = cubeDecision(cube, ply, net, &stats);
+      const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+      if (log) {
+        std::printf("  cube ply=%d onRoll=%s available=%d offer=%s take=%s leaves=%lld %.2fms\n", ply,
+                    playerName(cube.onRoll), out["available"].get<bool>() ? 1 : 0,
+                    out["offer"].get<std::string>().c_str(),
+                    out["take"].is_null() ? "null" : out["take"].get<std::string>().c_str(),
+                    static_cast<long long>(stats.leaves), ms);
+        std::fflush(stdout);
+      }
+      res.set_content(out.dump(), "application/json");
+    } catch (const std::invalid_argument& e) {
+      return sendError(res, 400, e.what());
+    } catch (const SearchTooLarge& e) {
+      if (log) std::printf("  cube ply=%d rejected: %s\n", ply, e.what());
+      return sendError(res, 400, e.what());
+    } catch (const std::exception& e) {
+      std::fprintf(stderr, "cube failed: %s\n", e.what());
+      return sendError(res, 500, std::string("internal error: ") + e.what());
+    }
+  });
 }
 
 }  // namespace bg

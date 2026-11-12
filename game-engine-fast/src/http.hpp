@@ -7,11 +7,11 @@
 
 namespace bg {
 
-// GET /health, POST /evaluate?ply=N.
-//   200: evaluate response.
+// GET /health, POST /evaluate?ply=N, POST /cube?ply=N.
+//   200: evaluate or cube response.
 //   400: invalid ply / JSON / position, ply above the search limit, or search too large.
 //   500: anything else (e.g. a CUDA error), as {"error": "..."}.
-// `log` prints one line per evaluate request with search stats.
+// `log` prints one line per evaluate or cube request with search stats.
 void registerRoutes(httplib::Server& server, Net& net, bool log = true);
 
 }  // namespace bg

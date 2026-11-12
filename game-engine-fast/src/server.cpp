@@ -1,4 +1,4 @@
-// game-engine-fast HTTP server: GET /health, POST /evaluate?ply=N (docs/domain/game-engine-fast.md).
+// game-engine-fast HTTP server: GET /health, POST /evaluate?ply=N, POST /cube?ply=N (docs/domain/game-engine-fast.md).
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
@@ -7,6 +7,7 @@
 #include <httplib.h>
 
 #include "http.hpp"
+#include "match.hpp"
 #include "net_gpu.hpp"
 #include "search.hpp"
 
@@ -24,6 +25,12 @@ int main() {
   const int port = std::atoi(envOr("PORT", "3001"));
   if (!bg::cudaAvailable()) {
     std::fprintf(stderr, "game-engine-fast: no CUDA device (is the container started with gpus: all?)\n");
+    return 1;
+  }
+  try {
+    bg::met();  // fail at startup, not on the first match request
+  } catch (const std::exception& e) {
+    std::fprintf(stderr, "game-engine-fast: %s\n", e.what());
     return 1;
   }
   std::unique_ptr<bg::Net> net;

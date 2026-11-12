@@ -7,11 +7,10 @@ import {
   playGame,
   Rng,
   type MatchPlayer,
-  type RankedPlay,
   type TurnContext,
 } from "ts-core/sim";
 import { DumpWriter } from "./dump";
-import { sampleCheckerIndex, sampleLevelPair } from "./levels";
+import { sampleCheckerIndex, sampleLevelPair, type RankedPlay } from "./levels";
 import type { DumpRecord, Level } from "./types";
 
 function dumpMoves(plays: readonly LegalPlay[]): DumpRecord["moves"] {

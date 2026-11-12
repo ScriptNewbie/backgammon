@@ -19,7 +19,17 @@ function counts(raw: unknown, label: string): { p1: number; p2: number } {
   return { p1: o.p1, p2: o.p2 };
 }
 
+/** `POST /evaluate`: dice required. */
 export function parseEvaluateBody(body: unknown): Position {
+  return parsePosition(body, true);
+}
+
+/** `POST /cube`: the doubler on roll before the roll, so `dice` must be null. */
+export function parseCubeBody(body: unknown): Position {
+  return parsePosition(body, false);
+}
+
+function parsePosition(body: unknown, withDice: boolean): Position {
   if (!body || typeof body !== "object") throw new Error("position object required");
   const raw = body as Record<string, unknown>;
   if (!Array.isArray(raw.points) || raw.points.length !== 24) {
@@ -32,12 +42,18 @@ export function parseEvaluateBody(body: unknown): Position {
     return n;
   });
   if (!isPlayer(raw.onRoll)) throw new Error("onRoll must be p1 or p2");
-  if (!Array.isArray(raw.dice) || raw.dice.length !== 2) {
-    throw new Error("dice must be two ints 1-6");
+  let dice: Position["dice"] = null;
+  if (withDice) {
+    if (!Array.isArray(raw.dice) || raw.dice.length !== 2) {
+      throw new Error("dice must be two ints 1-6");
+    }
+    const d1 = raw.dice[0];
+    const d2 = raw.dice[1];
+    if (!isInt(d1, 1, 6) || !isInt(d2, 1, 6)) throw new Error("dice must be two ints 1-6");
+    dice = [d1, d2];
+  } else if (raw.dice !== null) {
+    throw new Error("dice must be null (cube decisions are made before the roll)");
   }
-  const d1 = raw.dice[0];
-  const d2 = raw.dice[1];
-  if (!isInt(d1, 1, 6) || !isInt(d2, 1, 6)) throw new Error("dice must be two ints 1-6");
 
   if (!raw.cube || typeof raw.cube !== "object") throw new Error("cube required");
   const cubeRaw = raw.cube as Record<string, unknown>;
@@ -81,7 +97,7 @@ export function parseEvaluateBody(body: unknown): Position {
     bar: counts(raw.bar, "bar"),
     off: counts(raw.off, "off"),
     onRoll: raw.onRoll,
-    dice: [d1, d2],
+    dice,
     cube: {
       value: cubeRaw.value,
       owner: cubeRaw.owner,

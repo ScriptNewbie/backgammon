@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { parseArgs, playersForSeats, seatsForMatch } from "../src/cli.ts";
-import { evaluateUrl } from "../src/drivers/game-engine.ts";
+import { engineUrl } from "../src/drivers/game-engine.ts";
 import type { MatchPlayer } from "ts-core/sim";
 
 test("CLI defaults to game-engine vs gnubg at 2-ply", () => {
@@ -125,10 +125,11 @@ test("game-engine-fast takes ply 0-4, default 0, own URL", () => {
   }
 });
 
-test("engine evaluate URL carries ply only when set", () => {
-  assert.equal(evaluateUrl("http://game-engine:3000"), "http://game-engine:3000/evaluate");
-  assert.equal(evaluateUrl("http://game-engine-fast:3001/", 2), "http://game-engine-fast:3001/evaluate?ply=2");
-  assert.equal(evaluateUrl("http://game-engine-fast:3001", 0), "http://game-engine-fast:3001/evaluate?ply=0");
+test("engine route URLs carry ply only when set", () => {
+  assert.equal(engineUrl("http://game-engine:3000", "evaluate"), "http://game-engine:3000/evaluate");
+  assert.equal(engineUrl("http://game-engine-fast:3001/", "evaluate", 2), "http://game-engine-fast:3001/evaluate?ply=2");
+  assert.equal(engineUrl("http://game-engine-fast:3001", "cube", 0), "http://game-engine-fast:3001/cube?ply=0");
+  assert.equal(engineUrl("http://game-engine:3000", "cube"), "http://game-engine:3000/cube");
 });
 
 test("CLI rejects an unknown driver", () => {

@@ -12,14 +12,11 @@ import {
   opponent,
   pointsAwarded,
 } from "./board";
-import { evaluateCube, type CubeEval } from "./cube";
-import { flipStmCubeless } from "./eval";
 import { Rng } from "./rng";
 import type { SgfEvent, SgfGame } from "./sgf-codec";
 import type { Cubeless, MatchPhase, Player, Position, Step } from "./types";
 
 export { Rng } from "./rng";
-export type { CubeEval };
 
 export type TurnContext = {
   matchId: string;
@@ -28,15 +25,18 @@ export type TurnContext = {
   phase: MatchPhase;
 };
 
+/** The play the side chose. `cubeless` (the engine's eval of the result) is informational: the loop only plays `steps`. */
 export type CheckerChoice = {
   steps: Step[];
-  cubeless: Cubeless | null;
+  cubeless?: Cubeless | null;
 };
 
 export type MatchPlayer = {
   chooseChecker(pos: Position, ctx: TurnContext): Promise<CheckerChoice>;
-  chooseOffer(pos: Position, cubeEval: CubeEval, ctx: TurnContext): Promise<"no-double" | "double">;
-  chooseTake(pos: Position, cubeEval: CubeEval, ctx: TurnContext): Promise<"take" | "drop">;
+  /** Doubler on roll, `dice` null. The side decides on its own evaluation (ADR 0032). */
+  chooseOffer(pos: Position, ctx: TurnContext): Promise<"no-double" | "double">;
+  /** Same position as the offer (doubler on roll); the taker answers. */
+  chooseTake(pos: Position, ctx: TurnContext): Promise<"take" | "drop">;
 };
 
 export type MatchObserver = {
@@ -55,28 +55,6 @@ export type MatchObserver = {
   }): void;
 };
 
-export type RankedPlay = {
-  /** Higher is better. Arena: mover MWC. Dumper: negated result cubeless equity. */
-  rankScore: number;
-  teacherDiff: number;
-  stepsKey: string;
-};
-
-export function pickBestPlayIndex(plays: readonly RankedPlay[]): number {
-  if (plays.length === 0) return -1;
-  let best = 0;
-  for (let i = 1; i < plays.length; i++) {
-    if (betterInfallible(plays[i]!, plays[best]!)) best = i;
-  }
-  return best;
-}
-
-function betterInfallible(a: RankedPlay, b: RankedPlay): boolean {
-  if (a.rankScore !== b.rankScore) return a.rankScore > b.rankScore;
-  if (a.teacherDiff !== b.teacherDiff) return a.teacherDiff > b.teacherDiff;
-  return a.stepsKey < b.stepsKey;
-}
-
 export function rollOpening(rng: Rng): { onRoll: Player; dice: [number, number] } {
   let d1 = rng.die();
   let d2 = rng.die();
@@ -86,17 +64,6 @@ export function rollOpening(rng: Rng): { onRoll: Player; dice: [number, number] 
   }
   if (d1 > d2) return { onRoll: "p1", dice: [d1, d2] };
   return { onRoll: "p2", dice: [d2, d1] };
-}
-
-export function infallibleCube(): Pick<MatchPlayer, "chooseOffer" | "chooseTake"> {
-  return {
-    async chooseOffer(_pos, cubeEval) {
-      return cubeEval.infallibleOffer;
-    },
-    async chooseTake(_pos, cubeEval) {
-      return cubeEval.infallibleTake;
-    },
-  };
 }
 
 export async function playMatch(opts: {
@@ -167,7 +134,7 @@ export async function playGame(opts: {
   phase: MatchPhase;
   gameIndex: number;
   observer?: MatchObserver;
-  start?: { position: Position; stmCubeless: Cubeless | null; opening: boolean };
+  start?: { position: Position; opening: boolean };
   allowCube?: boolean;
   /** Money game: opening `match` is null. SGF still uses `length` / `score` / `phase` as file headers. */
   money?: boolean;
@@ -195,7 +162,6 @@ export async function playGame(opts: {
   const events: SgfEvent[] = [];
   let ply = 0;
   let opening = opts.start?.opening ?? true;
-  let stmCubeless: Cubeless | null = opts.start?.stmCubeless ?? null;
 
   if (opening && !pos.dice) {
     const openingDice = rollOpening(rng);
@@ -210,13 +176,10 @@ export async function playGame(opts: {
         allowCube &&
         pos.match &&
         pos.cube.mayDouble[pos.onRoll] &&
-        pos.cube.value < MAX_CUBE_VALUE &&
-        stmCubeless
+        pos.cube.value < MAX_CUBE_VALUE
       ) {
         const ended = await maybeCube({
           pos,
-          stmCubeless,
-          phase,
           players,
           observer,
           ctx: { matchId, gameId, ply, phase },
@@ -257,9 +220,6 @@ export async function playGame(opts: {
 
     if (chosen.steps.length > 0) {
       pos = applySteps(pos, chosen.steps);
-      stmCubeless = chosen.cubeless;
-    } else if (stmCubeless) {
-      stmCubeless = flipStmCubeless(stmCubeless);
     }
 
     const ended = gameResult(pos);
@@ -284,8 +244,6 @@ export async function playGame(opts: {
 
 async function maybeCube(opts: {
   pos: Position;
-  stmCubeless: Cubeless;
-  phase: MatchPhase;
   players: { p1: MatchPlayer; p2: MatchPlayer };
   observer?: MatchObserver;
   ctx: TurnContext;
@@ -294,12 +252,11 @@ async function maybeCube(opts: {
   events: SgfEvent[];
   drop: { winner: Player; cubeValue: number } | null;
 }> {
-  const { stmCubeless, phase, players, observer, ctx } = opts;
+  const { players, observer, ctx } = opts;
   let pos = clonePosition(opts.pos);
   pos.dice = null;
   const doubler = pos.onRoll;
-  const cubeEval = evaluateCube(stmCubeless, pos, phase);
-  const offer = await players[doubler].chooseOffer(pos, cubeEval, ctx);
+  const offer = await players[doubler].chooseOffer(pos, ctx);
   const events: SgfEvent[] = [];
 
   if (offer === "no-double") {
@@ -309,7 +266,7 @@ async function maybeCube(opts: {
   observer?.onCube?.({ position: clonePosition(pos), player: doubler, action: "double", ply: ctx.ply });
   events.push({ kind: "cube", player: doubler, action: "double" });
   const taker = opponent(doubler);
-  const response = await players[taker].chooseTake(pos, cubeEval, ctx);
+  const response = await players[taker].chooseTake(pos, ctx);
   observer?.onCube?.({ position: clonePosition(pos), player: taker, action: response, ply: ctx.ply });
   events.push({ kind: "cube", player: taker, action: response });
 

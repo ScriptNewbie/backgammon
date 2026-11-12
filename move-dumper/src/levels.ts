@@ -1,5 +1,5 @@
 import type { Level } from "./types";
-import { pickBestPlayIndex, type RankedPlay, type Rng } from "ts-core/sim";
+import type { Rng } from "ts-core/sim";
 
 export const LEVELS: readonly Level[] = [
   "noob",
@@ -78,12 +78,19 @@ export function softmaxSample(weights: readonly number[], rng: Rng): number {
   return exps.length - 1;
 }
 
-export type { RankedPlay };
+/** One teacher play, in the teacher's order (index 0 is gnubg's own first choice). */
+export type RankedPlay = {
+  /** Higher is better: negated result cubeless equity (sampling weight for the softmax levels). */
+  rankScore: number;
+  teacherDiff: number;
+  stepsKey: string;
+};
 
 export function sampleCheckerIndex(level: Level, plays: readonly RankedPlay[], rng: Rng): number {
   if (plays.length === 0) return -1;
   if (level === "noob") return rng.int(plays.length);
-  if (level === "infallible") return pickBestPlayIndex(plays);
+  // gnubg's own first line (ADR 0032); the softmax levels below still sample by rankScore.
+  if (level === "infallible") return 0;
   const tau = temperature(level);
   if (tau === null) return sampleCheckerIndex("infallible", plays, rng);
   const max = Math.max(...plays.map((p) => p.rankScore));

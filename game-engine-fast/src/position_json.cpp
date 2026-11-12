@@ -31,7 +31,7 @@ void counts(const json& body, const char* label, int& p1, int& p2) {
   }
 }
 
-void validateCube(const json& body, int& value) {
+void validateCube(const json& body, int& value, bool mayDouble[2]) {
   if (!body.contains("cube") || !body["cube"].is_object()) fail("cube required");
   const json& cube = body["cube"];
   int v = 0;
@@ -48,11 +48,14 @@ void validateCube(const json& body, int& value) {
       !may["p2"].is_boolean()) {
     fail("cube.mayDouble.p1/p2 must be boolean");
   }
+  mayDouble[0] = may["p1"].get<bool>();
+  mayDouble[1] = may["p2"].get<bool>();
 }
 
-void validateMatch(const json& body) {
+void validateMatch(const json& body, EvalRequest& req) {
   if (!body.contains("match")) fail("match must be an object or null");
   const json& match = body["match"];
+  req.hasMatch = false;
   if (match.is_null()) return;
   if (!match.is_object()) fail("match must be an object or null");
   int length = 0, s1 = 0, s2 = 0;
@@ -68,11 +71,16 @@ void validateMatch(const json& body) {
   if (!match.contains("crawford") || !match["crawford"].is_boolean()) {
     fail("match.crawford must be boolean");
   }
+  req.hasMatch = true;
+  req.matchLength = length;
+  req.score[0] = s1;
+  req.score[1] = s2;
+  req.crawford = match["crawford"].get<bool>();
 }
 
 }  // namespace
 
-EvalRequest parseEvalRequest(const json& body) {
+static EvalRequest parseRequest(const json& body, bool withDice) {
   if (!body.is_object()) fail("position object required");
   if (!body.contains("points") || !body["points"].is_array() || body["points"].size() != 24) {
     fail("points must be length 24");
@@ -87,12 +95,16 @@ EvalRequest parseEvalRequest(const json& body) {
   const Player onRoll = isString(body["onRoll"], "p1") ? Player::P1 : Player::P2;
 
   EvalRequest req{};
-  if (!body.contains("dice") || !body["dice"].is_array() || body["dice"].size() != 2 ||
-      !intIn(body["dice"][0], 1, 6, req.die1) || !intIn(body["dice"][1], 1, 6, req.die2)) {
-    fail("dice must be two ints 1-6");
+  if (withDice) {
+    if (!body.contains("dice") || !body["dice"].is_array() || body["dice"].size() != 2 ||
+        !intIn(body["dice"][0], 1, 6, req.die1) || !intIn(body["dice"][1], 1, 6, req.die2)) {
+      fail("dice must be two ints 1-6");
+    }
+  } else if (!body.contains("dice") || !body["dice"].is_null()) {
+    fail("dice must be null (cube decisions are made before the roll)");
   }
-  validateCube(body, req.cubeValue);
-  validateMatch(body);
+  validateCube(body, req.cubeValue, req.mayDouble);
+  validateMatch(body, req);
   int bar1, bar2, off1, off2;
   counts(body, "bar", bar1, bar2);
   counts(body, "off", off1, off2);
@@ -127,6 +139,10 @@ EvalRequest parseEvalRequest(const json& body) {
   req.onRoll = onRoll;
   return req;
 }
+
+EvalRequest parseEvalRequest(const json& body) { return parseRequest(body, true); }
+
+EvalRequest parseCubeRequest(const json& body) { return parseRequest(body, false); }
 
 nlohmann::ordered_json stepToJson(Player onRoll, const Step& step) {
   nlohmann::ordered_json j;

@@ -9,9 +9,8 @@ type HedgehogLike = {
 
 /**
  * The Hedgehog engine through its sidecar (docs/domain/hedgehog.md, ADR 0030). Checker play
- * is Hedgehog's top play at this cube and score, not re-ranked by our MWC. Offer and take are
- * Hedgehog's own cube decision with the doubler on roll; `cubeEval.infallible*` is ignored on
- * this side only.
+ * is Hedgehog's top play at this cube and score, not re-ranked. Offer and take are
+ * Hedgehog's own cube decision with the doubler on roll.
  */
 export function createHedgehogDriver(client: HedgehogLike): MatchPlayer {
   return {

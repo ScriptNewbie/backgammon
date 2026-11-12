@@ -4,10 +4,8 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { after, before, test } from "node:test";
 import { openingPosition, stepsKey, type Position } from "ts-core";
-import type { CubeEval } from "ts-core/sim";
 import { XgClient } from "ts-core/xg";
 import { parseArgs } from "../src/cli.ts";
-import { createGameEngineDriver } from "../src/drivers/game-engine.ts";
 import { createXgDriver } from "../src/drivers/xg.ts";
 
 const FIXTURES = new URL("../../ts-core/test/fixtures/xg/", import.meta.url);
@@ -76,10 +74,6 @@ function racePosition(): Position {
   return pos;
 }
 
-function cubeEval(offer: "double" | "no-double", take: "take" | "drop"): CubeEval {
-  return { infallibleOffer: offer, infallibleTake: take } as CubeEval;
-}
-
 test("health check reads the sidecar version", async () => {
   const client = new XgClient(baseUrl);
   await client.healthCheck();
@@ -94,19 +88,13 @@ test("xg checker play is XG's top play with cubeless for the next mover", async 
   assert.ok(Math.abs(choice.cubeless.win - 0.4666) < 1e-9);
 });
 
-test("xg offer and take come from XG and ignore the infallible heuristic", async () => {
+test("xg offer and take come from XG", async () => {
   const driver = createXgDriver(new XgClient(baseUrl));
   const pos = racePosition();
   queries.length = 0;
-  assert.equal(await driver.chooseOffer(pos, cubeEval("no-double", "take"), ctx), "double");
-  assert.equal(await driver.chooseTake(pos, cubeEval("no-double", "take"), ctx), "drop");
+  assert.equal(await driver.chooseOffer(pos, ctx), "double");
+  assert.equal(await driver.chooseTake(pos, ctx), "drop");
   assert.deepEqual(queries, [{ xgid: "XGID=-CCCCBA------------ccccc--:0:0:1:00:0:0:0:7:6", kind: "cube" }]);
-});
-
-test("a side without its own cube uses the infallible cube", async () => {
-  const other = createGameEngineDriver("http://127.0.0.1:9");
-  assert.equal(await other.chooseOffer(racePosition(), cubeEval("no-double", "take"), ctx), "no-double");
-  assert.equal(await other.chooseTake(racePosition(), cubeEval("double", "take"), ctx), "take");
 });
 
 test("a sidecar error fails the decision", async () => {

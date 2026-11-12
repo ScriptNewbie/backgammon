@@ -10,8 +10,7 @@ type GnubgLike = {
 /**
  * GNU Backgammon through its command-line sidecar (docs/domain/gnubg.md, ADR 0031). Checker
  * play is gnubg's top play at this cube, score, and ply, with its own move filters, not
- * re-ranked by our MWC. Offer and take are gnubg's cube analysis with the doubler on roll;
- * `cubeEval.infallible*` is ignored on this side only.
+ * re-ranked. Offer and take are gnubg's cube analysis with the doubler on roll.
  */
 export function createGnubgDriver(client: GnubgLike): MatchPlayer {
   return {

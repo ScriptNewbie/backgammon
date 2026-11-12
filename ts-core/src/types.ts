@@ -48,9 +48,27 @@ export type CubeActionFlag = {
   take: boolean;
 };
 
+/**
+ * An engine's cube decision for the position with the doubler on roll and no dice
+ * (`POST /cube` on game-engine and game-engine-fast, ADR 0032). MWCs are for the doubler.
+ * `available` is false when `match` is null, the doubler may not double, or the cube is at 64:
+ * then `offer` is "no-double" and `take` and the MWCs are null.
+ */
+export type CubeDecision = {
+  available: boolean;
+  offer: "double" | "no-double";
+  take: "take" | "drop" | null;
+  noDouble: number | null;
+  doubleTake: number | null;
+  doubleDrop: number | null;
+  /** The doubler's cubeless probabilities the decision was made from. */
+  cubeless: Cubeless;
+};
+
 export type Eval = {
   cubeless: Cubeless;
   cubefulEquity: number;
+  /** Reserved. Teacher labels and both engines leave it null; engine cube decisions come from `/cube` (ADR 0032). */
   cubeAction: CubeActionFlag | null;
   /** `"bgweb-api"` is the teacher of dumps written before ADR 0031; new teacher labels are `"gnubg"`. */
   source: "gnubg" | "bgweb-api" | "hedgehog" | "model" | "heuristic" | "unknown";

@@ -1,6 +1,6 @@
 # Battle-arena
 
-Locked by [ADR 0019](../decisions/0019-battle-arena.md), [ADR 0023](../decisions/0023-arena-any-driver.md), [ADR 0025](../decisions/0025-xg-gui-sidecar.md), [ADR 0028](../decisions/0028-game-engine-fast.md), [ADR 0030](../decisions/0030-hedgehog-plays-itself.md), and [ADR 0031](../decisions/0031-gnubg-cli-sidecar.md). Match math: [match-play.md](match-play.md). GNU Backgammon sidecar: [gnubg.md](gnubg.md). Engine HTTP: [game-engine.md](game-engine.md), [game-engine-fast.md](game-engine-fast.md). Shared loop: `ts-core/sim`.
+Locked by [ADR 0019](../decisions/0019-battle-arena.md), [ADR 0023](../decisions/0023-arena-any-driver.md), [ADR 0025](../decisions/0025-xg-gui-sidecar.md), [ADR 0028](../decisions/0028-game-engine-fast.md), [ADR 0030](../decisions/0030-hedgehog-plays-itself.md), [ADR 0031](../decisions/0031-gnubg-cli-sidecar.md), and [ADR 0032](../decisions/0032-engines-own-decisions.md). Match math: [match-play.md](match-play.md). GNU Backgammon sidecar: [gnubg.md](gnubg.md). Engine HTTP: [game-engine.md](game-engine.md), [game-engine-fast.md](game-engine-fast.md). Shared loop: `ts-core/sim`.
 
 TypeScript tool that plays match-play between two drivers, both at **max strength**. Default is our `game-engine` vs GNU Backgammon (`gnubg`). Either side may be `game-engine`, `game-engine-fast`, `gnubg`, `hedgehog`, or `xg` (`teacher` is accepted as an old name for `gnubg`, with a warning), including the same driver on both sides.
 
@@ -26,7 +26,7 @@ docker compose --profile install-host run --rm install-host
 
 1. Two sides, `a` (`--a`) and `b` (`--b`). Even index: a=`p1`, b=`p2`. Odd index: swapped.
 2. Play games until a player’s score `>= length` (CLI `--length`, default 7; allowed `{1,3,5,7,9,11,13,15}`).
-3. `game-engine` and `game-engine-fast` sides pick the best checker play by **mover MWC** (tie-break: stable `stepsKey`). A `gnubg`, `hedgehog`, or `xg` side plays its engine's own top move. Cube (default): infallible dead-cube action from `evaluateCube`; a `gnubg`, `hedgehog`, or `xg` side offers and takes as its engine's cube analysis says. Skip cube on the opening roll of a game; skip at cube 64. **`--no-cube`:** never offer, take, or drop; `mayDouble` is false and the cube stays 1 (games play to bear-off / gammon / backgammon).
+3. Every side plays its engine's own decisions ([ADR 0032](../decisions/0032-engines-own-decisions.md)): its engine's top checker play at the real cube, score, and Crawford state, and its engine's offer (doubler) and take (taker), each side asking its own engine. The arena never re-ranks a play or computes a cube decision. It only decides when a cube question is asked: never on the opening roll of a game, in the Crawford game, or at cube 64. **`--no-cube`:** never offer, take, or drop; `mayDouble` is false and the cube stays 1 (games play to bear-off / gammon / backgammon).
 4. Write `battle-arena/replays/<batch-id>/<matchId>.sgf`. The batch id names both sides (`game-engine-vs-gnubg-ply2`, `hedgehog-ply0-vs-hedgehog-ply1`). Print a summary of match wins (overall and by seat), games, and points when the batch finishes.
 
 No skill levels. No training JSONL. Never commit `replays/`.
@@ -37,11 +37,11 @@ Each side has its own URL (`--a-url`, `--b-url`). Defaults: `ENGINE_BASE_URL` or
 
 - **GNU Backgammon (`gnubg`):** the CLI sidecar in [gnubg.md](gnubg.md) ([ADR 0031](../decisions/0031-gnubg-cli-sidecar.md)), the `gnubg` Compose service. gnubg's top checker play with its own move filter at the real cube, score, and Crawford state (not re-ranked), and gnubg's own offer and take. `ply` is GnuBG 0-4 (default 2, GnuBG world class, the depth bgweb-api effectively played at) for checker play and cube. Labels dumps too, through `move-dumper`.
 - **Hedgehog:** the sidecar in [hedgehog.md](hedgehog.md) ([ADR 0030](../decisions/0030-hedgehog-plays-itself.md)). Hedgehog's top checker play at the cube and score (not re-ranked), and Hedgehog's own offer and take. `ply` is GnuBG 0 or 1 (default 1), for checker play and cube. Not a dump source.
-- **Game-engine:** `POST /evaluate` with the full position JSON (dice set). Re-rank by mover MWC; do not use the API’s money-equity order for match play.
-- **Game-engine-fast:** the GPU engine in [game-engine-fast.md](game-engine-fast.md). Same `POST /evaluate` as game-engine plus `?ply=N`, re-ranked by mover MWC. `ply` is GnuBG 0–4 (default 0). At `ply >= 1` the engine returns only fully searched candidates, so the re-rank compares evals of the same depth.
+- **Game-engine:** `POST /evaluate` with the full position JSON (dice set); plays `moves[0]`, which the engine orders by mover MWC at the score ([game-engine.md](game-engine.md)). Offer and take from the engine's `POST /cube` on the position with the doubler on roll, cached per position.
+- **Game-engine-fast:** the GPU engine in [game-engine-fast.md](game-engine-fast.md). Same `POST /evaluate` and `POST /cube` as game-engine plus `?ply=N` on both, so checker play and cube use the same search depth. `ply` is GnuBG 0–4 (default 0).
 - **XG:** eXtreme Gammon 2 through the host GUI sidecar in [xg.md](xg.md). XG's top checker play (not re-ranked), and XG's own offer and take. Analysis level is whatever is set in XG. Not a dump source.
 
-Parameters are per side. A driver applies a parameter only when it supports it. `ply` is gnubg (0–4), hedgehog (0–1), and game-engine-fast (0–4); the CLI accepts integers 0–4 and a value above the side's driver maximum is an error. Setting `--a-ply` or `--b-ply` on `game-engine` or `xg` drops that value and prints a warning. Cube is not asked of any HTTP API except the `gnubg`, `hedgehog`, and `xg` sidecars, and only for that side. Every other side uses the shared infallible heuristic.
+Parameters are per side. A driver applies a parameter only when it supports it. `ply` is gnubg (0–4), hedgehog (0–1), and game-engine-fast (0–4); the CLI accepts integers 0–4 and a value above the side's driver maximum is an error. Setting `--a-ply` or `--b-ply` on `game-engine` or `xg` drops that value and prints a warning. Each side's cube questions go to that side's own engine only.
 
 ## Replay SGF
 

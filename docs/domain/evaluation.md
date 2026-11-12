@@ -40,31 +40,28 @@ Store the probabilities **and** `equity`; do not store equity alone. The trained
     "loseBackgammon": 0.0
   },
   "cubefulEquity": 0.0,
-  "cubeAction": {
-    "double": false,
-    "take": true
-  },
+  "cubeAction": null,
   "source": "gnubg"
 }
 ```
 
 - `source`: `"gnubg"` | `"bgweb-api"` | `"hedgehog"` | `"model"` | `"heuristic"` | `"unknown"`. `"gnubg"` is the teacher ([gnubg.md](gnubg.md)); `"bgweb-api"` marks teacher evals in batches written before [ADR 0031](../decisions/0031-gnubg-cli-sidecar.md). `"hedgehog"` is an arena opponent eval and stays out of training dumps; those plays leave `cubefulEquity` at 0 ([hedgehog.md](hedgehog.md)).
 - `cubefulEquity`: expected **money** points per game **for STM**, with the cube in its current state. Teacher dumps hold gnubg's cubeful money `Eq.` (live centered cube) after the mover→STM flip in [gnubg.md](gnubg.md). The engine uses dead-cube money `cubeless.equity * cube.value` ([ADR 0018](../decisions/0018-cube-wrap-formula.md)). This is **not** match-winning chance.
-- `cubeAction`: STM’s double decision and opponent’s take/drop if STM doubled. Use `null` when unknown or not applicable. **Teacher labels never carry cube actions** — teacher evals leave this `null`. The engine fills this from the dead-cube MWC heuristic when `position.match` is set and STM may double ([ADR 0018](../decisions/0018-cube-wrap-formula.md)). `null` when `match` is null ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)). The dumper does not simulate cube actions.
+- `cubeAction`: reserved for STM’s double decision and the opponent’s take/drop. It is always `null` today: **teacher labels never carry cube actions**, and both engines leave it `null` because their cube decisions come from `POST /cube` ([ADR 0032](../decisions/0032-engines-own-decisions.md), [game-engine.md](game-engine.md)). The dumper does not simulate cube actions ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)).
 
-Dumps store cubeless probabilities (and cubeful `eq` when requested). Training the net uses `cubeless.*`. The cube wrapper uses `cubefulEquity` for ranking and the MWC formula for `cubeAction`; it cannot use teacher `cubeAction`.
+Dumps store cubeless probabilities (and cubeful `eq` when requested). Training the net uses `cubeless.*`. The engines rank by MWC (match) or `cubefulEquity` (money) and decide the cube with the MWC formula on their own evals; nothing uses teacher `cubeAction`.
 
-Do not store MWC on the shared eval object. Arena/engine derive it from cubeless probs + `position.match` + the MET when `match` is set. The dumper ranks by negated result cubeless equity.
+Do not store MWC on the shared eval object. The engines derive it from cubeless probs + `position.match` + the MET when `match` is set. The dumper samples by negated result cubeless equity; its infallible level plays gnubg’s own first line.
 
 ## API
 
 The eval object is always for **STM of the position being scored**.
 
-`game-engine` HTTP: [game-engine.md](game-engine.md). It returns legal **checker moves**, each with the eval of the **resulting** position (opponent is STM there). To rank plays for the mover in **money** play, use **negated** `cubefulEquity` of that result (higher is better for the mover). Also return cubeless probs.
+`game-engine` HTTP: [game-engine.md](game-engine.md). It returns legal **checker moves**, each with the eval of the **resulting** position (opponent is STM there), already ordered best first for the mover: mover MWC in a match, **negated** `cubefulEquity` of the result in money play ([ADR 0032](../decisions/0032-engines-own-decisions.md)). Callers play `moves[0]`; they do not re-rank.
 
-The **dumper** ranks simulated checker plays by **negated result cubeless equity**, not MWC ([move-dumper.md](move-dumper.md)).
+The **dumper** samples simulated checker plays by **negated result cubeless equity**, not MWC; its infallible level plays gnubg’s first line ([move-dumper.md](move-dumper.md)).
 
-Cube decisions (double / no-double, take / drop) use the same eval object, not a second encoding. Teacher dumps still have `cubeAction: null`. Engine evals set `source` to `"model"`.
+Engine cube decisions (double / no-double, take / drop) come from `POST /cube` (doubler on roll, no dice), computed from the engine’s own cubeless probs of that position. Teacher dumps still have `cubeAction: null`. Engine evals set `source` to `"model"`.
 
 ## Out of scope until an ADR
 

@@ -19,10 +19,9 @@ import {
 import { animateCheckerPlay, animateCube, cancelMoveAnimation, measureCheckerTip, rollDice } from "../animate";
 import { dom, showError, type Screen } from "../dom";
 import { renderBoard } from "../render";
-import { evaluate } from "./engine";
+import { cube, evaluate } from "./engine";
 import {
   chooseStep,
-  findMove,
   movableFrom,
   reviewMove,
   turnComplete,
@@ -62,9 +61,6 @@ type State = {
   seqs: LegalSequence[];
   played: PlayedStep[];
   usedDice: number[];
-  /** Engine cube decisions, read from the eval of the last play (null = unknown). */
-  engineDoubles: boolean | null;
-  engineTakes: boolean | null;
   review: MoveReview | null;
   status: string;
   error: string | null;
@@ -82,8 +78,6 @@ const state: State = {
   seqs: [],
   played: [],
   usedDice: [],
-  engineDoubles: null,
-  engineTakes: null,
   review: null,
   status: "Pick a match length and press New match.",
   error: null,
@@ -250,8 +244,6 @@ function newMatch(): void {
 
 async function startGame(gen: number): Promise<void> {
   state.pos = openingPosition(state.length, state.score, state.phase);
-  state.engineDoubles = null;
-  state.engineTakes = null;
   state.error = null;
   state.usedDice = [];
   state.mode = "busy";
@@ -358,14 +350,12 @@ async function finishHumanTurn(gen: number): Promise<void> {
   const steps = state.played.map((p) => p.step);
   state.mode = "busy";
   state.review = null;
-  state.engineDoubles = null;
   if (start && steps.length > 0) {
     state.status = "Engine is reviewing your move…";
     render();
     const moves = await engineCall(gen, () => evaluate(start), () => void finishHumanTurn(gen));
     if (stale(gen) || !moves) return;
     state.review = reviewMove(moves, start, steps);
-    state.engineDoubles = findMove(moves, start, steps)?.eval.cubeAction?.double ?? null;
   }
   const ended = gameResult(state.pos);
   if (ended) {
@@ -381,7 +371,16 @@ async function finishHumanTurn(gen: number): Promise<void> {
 
 async function engineTurn(gen: number): Promise<void> {
   if (stale(gen)) return;
-  if (canDouble(ENGINE) && state.engineDoubles === true) {
+  if (canDouble(ENGINE)) {
+    state.status = "Engine is considering the cube…";
+    render();
+    const pos = clonePosition(state.pos);
+    const decision = await engineCall(gen, () => cube(pos), () => void engineTurn(gen));
+    if (stale(gen) || !decision) return;
+    if (decision.offer !== "double") {
+      await engineRoll(gen);
+      return;
+    }
     state.mode = "answer-double";
     state.status = `Engine doubles to ${state.pos.cube.value * 2}. Take or drop?`;
     render();
@@ -428,12 +427,10 @@ async function engineMove(gen: number): Promise<void> {
   state.error = null;
   const best = moves[0];
   if (!best) {
-    state.engineTakes = null;
     state.status = "Engine cannot move";
     render();
     await sleep(1200);
   } else {
-    state.engineTakes = best.eval.cubeAction?.take ?? null;
     state.status = `Engine plays ${stepsKey(best.steps)}`;
     const dice = diceForSteps(start, best.steps);
     for (let i = 0; i < best.steps.length; i++) {
@@ -465,8 +462,15 @@ async function humanDouble(): Promise<void> {
   if (active) animateCube(dom.board);
   await sleep(700);
   if (stale(gen)) return;
-  // Unknown (e.g. the engine danced last turn, so it has no eval): it takes.
-  if (state.engineTakes === false) {
+  await engineAnswersDouble(gen);
+}
+
+/** The engine takes or drops from its own `/cube` on the position with you on roll. */
+async function engineAnswersDouble(gen: number): Promise<void> {
+  const pos = clonePosition(state.pos);
+  const decision = await engineCall(gen, () => cube(pos), () => void engineAnswersDouble(gen));
+  if (stale(gen) || !decision) return;
+  if (decision.take === "drop") {
     endGame(gen, HUMAN, 1, state.pos.cube.value, "drop");
     return;
   }

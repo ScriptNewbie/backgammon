@@ -16,13 +16,21 @@ enum class Player : uint8_t { P1, P2 };
 struct EvalRequest {
   Board board;  // STM = onRoll
   Player onRoll;
-  int die1;
+  int die1;  // 0 for /cube (dice null)
   int die2;
-  int cubeValue;  // only used for cubefulEquity = equity * value
+  int cubeValue;
+  bool mayDouble[2];  // [p1, p2]
+  bool hasMatch;      // false: money (`match` null)
+  int matchLength;
+  int score[2];  // [p1, p2]
+  bool crawford;
 };
 
-// Validates like game-engine's parseEvaluateBody; throws std::invalid_argument with the reason.
+// POST /evaluate: validates like game-engine's parseEvaluateBody (dice required); throws
+// std::invalid_argument with the reason.
 EvalRequest parseEvalRequest(const nlohmann::json& body);
+// POST /cube: the same, but `dice` must be null (the doubler is on roll before the roll).
+EvalRequest parseCubeRequest(const nlohmann::json& body);
 
 // STM-numbered point → JSON point (1..24) for the player on roll.
 inline int toJsonPoint(Player onRoll, int stmPoint) {

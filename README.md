@@ -139,7 +139,7 @@ docker compose --profile test run --rm test
 docker compose --profile install-host run --rm install-host
 ```
 
-http://localhost:3000 — `GET /health` → `{"ok":true}`. `POST /evaluate` with a position JSON (dice required) returns legal checker plays ranked for the mover. Contract: [docs/domain/game-engine.md](docs/domain/game-engine.md).
+http://localhost:3000 — `GET /health` → `{"ok":true}`. `POST /evaluate` with a position JSON (dice required) returns legal checker plays best first for the mover at the match score (`moves[0]` is the engine's play). `POST /cube` (doubler on roll, `dice: null`) returns the engine's own double/take. Contract: [docs/domain/game-engine.md](docs/domain/game-engine.md).
 
 ## game-engine-fast
 
@@ -153,7 +153,7 @@ docker compose --profile test run --rm test
 docker compose --profile gpu-info run --rm gpu-info
 ```
 
-http://localhost:3001 — `GET /health`, `POST /evaluate?ply=N`. Contract: [docs/domain/game-engine-fast.md](docs/domain/game-engine-fast.md). Optional tuning from the host environment, for example `SEARCH_MAX_LEAF_VISITS=40000000 docker compose up` (leaf budget per request; heavy 4-ply positions over it get a `400`). All variables: the domain doc, section Limits.
+http://localhost:3001 — `GET /health`, `POST /evaluate?ply=N`, `POST /cube?ply=N`. Contract: [docs/domain/game-engine-fast.md](docs/domain/game-engine-fast.md). Optional tuning from the host environment, for example `SEARCH_MAX_LEAF_VISITS=40000000 docker compose up` (leaf budget per request; heavy 4-ply positions over it get a `400`). All variables: the domain doc, section Limits.
 
 ## gui
 

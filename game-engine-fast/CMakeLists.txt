@@ -36,7 +36,8 @@ add_library(bgcore STATIC
   src/position_json.cpp
   src/onnx_mlp.cpp
   src/search.cpp
-  src/evaluate.cpp)
+  src/evaluate.cpp
+  src/match.cpp)
 target_include_directories(bgcore PUBLIC src)
 target_link_libraries(bgcore PUBLIC nlohmann_json::nlohmann_json)
 target_compile_options(bgcore PRIVATE -Wall -Wextra)
@@ -64,5 +65,6 @@ add_executable(game-engine-fast-tests
   test/evaluate_test.cpp
   test/net_test.cpp
   test/search_test.cpp
-  test/http_test.cpp)
+  test/http_test.cpp
+  test/match_test.cpp)
 target_link_libraries(game-engine-fast-tests PRIVATE bggpu bghttp doctest::doctest)

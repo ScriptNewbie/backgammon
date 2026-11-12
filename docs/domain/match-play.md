@@ -1,6 +1,6 @@
 # Match play
 
-Locked by [ADR 0008](../decisions/0008-match-play.md) for **battle-arena** and the engine cube wrap. [ADR 0020](../decisions/0020-dumper-games-no-cube.md) removed match play and cube policy from `move-dumper` and made `Position.match` `MatchInfo | null`; this file applies when `match` is set. Cube skill noise for arena: [ADR 0007](../decisions/0007-skill-levels-and-pairing.md) names; arena itself is infallible ([ADR 0019](../decisions/0019-battle-arena.md)).
+Locked by [ADR 0008](../decisions/0008-match-play.md) for **battle-arena** and the engine cube wrap. Since [ADR 0032](../decisions/0032-engines-own-decisions.md) the checker ranking and cube formula below run **inside** `game-engine` (`ts-core/match`) and `game-engine-fast` (`src/match.cpp`); the arena only plays what each engine decides. [ADR 0020](../decisions/0020-dumper-games-no-cube.md) removed match play and cube policy from `move-dumper` and made `Position.match` `MatchInfo | null`; this file applies when `match` is set. Cube skill noise for arena: [ADR 0007](../decisions/0007-skill-levels-and-pairing.md) names; arena itself is infallible ([ADR 0019](../decisions/0019-battle-arena.md)).
 
 This file is **not** dumper policy. Jacoby, beavers, and raccoons are money-play variants and stay unused.
 
@@ -56,13 +56,13 @@ Each legal play’s eval is the **result** with opponent to move. Convert that r
 
 `moverMwc = 1 - opponentMwc`
 
-(after applying the play, cube unchanged). **Battle-arena / engine** argmax on `moverMwc` (stored as `RankedPlay.rankScore`). The **dumper** does not rank by MWC; it uses negated result cubeless equity ([move-dumper.md](move-dumper.md), [ADR 0020](../decisions/0020-dumper-games-no-cube.md)).
+(after applying the play, cube unchanged). **The engines** order `/evaluate` by `moverMwc` (ties: `stepsKey`) when `match` is set (`sortForMover`); `moves[0]` is their play. The **dumper** does not rank by MWC; it uses negated result cubeless equity ([move-dumper.md](move-dumper.md), [ADR 0020](../decisions/0020-dumper-games-no-cube.md)).
 
 ## Cube heuristic
 
 Decide **before the roll** when `mayDouble` is true for on-roll. Skip the **opening roll of a game**. Skip (and leave `mayDouble` false) when `cube.value` is already **64** — doubling to 128 is illegal.
 
-Use cubeless probs of the play that created the current position (STM = player about to roll).
+Use the engine’s **own** cubeless probs of the current position for the player about to roll (`POST /cube`; `game-engine-fast` searches it at its ply). Each side asks its own engine, so one side never decides on the other side’s evaluation.
 
 Actions:
 
@@ -76,6 +76,6 @@ Actions:
 - **Too good:** no-double MWC `>` double-and-take MWC → do not offer (play for gammon).
 - Otherwise **double** if double-and-take (or drop, if they would drop) MWC `>` no-double MWC.
 
-Infallible takes that action. Other levels: logistic on ΔMWC with the same τ as checker play (`P(double) = 1 / (1 + exp(-Δ / τ))`, and the same for take vs drop). Noob: offer with probability 0.10 when allowed; take/drop with probability 0.50.
+The engines take that action (`cubeDecision` in `ts-core/match`, `decideCube` in `game-engine-fast`). Skill-level cube noise is not used: the dumper has no cube and the arena plays at max strength.
 
-Teacher `eval.cubeAction` stays `null`. The dumper does not persist cube actions ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)). `game-engine` maps the infallible side of this heuristic onto `eval.cubeAction` ([ADR 0018](../decisions/0018-cube-wrap-formula.md)).
+Teacher `eval.cubeAction` stays `null`. The dumper does not persist cube actions ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)). Engine `eval.cubeAction` is also `null`; the decision is the `/cube` response ([ADR 0032](../decisions/0032-engines-own-decisions.md)).

@@ -37,7 +37,7 @@ Later turns: roll both dice. Never consult cube.
 
 1. One gnubg `hint` for every legal play at `--ply` (default 2) with `--label-filter` (default `gnubg`, GnuBG world class as bgweb-api labelled; `all` searches every play at `--ply`), priced as a money game with a live centered cube ([gnubg.md](gnubg.md)). A dance skips the query.
 2. Append a `decision: "checker"` record with **all** legal plays and teacher evals.
-3. Sample `chosen` with the on-roll level (below). Rank by **negated result cubeless equity** (`-eval.cubeless.equity` of the teacher result, which is STM of the result). Store that as `RankedPlay.rankScore` (higher is better). Do not rank by MWC or cubeful equity. Do not import `ts-core/match`. Loop: `src/games.ts`.
+3. Sample `chosen` with the on-roll level (below). Infallible plays gnubg's own first line ([ADR 0032](../decisions/0032-engines-own-decisions.md)); the softmax levels weight by **negated result cubeless equity** (`-eval.cubeless.equity` of the teacher result, which is STM of the result). Store that as `RankedPlay.rankScore` (higher is better). Do not rank by MWC or cubeful equity. Do not import `ts-core/match`. Loop: `src/games.ts`.
 4. Apply `chosen.steps` to the position JSON (hits implied). The dumped move list is gnubg's, matched one-to-one onto our legal plays.
 5. If a player has 15 off: the game is over (single / gammon / backgammon for SGF `RE` only). Next game is independent.
 
@@ -53,7 +53,7 @@ No resignations in v1. Play to bear-off.
 | beginner | Softmax on negated cubeless equity, τ = 0.08 |
 | midwit | τ = 0.025 |
 | genius | τ = 0.008 |
-| infallible | Argmax negated cubeless equity; ties: teacher `diff`, then stable `steps` |
+| infallible | gnubg's own first line (`plays[0]`, gnubg's order: cubeful money equity at its ply and filter) |
 
 `P(i) ∝ exp(equity_i / τ)` with equity = `-result.cubeless.equity`. τ is the same numeric family as ADR 0007.
 

@@ -1,4 +1,5 @@
-import type { Cubeless, MatchPhase, Player, Position } from "./types";
+import type { Cubeless, Eval, MatchPhase, Player, Position, Step } from "./types";
+import { matchPhase, stepsKey } from "./board";
 import { matchEquity, stmAwayAfter } from "./met";
 
 function clamp01(n: number): number {
@@ -55,4 +56,29 @@ export function moverMwc(
     phase,
   );
   return 1 - oppMwc;
+}
+
+/**
+ * Engine checker order (ADR 0032): best first for the mover at the position's match state.
+ * Match play: mover dead-cube MWC of each result. Money (`match` null): negated `cubefulEquity`.
+ * Exact ties break by `stepsKey`. Returns a new array; `moves[0]` is the engine's play.
+ */
+export function sortForMover<T extends { steps: Step[]; eval: Eval }>(
+  moves: readonly T[],
+  positionBeforePlay: Position,
+): T[] {
+  const phase = positionBeforePlay.match ? matchPhase(positionBeforePlay) : null;
+  const scored = moves.map((move) => ({
+    move,
+    score:
+      phase === null
+        ? -move.eval.cubefulEquity
+        : moverMwc(move.eval.cubeless, positionBeforePlay, phase),
+    key: stepsKey(move.steps),
+  }));
+  scored.sort((a, b) => {
+    if (a.score !== b.score) return b.score - a.score;
+    return a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
+  });
+  return scored.map((s) => s.move);
 }

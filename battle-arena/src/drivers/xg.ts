@@ -10,7 +10,7 @@ type XgLike = {
 /**
  * eXtreme Gammon 2 through the GUI sidecar (docs/domain/xg.md). Checker play is XG's top
  * play, not re-ranked. Offer and take are XG's own, from its cube analysis with the doubler
- * on roll; `cubeEval.infallible*` is ignored on this side only.
+ * on roll.
  */
 export function createXgDriver(client: XgLike): MatchPlayer {
   return {

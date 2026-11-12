@@ -23,3 +23,5 @@ Battle-arena played our game-engine against one opponent (`teacher` or `hedgehog
 `--opponent`, `--ply`, `--engine-url`, `--teacher-url`, and `--hedgehog-url` are removed. `cubeless.onnx` is required only when a side is `game-engine`. Spec: [battle-arena.md](../domain/battle-arena.md).
 
 [0031](0031-gnubg-cli-sidecar.md) renames `teacher` to `gnubg` (alias kept), gives it `ply` 0-4, and lets that side play GNU Backgammon's own checker ranking and cube.
+
+[0032](0032-engines-own-decisions.md) does the same for `game-engine` and `game-engine-fast`: they play their engine's `moves[0]` and its own `/cube`. The shared heuristic and the arena re-rank are gone.

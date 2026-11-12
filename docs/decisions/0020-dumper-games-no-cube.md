@@ -25,3 +25,5 @@ Dumps are an unpublished working set. There is no public dump contract to versio
 ## Consequences
 
 Do not sample match length or rank dumper checker plays by MWC. Do not treat dumper SGF as a multi-game match file. Do not invent Crawford or 1-away training signal from dumps. Further unpublished dump-internal cleanup amends this ADR and `docs/domain/`; do not mint a new ADR for it. Jacoby / beavers / raccoons stay open and unused. Specs: [move-dumper.md](../domain/move-dumper.md), [dump-format.md](../domain/dump-format.md), [board-representation.md](../domain/board-representation.md).
+
+[0032](0032-engines-own-decisions.md): the infallible level plays gnubg's own first line instead of the best cubeless equity; the softmax levels still sample by negated result cubeless equity.

@@ -12,14 +12,13 @@ A match against `game-engine` ([game-engine.md](game-engine.md)). Needs the engi
 - **Dice:** random in the browser (`crypto.getRandomValues`). Opening roll decides who starts and is that player's first roll.
 - **Your turn:** if you may double, choose **Double** or **Roll**; otherwise the GUI rolls for you. Movable checkers have a ring. Click one: it moves by the first die, in the displayed order, that gives a legal step. **Swap dice** (under the dice, before the first step) reverses the order. **Undo** takes back one step. **Done** ends the turn when every usable die is played. With no legal move the turn passes by itself.
 - **Legality:** a partial turn is legal iff it is a prefix of a play from `ts-core` `generateLegalSequences` (maximal plays, higher-die rule, every step order, die per step).
-- **Engine turn:** may double, rolls, calls `POST /evaluate`, plays `moves[0]`, step by step.
-- **Cube decisions** come from `/evaluate` evals (each is for the resulting position, the opponent on roll):
-  - engine doubles next turn ⇐ `cubeAction.double` of the human's chosen play;
-  - engine takes your double ⇐ `cubeAction.take` of the engine's last play;
-  - no eval (previous mover danced) ⇒ engine does not double, and takes.
-- **Review line** (after each of your turns): your play and its cubeful equity for you (`-cubefulEquity`, scaled by the cube), the engine's best play, and the loss. No hints before you move.
+- **Engine turn:** may double, rolls, calls `POST /evaluate`, plays `moves[0]` (the engine's own choice at the match score, [ADR 0032](../decisions/0032-engines-own-decisions.md)), step by step.
+- **Cube decisions** are the engine's own, from `POST /cube` (position with the doubler on roll, no dice):
+  - before its roll, when it may double, the engine is asked with itself on roll and doubles if `offer` is `"double"`;
+  - when you double, the engine is asked with you on roll and takes unless `take` is `"drop"`.
+- **Review line** (after each of your turns): your play and its cubeful equity for you (`-cubefulEquity`, scaled by the cube), the engine's choice (`moves[0]`), and the loss in that equity (at least 0). The engine chooses by match winning chances, so in a match the loss is a money-equity guide, not the MWC cost. No hints before you move.
 - **Game end:** points by `pointsAwarded` (cube × single/gammon/backgammon, capped at the match length). Drops score the cube value. **Next game** / **New match**.
-- **Wire:** the browser posts position JSON ([board-representation.md](board-representation.md)) to `/api/engine/evaluate`; the Vite dev server proxies `/api/engine` to `ENGINE_URL` (Compose default `http://host.docker.internal:3000`).
+- **Wire:** the browser posts position JSON ([board-representation.md](board-representation.md)) to `/api/engine/evaluate` and `/api/engine/cube`; the Vite dev server proxies `/api/engine` to `ENGINE_URL` (Compose default `http://host.docker.internal:3000`).
 - Play is not recorded: no SGF, no training data.
 
 ## Replay

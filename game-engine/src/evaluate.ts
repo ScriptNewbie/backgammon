@@ -3,14 +3,14 @@ import {
   cubelessFromVector,
   featurize,
   generateLegalPlays,
-  stepsKey,
   terminalCubeless,
+  type CubeDecision,
   type Cubeless,
   type Eval,
   type Position,
   type Step,
 } from "ts-core";
-import { wrapModelEval } from "ts-core/match";
+import { cubeDecision, sortForMover, wrapModelEval } from "ts-core/match";
 
 export type Infer = {
   infer(features: Float32Array[]): Promise<Float32Array[]>;
@@ -49,10 +49,16 @@ export async function evaluatePosition(
     steps: row.steps,
     eval: wrapModelEval(cubeless[i]!, row.result),
   }));
-  moves.sort((a, b) => {
-    const d = a.eval.cubefulEquity - b.eval.cubefulEquity;
-    if (d !== 0) return d;
-    return stepsKey(a.steps).localeCompare(stepsKey(b.steps));
-  });
-  return { moves };
+  // Best first for the mover at the position's match state (ADR 0032): moves[0] is our play.
+  return { moves: sortForMover(moves, position) };
+}
+
+/**
+ * `POST /cube` (ADR 0032): the net's cubeless probs for the doubler on roll (before the roll),
+ * through the dead-cube formula. A finished position cannot be on roll, so the net always runs.
+ */
+export async function cubePosition(position: Position, infer: Infer): Promise<CubeDecision> {
+  const [out] = await infer.infer([featurize(position)]);
+  if (!out) throw new Error("infer returned no row");
+  return cubeDecision(position, cubelessFromVector(out));
 }

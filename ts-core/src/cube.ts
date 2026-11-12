@@ -1,4 +1,4 @@
-import type { CubeActionFlag, Cubeless, Eval, MatchPhase, Player, Position } from "./types";
+import type { CubeDecision, Cubeless, Eval, MatchPhase, Player, Position } from "./types";
 import { MAX_CUBE_VALUE, matchPhase } from "./board";
 import { matchEquity, stmAwayAfter } from "./met";
 import { deadCubeMwc } from "./mwc";
@@ -74,23 +74,44 @@ export function cubefulEquity(cubeless: Cubeless, cubeValue: number): number {
   return cubeless.equity * cubeValue;
 }
 
-export function cubeActionFor(position: Position, cubeless: Cubeless): CubeActionFlag | null {
-  if (!position.match) return null;
-  if (!position.cube.mayDouble[position.onRoll] || position.cube.value >= MAX_CUBE_VALUE) {
-    return null;
+/**
+ * The engine cube decision (ADR 0032): the dead-cube formula above applied to the doubler's own
+ * cubeless probabilities for `position` (doubler on roll, before the roll).
+ */
+export function cubeDecision(position: Position, doublerCubeless: Cubeless): CubeDecision {
+  if (
+    !position.match ||
+    !position.cube.mayDouble[position.onRoll] ||
+    position.cube.value >= MAX_CUBE_VALUE
+  ) {
+    return {
+      available: false,
+      offer: "no-double",
+      take: null,
+      noDouble: null,
+      doubleTake: null,
+      doubleDrop: null,
+      cubeless: doublerCubeless,
+    };
   }
-  const ev = evaluateCube(cubeless, position, matchPhase(position));
+  const ev = evaluateCube(doublerCubeless, position, matchPhase(position));
   return {
-    double: ev.infallibleOffer === "double",
-    take: ev.infallibleTake === "take",
+    available: true,
+    offer: ev.infallibleOffer,
+    take: ev.infallibleTake,
+    noDouble: ev.noDouble,
+    doubleTake: ev.doubleTake,
+    doubleDrop: ev.doubleDrop,
+    cubeless: doublerCubeless,
   };
 }
 
+/** Engine eval of a result position. `cubeAction` stays null; cube decisions come from `cubeDecision`. */
 export function wrapModelEval(cubeless: Cubeless, position: Position): Eval {
   return {
     cubeless,
     cubefulEquity: cubefulEquity(cubeless, position.cube.value),
-    cubeAction: cubeActionFor(position, cubeless),
+    cubeAction: null,
     source: "model",
   };
 }

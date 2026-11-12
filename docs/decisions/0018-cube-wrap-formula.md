@@ -18,3 +18,5 @@ The net predicts cubeless outcome probabilities ([ADR 0003](0003-doubling-cube.m
 ## Consequences
 
 A learned cube head needs a later ADR. Jacoby / beavers stay open. Dumper checker sampling stays in `move-dumper` (cubeless equity, [ADR 0020](0020-dumper-games-no-cube.md)). The infallible cube formula lives in `ts-core`. Spec: [evaluation.md](../domain/evaluation.md), [game-engine.md](../domain/game-engine.md).
+
+[0032](0032-engines-own-decisions.md) moves the checker ranking and the cube decision into the engines: `/evaluate` orders by mover MWC in a match, `POST /cube` returns the engine's offer and take, and `eval.cubeAction` is always `null`.

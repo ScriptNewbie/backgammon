@@ -2,9 +2,11 @@ openapi: 3.1.0
 info:
   title: game-engine
   description: |
-    Backgammon move-evaluation HTTP API. Accepts a position JSON with dice, runs ONNX
-    cubeless inference on legal checker plays, and returns moves ranked best-first for the
-    mover (by negated cubeful equity of the resulting position).
+    Backgammon engine HTTP API (ADR 0032: the engine makes its own decisions). `/evaluate`
+    takes a position JSON with dice, runs ONNX cubeless inference on legal checker plays, and
+    returns moves best-first for the mover at the match state (mover MWC in a match, negated
+    cubeful equity for money); `moves[0]` is the engine's play. `/cube` returns the engine's
+    double/take decision for the position with the doubler on roll.
 
     Domain docs: `docs/domain/game-engine.md`, `docs/domain/board-representation.md`,
     `docs/domain/evaluation.md`.
@@ -37,8 +39,9 @@ paths:
         Request body is a position JSON with `dice` set to two integers 1–6. Returns all
         legal checker plays for the side on roll, each with the eval of the **resulting**
         position (opponent is side to move there). Moves are sorted best-first for the
-        mover: lowest `cubefulEquity` first (negated result equity). Empty `moves` when
-        the player dances.
+        mover at the match state: highest mover dead-cube MWC first when `match` is set,
+        lowest `cubefulEquity` first (negated result equity) when `match` is null; exact ties
+        by `stepsKey`. `moves[0]` is the engine's play. Empty `moves` when the player dances.
       requestBody:
         required: true
         content:
@@ -96,9 +99,7 @@ paths:
                         loseGammon: 0.05
                         loseBackgammon: 0
                       cubefulEquity: 0.1
-                      cubeAction:
-                        double: false
-                        take: true
+                      cubeAction: null
                       source: model
         "400":
           description: Invalid JSON, position, or dice
@@ -115,6 +116,52 @@ paths:
                   summary: Validation failure
                   value:
                     error: dice must be two ints 1-6
+
+  /cube:
+    post:
+      operationId: cubeDecision
+      summary: The engine's cube decision for the doubler on roll
+      description: |
+        Request body is a position JSON with the doubler on roll and `dice: null` (before the
+        roll). The net evaluates the position for the doubler and the dead-cube MWC formula
+        (docs/domain/match-play.md) gives the doubler's offer and the taker's answer. Not
+        available for money (`match` null), when the player on roll may not double, or at
+        cube 64.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              : "#/components/schemas/CubeRequest"
+      responses:
+        "200":
+          description: Cube decision
+          content:
+            application/json:
+              schema:
+                : "#/components/schemas/CubeDecision"
+              example:
+                available: true
+                offer: double
+                take: take
+                noDouble: 0.53
+                doubleTake: 0.57
+                doubleDrop: 0.56
+                cubeless:
+                  equity: 0.31
+                  win: 0.68
+                  gammon: 0.22
+                  backgammon: 0.02
+                  loseGammon: 0.08
+                  loseBackgammon: 0.005
+        "400":
+          description: Invalid JSON or position, or dice not null
+          content:
+            application/json:
+              schema:
+                : "#/components/schemas/ErrorResponse"
+              example:
+                error: dice must be null (cube decisions are made before the roll)
 
 components:
   schemas:
@@ -257,6 +304,46 @@ components:
               $ref: "#/components/schemas/DicePair"
           required: [dice]
 
+    CubeRequest:
+      allOf:
+        - $ref: "#/components/schemas/Position"
+        - type: object
+          properties:
+            dice:
+              type: "null"
+          required: [dice]
+
+    CubeDecision:
+      type: object
+      required: [available, offer, take, noDouble, doubleTake, doubleDrop, cubeless]
+      additionalProperties: false
+      properties:
+        available:
+          type: boolean
+          description: False for money, when the player on roll may not double, or at cube 64.
+        offer:
+          type: string
+          enum: [double, no-double]
+          description: The doubler's action (`no-double` when not available).
+        take:
+          oneOf:
+            - type: string
+              enum: [take, drop]
+            - type: "null"
+          description: The taker's answer to a double; `null` when not available.
+        noDouble:
+          type: [number, "null"]
+          description: Doubler MWC without doubling.
+        doubleTake:
+          type: [number, "null"]
+          description: Doubler MWC after double and take (dead cube at twice the value).
+        doubleDrop:
+          type: [number, "null"]
+          description: Doubler MWC after double and drop.
+        cubeless:
+          $ref: "#/components/schemas/Cubeless"
+          description: The doubler's cubeless probabilities the decision was made from.
+
     StepFrom:
       oneOf:
         - type: integer
@@ -350,7 +437,8 @@ components:
             - $ref: "#/components/schemas/CubeAction"
             - type: "null"
           description: |
-            STM double/take heuristic when `match` is set and STM may double; otherwise `null`.
+            Reserved. Always `null` on engine responses (and on teacher labels); cube decisions
+            come from `POST /cube` (ADR 0032).
         source:
           $ref: "#/components/schemas/EvalSource"
           description: Engine responses use `model`.
@@ -376,4 +464,4 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ScoredMove"
-          description: Legal checker plays sorted best-first for the mover.
+          description: Legal checker plays sorted best-first for the mover at the match state; `moves[0]` is the engine's play.

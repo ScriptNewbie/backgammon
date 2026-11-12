@@ -1,6 +1,6 @@
 import { Hono, type MiddlewareHandler } from "hono";
-import { evaluatePosition, type Infer } from "./evaluate";
-import { parseEvaluateBody } from "./validate";
+import { cubePosition, evaluatePosition, type Infer } from "./evaluate";
+import { parseCubeBody, parseEvaluateBody } from "./validate";
 
 export type RequestLog = (line: string) => void;
 
@@ -41,6 +41,28 @@ export function createApp(infer: Infer, log: RequestLog = (line) => console.log(
         `moves=${result.moves.length} onRoll=${position.onRoll} dice=${dice[0]}-${dice[1]}`,
       );
       return c.json(result);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "invalid position";
+      c.set("requestLogExtra", `error=${message}`);
+      return c.json({ error: message }, 400);
+    }
+  });
+  app.post("/cube", async (c) => {
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      c.set("requestLogExtra", "error=invalid json");
+      return c.json({ error: "invalid json" }, 400);
+    }
+    try {
+      const position = parseCubeBody(body);
+      const decision = await cubePosition(position, infer);
+      c.set(
+        "requestLogExtra",
+        `onRoll=${position.onRoll} available=${decision.available} offer=${decision.offer} take=${decision.take}`,
+      );
+      return c.json(decision);
     } catch (err) {
       const message = err instanceof Error ? err.message : "invalid position";
       c.set("requestLogExtra", `error=${message}`);

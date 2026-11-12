@@ -32,6 +32,7 @@ export type { SgfEvent, SgfGame } from "./sgf-codec";
 export type {
   Cube,
   CubeActionFlag,
+  CubeDecision,
   Cubeless,
   Eval,
   LegalPlay,

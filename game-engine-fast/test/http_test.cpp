@@ -128,3 +128,24 @@ TEST_CASE("POST /evaluate: an internal failure is a 500 with a reason") {
   const auto res = post(c, "/evaluate", openingBody(), 500);
   CHECK(res["error"] == "internal error: gpu fell over");
 }
+
+TEST_CASE("POST /cube: the doubler on roll without dice; ply and dice are checked") {
+  ConstNet net;
+  TestServer server(net);
+  auto c = server.client();
+  nlohmann::json body = toJson(kOpening, "p1", 3, 1);
+  body["dice"] = nullptr;
+  body["match"] = {{"length", 7}, {"score", {{"p1", 0}, {"p2", 0}}}, {"crawford", false}};
+  const auto ply0 = post(c, "/cube", body.dump(), 200);
+  CHECK(ply0["available"] == true);
+  CHECK((ply0["offer"] == "double" || ply0["offer"] == "no-double"));
+  CHECK((ply0["take"] == "take" || ply0["take"] == "drop"));
+  CHECK(ply0["noDouble"].is_number());
+  CHECK(ply0["cubeless"].contains("equity"));
+  CHECK(post(c, "/cube?ply=1", body.dump(), 200)["available"] == true);
+  CHECK(post(c, "/cube?ply=5", body.dump(), 400)["error"] == "ply must be an integer 0-4");
+  body["match"] = nullptr;
+  CHECK(post(c, "/cube", body.dump(), 200)["available"] == false);
+  CHECK(post(c, "/cube", openingBody(), 400)["error"] == "dice must be null (cube decisions are made before the roll)");
+  CHECK(post(c, "/cube", "{not json", 400)["error"] == "invalid json");
+}

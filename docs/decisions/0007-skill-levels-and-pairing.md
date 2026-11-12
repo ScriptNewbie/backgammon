@@ -30,3 +30,5 @@
 ## Consequences
 
 Do not dump only the chosen play. Do not rank simulated checker plays by money cubeful equity. Do not sample noob vs noob under the default weights. [ADR 0020](0020-dumper-games-no-cube.md) keeps the names, pairing weights, and τ values, but the dumper now plays independent games and ranks by negated result cubeless equity instead of MWC.
+
+[0032](0032-engines-own-decisions.md): the infallible level now plays gnubg's own first line. The other levels are unchanged.

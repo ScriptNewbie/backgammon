@@ -4,7 +4,6 @@ import type { AddressInfo } from "node:net";
 import { after, before, beforeEach, test } from "node:test";
 import { applySteps, generateLegalPlays, openingPosition, stepsKey, type Position } from "ts-core";
 import { HedgehogClient, positionToOgid, type HedgehogMoveJson } from "ts-core/hedgehog";
-import type { CubeEval } from "ts-core/sim";
 import { createHedgehogDriver } from "../src/drivers/hedgehog.ts";
 
 type Query = { path: string; ogid: string; ply: number };
@@ -61,10 +60,6 @@ function hitPosition(): Position {
   pos.points[2] = -1;
   pos.dice = [3, 1];
   return pos;
-}
-
-function cubeEval(offer: "double" | "no-double", take: "take" | "drop"): CubeEval {
-  return { infallibleOffer: offer, infallibleTake: take } as CubeEval;
 }
 
 /** Every legal successor, best first by `match_equity`, with `top` moved to the front. */
@@ -127,8 +122,8 @@ test("hedgehog offer and take come from the sidecar, asked once, without dice", 
   const driver = createHedgehogDriver(new HedgehogClient(baseUrl, 1));
   const pos = hitPosition();
   pos.dice = null;
-  assert.equal(await driver.chooseOffer(pos, cubeEval("no-double", "take"), ctx), "double");
-  assert.equal(await driver.chooseTake(pos, cubeEval("no-double", "take"), ctx), "drop");
+  assert.equal(await driver.chooseOffer(pos, ctx), "double");
+  assert.equal(await driver.chooseTake(pos, ctx), "drop");
   assert.equal(queries.length, 1);
   assert.equal(queries[0]!.path, "/v1/cube");
   assert.equal(queries[0]!.ply, 1);
@@ -141,5 +136,5 @@ test("an unknown cube answer fails the decision", async () => {
   const driver = createHedgehogDriver(new HedgehogClient(baseUrl));
   const pos = hitPosition();
   pos.dice = null;
-  await assert.rejects(driver.chooseOffer(pos, cubeEval("no-double", "take"), ctx), /offer is not recognised/);
+  await assert.rejects(driver.chooseOffer(pos, ctx), /offer is not recognised/);
 });
