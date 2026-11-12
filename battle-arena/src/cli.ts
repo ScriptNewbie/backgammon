@@ -293,8 +293,10 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         points,
       });
       const winnerLabel = winner === "a" ? args.a.label : args.b.label;
+      const aWins = rows.filter((r) => r.winner === "a").length;
+      const bWins = rows.length - aWins;
       console.log(
-        `match ${i + 1}/${args.matches} ${labels.p1} vs ${labels.p2} winner=${winnerLabel} games=${result.games.length} ${file}`,
+        `match ${i + 1}/${args.matches} ${labels.p1} vs ${labels.p2} winner=${winnerLabel} games=${result.games.length} points=${result.score.p1}-${result.score.p2} score=${args.a.label} ${aWins}-${bWins} ${args.b.label} ${file}`,
       );
     }
   } finally {
