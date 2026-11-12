@@ -36,12 +36,12 @@ No skill levels. No training JSONL. Never commit `replays/`.
 Each side has its own URL (`--a-url`, `--b-url`). Defaults: `ENGINE_BASE_URL` or `http://127.0.0.1:3000`, `FAST_ENGINE_BASE_URL` or `http://127.0.0.1:3001`, `BGWEB_BASE_URL` or `http://127.0.0.1:8080`, `HEDGEHOG_BASE_URL` or `http://127.0.0.1:8090`, `XG_BASE_URL` or `http://127.0.0.1:8091`. Health-check only the sides that play (one check per driver and URL).
 
 - **Teacher:** `POST /api/v1/getmoves` as in [gnubg.md](gnubg.md). Rank the returned list by mover MWC.
-- **Hedgehog:** the sidecar in [hedgehog.md](hedgehog.md), ranked by mover MWC. `ply` is GnuBG 0 or 1 (default 1). Not a dump source.
+- **Hedgehog:** the sidecar in [hedgehog.md](hedgehog.md) ([ADR 0030](../decisions/0030-hedgehog-plays-itself.md)). Hedgehog's top checker play at the cube and score (not re-ranked), and Hedgehog's own offer and take. `ply` is GnuBG 0 or 1 (default 1), for checker play and cube. Not a dump source.
 - **Game-engine:** `POST /evaluate` with the full position JSON (dice set). Re-rank by mover MWC; do not use the API’s money-equity order for match play.
 - **Game-engine-fast:** the GPU engine in [game-engine-fast.md](game-engine-fast.md). Same `POST /evaluate` as game-engine plus `?ply=N`, re-ranked by mover MWC. `ply` is GnuBG 0–4 (default 0). At `ply >= 1` the engine returns only fully searched candidates, so the re-rank compares evals of the same depth.
 - **XG:** eXtreme Gammon 2 through the host GUI sidecar in [xg.md](xg.md). XG's top checker play (not re-ranked), and XG's own offer and take. Analysis level is whatever is set in XG. Not a dump source.
 
-Parameters are per side. A driver applies a parameter only when it supports it. `ply` is hedgehog (0–1) and game-engine-fast (0–4); the CLI accepts integers 0–4 and a value above the side's driver maximum is an error. Setting `--a-ply` or `--b-ply` on `game-engine`, `teacher`, or `xg` drops that value and prints a warning. Cube is not asked of any HTTP API except the `xg` sidecar, and only for the `xg` side.
+Parameters are per side. A driver applies a parameter only when it supports it. `ply` is hedgehog (0–1) and game-engine-fast (0–4); the CLI accepts integers 0–4 and a value above the side's driver maximum is an error. Setting `--a-ply` or `--b-ply` on `game-engine`, `teacher`, or `xg` drops that value and prints a warning. Cube is not asked of any HTTP API except the `xg` and `hedgehog` sidecars, and only for that side. Every other side uses the shared infallible heuristic.
 
 ## Replay SGF
 

@@ -7,7 +7,7 @@ type CheckerClient = {
   getMoves(pos: Position): Promise<{ plays: LegalPlay[] }>;
 };
 
-/** Max-strength checker driver for the teacher and Hedgehog clients. */
+/** Max-strength checker driver for the teacher client: re-ranked by mover MWC, shared cube heuristic. */
 export function createCheckerDriver(client: CheckerClient): MatchPlayer {
   return {
     ...infallibleCube(),

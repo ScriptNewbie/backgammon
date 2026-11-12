@@ -3,7 +3,7 @@ import { fetchWithRetry } from "./bgweb";
 import { flipStmCubeless, makeCubeless } from "./eval";
 import { generateLegalPlays } from "./moves";
 import type { LegalPlay } from "./bgweb";
-import type { Player, Position, SearchPly, Step } from "./types";
+import type { Cubeless, Player, Position, SearchPly, Step } from "./types";
 
 /**
  * Wire encoding for the external Hedgehog getmoves server.
@@ -16,6 +16,8 @@ const PIP_CHAR = "0123456789abcdefghijklmnop";
 
 export const HEDGEHOG_PLY_MAX = 2;
 export const HEDGEHOG_TIMEOUT_MS = 180_000;
+/** Sidecar wire version this client speaks (`/health` `api`). */
+export const HEDGEHOG_API = 2;
 
 export type HedgehogMoveJson = {
   ogid: string;
@@ -24,7 +26,19 @@ export type HedgehogMoveJson = {
   bg_win: number;
   gammon_loss: number;
   bg_loss: number;
+  /** Cubeless money equity, mover side. */
   equity?: number;
+  /** Hedgehog's ranking key: EMG at the mover's score and cube, money equity in a money game. */
+  match_equity?: number;
+};
+
+/** Hedgehog's own cube decision for the doubler on roll (docs/domain/hedgehog.md). */
+export type HedgehogCubeAnalysis = {
+  ogid: string;
+  /** Engine wording, e.g. "No double", "Double, take". */
+  action: string;
+  offer: "double" | "no-double";
+  take: "take" | "drop";
 };
 
 function pipChar(pip: number): string {
@@ -199,14 +213,55 @@ export function joinHedgehogMoves(
   return { plays, unmatched: 0 };
 }
 
+/** The sidecar lists moves best first by `match_equity`. Anything else is an old or broken sidecar. */
+export function assertHedgehogOrder(moves: readonly HedgehogMoveJson[]): void {
+  for (let i = 0; i < moves.length; i++) {
+    const key = moves[i]!.match_equity;
+    if (typeof key !== "number" || !Number.isFinite(key)) {
+      throw new Error("hedgehog move has no match_equity; rebuild the sidecar image (docs/domain/hedgehog.md)");
+    }
+    if (i > 0 && key > moves[i - 1]!.match_equity!) {
+      throw new Error("hedgehog moves are not best first");
+    }
+  }
+}
+
+export function parseHedgehogCube(ogid: string, body: unknown): HedgehogCubeAnalysis {
+  const parsed = body as { action?: unknown; offer?: unknown; take?: unknown };
+  const offer = parsed.offer;
+  const take = parsed.take;
+  if (offer !== "double" && offer !== "no-double") throw new Error(`hedgehog cube offer is not recognised: ${String(offer)}`);
+  if (take !== "take" && take !== "drop") throw new Error(`hedgehog cube take is not recognised: ${String(take)}`);
+  return { ogid, action: typeof parsed.action === "string" ? parsed.action : "", offer, take };
+}
+
 export class HedgehogClient {
   model = "";
+  private lastCube: HedgehogCubeAnalysis | null = null;
 
   constructor(
     readonly baseUrl: string,
     readonly ply: SearchPly = 1,
   ) {}
 
+  /** Hedgehog's top play, as the engine ranks it at this cube and score. Not re-ranked. */
+  async chooseChecker(position: Position): Promise<{ steps: Step[]; cubeless: Cubeless | null }> {
+    const { plays } = await this.getMoves(position);
+    const best = plays[0];
+    if (!best) return { steps: [], cubeless: null };
+    return { steps: best.steps, cubeless: best.eval.cubeless };
+  }
+
+  /** Hedgehog's cube decision with the doubler on roll: its offer, and the taker's answer. */
+  async cubeAction(position: Position): Promise<HedgehogCubeAnalysis> {
+    const ogid = positionToOgid({ ...position, dice: null });
+    if (this.lastCube?.ogid === ogid) return this.lastCube;
+    const analysis = parseHedgehogCube(ogid, await this.post("/v1/cube", { ogid, ply: this.ply }));
+    this.lastCube = analysis;
+    return analysis;
+  }
+
+  /** Every legal play with Hedgehog's evals, best first. */
   async getMoves(position: Position): Promise<{ plays: LegalPlay[]; plies: number }> {
     if (!position.dice) throw new Error("hedgehog getmoves requires dice");
     const body = await this.post("/v1/moves", {
@@ -216,6 +271,7 @@ export class HedgehogClient {
     const parsed = body as { ply?: number; moves?: HedgehogMoveJson[] };
     const moves = parsed.moves;
     if (!Array.isArray(moves)) throw new Error("hedgehog response has no moves array");
+    assertHedgehogOrder(moves);
     const joined = joinHedgehogMoves(position, moves);
     if (joined.unmatched !== 0) {
       const sample = moves
@@ -236,8 +292,13 @@ export class HedgehogClient {
       { method: "GET", headers: { accept: "application/json" }, signal: AbortSignal.timeout(HEDGEHOG_TIMEOUT_MS) },
       { log: hedgehogLog },
     );
-    const body = (await res.json()) as { ok?: boolean; model?: string };
+    const body = (await res.json()) as { ok?: boolean; model?: string; api?: number };
     if (!body.ok) throw new Error("hedgehog /health did not return ok");
+    if (body.api !== HEDGEHOG_API) {
+      throw new Error(
+        `hedgehog sidecar speaks api ${body.api ?? 1}, this client needs ${HEDGEHOG_API}; rebuild the image (docs/domain/hedgehog.md)`,
+      );
+    }
     this.model = body.model ?? "";
   }
 

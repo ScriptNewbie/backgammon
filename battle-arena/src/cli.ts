@@ -8,6 +8,7 @@ import { renderMatchSgf } from "ts-core/sgf";
 import { playMatch, Rng, type MatchPlayer } from "ts-core/sim";
 import { createCheckerDriver } from "./drivers/checker";
 import { createGameEngineDriver, engineHealthCheck } from "./drivers/game-engine";
+import { createHedgehogDriver } from "./drivers/hedgehog";
 import { createXgDriver } from "./drivers/xg";
 import { batchStamp, writeMatchSgf } from "./replay";
 import {
@@ -184,7 +185,7 @@ function createPlayer(side: SideSpec): MatchPlayer {
   if (side.driver === "game-engine-fast") return createGameEngineDriver(side.url, side.ply);
   if (side.driver === "teacher") return createCheckerDriver(new BgwebClient(side.url));
   if (side.driver === "xg") return createXgDriver(new XgClient(side.url));
-  return createCheckerDriver(new HedgehogClient(side.url, hedgehogPly(side)));
+  return createHedgehogDriver(new HedgehogClient(side.url, hedgehogPly(side)));
 }
 
 async function healthCheckSide(side: SideSpec): Promise<void> {

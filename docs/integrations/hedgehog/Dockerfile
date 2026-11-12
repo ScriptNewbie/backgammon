@@ -1,6 +1,8 @@
 # Local sidecar only. Not part of this repo's Compose workflow.
-# The engine source it clones is MIT. The .ogxf weight file is not, and this
-# image must not be published.
+# The engine source it clones is MIT (its Highway SIMD library is Apache-2.0 /
+# BSD-3; cpp-httplib is MIT). The .ogxf weight file is not: hedgehog-bg.com
+# licenses it for non-commercial use with credit. Do not publish this image, and
+# do not use its output as training data (ADR 0022, ADR 0030).
 #
 #   docker build -t hedgehog-getmoves docs/integrations/hedgehog
 #   docker run --rm -p 8090:8090 hedgehog-getmoves
@@ -15,7 +17,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
-RUN git clone --depth 1 https://gitlab.com/eranlambooij/hedgehog-public.git .
+# Pinned: the sidecar calls engine headers (cube, match, search) that can move.
+ARG HEDGEHOG_REF=e8847f498f7be8798c0b71314e83c8b4075f2043
+RUN git clone https://gitlab.com/eranlambooij/hedgehog-public.git . \
+    && git checkout --detach "$HEDGEHOG_REF"
 
 COPY getmoves_server.cpp /src/examples/getmoves_server.cpp
 

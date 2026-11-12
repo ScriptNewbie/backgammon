@@ -18,6 +18,6 @@ Battle-arena played our game-engine against one opponent (`teacher` or `hedgehog
 
 ## Consequences
 
-[0025](0025-xg-gui-sidecar.md) adds the `xg` driver and lets that side play eXtreme Gammon's own cube; every other driver keeps the shared heuristic.
+[0025](0025-xg-gui-sidecar.md) adds the `xg` driver and lets that side play eXtreme Gammon's own cube. [0030](0030-hedgehog-plays-itself.md) does the same for `hedgehog` (its own checker ranking and cube). Every other driver keeps MWC ranking and the shared heuristic.
 
 `--opponent`, `--ply`, `--engine-url`, `--teacher-url`, and `--hedgehog-url` are removed. `cubeless.onnx` is required only when a side is `game-engine`. Spec: [battle-arena.md](../domain/battle-arena.md).

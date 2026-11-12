@@ -4,7 +4,7 @@ A backgammon engine split into seven packages. **Docker** (Engine + Compose v2) 
 
 | Package | Role |
 | --- | --- |
-| `ts-core` | Shared TypeScript: board, legal moves, featurizer; Node match/MWC/cube, sim, teacher client, hedgehog client, XG sidecar client, SGF writer ([ADR 0016](docs/decisions/0016-ts-core.md), [ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0022](docs/decisions/0022-hedgehog-external.md), [ADR 0025](docs/decisions/0025-xg-gui-sidecar.md)) |
+| `ts-core` | Shared TypeScript: board, legal moves, featurizer; Node match/MWC/cube, sim, teacher client, hedgehog client, XG sidecar client, SGF writer ([ADR 0016](docs/decisions/0016-ts-core.md), [ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0022](docs/decisions/0022-hedgehog-external.md), [ADR 0030](docs/decisions/0030-hedgehog-plays-itself.md), [ADR 0025](docs/decisions/0025-xg-gui-sidecar.md)) |
 | `move-dumper` | Simulates money games (no cube) and dumps labelled checker plays from [bgweb-api](https://github.com/foochu/bgweb-api) (GNU Backgammon nets over HTTP) |
 | `training-ground` | PyTorch training of the cubeless eval net; exports ONNX and ExecuTorch `.pte` ([ADR 0014](docs/decisions/0014-export-onnx-and-pte.md)). CUDA image ([ADR 0013](docs/decisions/0013-training-cuda.md)) |
 | `game-engine` | TypeScript HTTP API (Hono): board + dice → legal moves with evaluations; infers the net via ONNX Runtime |
