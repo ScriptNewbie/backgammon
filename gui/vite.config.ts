@@ -14,7 +14,7 @@ export default defineConfig({
     host: true,
     port: 5173,
     watch: { usePolling: true },
-    fs: { allow: [here, path.resolve(here, "../ts-core")] },
+    fs: { allow: [here, path.resolve(here, "../ts-core"), path.resolve(here, "../board")] },
     proxy: {
       "/api/engine": {
         target: engineUrl,
@@ -26,9 +26,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "ts-core": path.resolve(here, "../ts-core/src/index.ts"),
+      "board/element": path.resolve(here, "../board/src/element.ts"),
     },
   },
   optimizeDeps: {
-    exclude: ["ts-core"],
+    exclude: ["ts-core", "board"],
   },
 });

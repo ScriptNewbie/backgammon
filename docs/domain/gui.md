@@ -1,6 +1,8 @@
 # GUI
 
-Locked by [ADR 0010](../decisions/0010-replay-player.md), [ADR 0026](../decisions/0026-gui-tailwind.md), and [ADR 0027](../decisions/0027-gui-play-vs-engine.md). Vite + vanilla TypeScript + Tailwind CSS in `gui/`. Run with `docker compose up --build` from `gui/` (http://localhost:5173). Host commands: [README.md](../../README.md).
+Locked by [ADR 0010](../decisions/0010-replay-player.md), [ADR 0026](../decisions/0026-gui-tailwind.md), [ADR 0027](../decisions/0027-gui-play-vs-engine.md), and [ADR 0033](../decisions/0033-board-package.md). Vite + vanilla TypeScript + Tailwind CSS in `gui/`. Run with `docker compose up --build` from `gui/` (http://localhost:5173). Host commands: [README.md](../../README.md).
+
+The board is the [`board`](board-widget.md) custom element (`<backgammon-board>`). This package does not draw checkers or dice. It sets an XGID and the partial-turn props (`usedDice`, `movable`, `swap`) and listens for `point` and `swap`.
 
 Two screens, switched in the header.
 
@@ -27,4 +29,4 @@ Steps through GNU Backgammon SGF (`FF[4]` `GM[6]`) from `move-dumper/dumps/<batc
 
 ## Look
 
-Tailwind utilities, solid colors, no gradients. Dice roll in 3D and land flat with no tilt. Checker moves are animated. Animations ignore the OS reduce-motion setting.
+Tailwind utilities on the chrome (header, HUD, buttons). The board’s own look, dice roll, and checker flights live in [`board`](board-widget.md): solid colors, no gradients, dice land flat, animations ignore the OS reduce-motion setting.

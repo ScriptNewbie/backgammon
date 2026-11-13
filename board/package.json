@@ -1,0 +1,26 @@
+{
+  "name": "board",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./element": "./src/element.ts"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build --config vite.lib.element.config.ts",
+    "test:inner": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "ts-core": "file:../ts-core"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.0"
+  }
+}

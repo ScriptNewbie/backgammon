@@ -1,0 +1,9 @@
+# board
+
+Vanilla TypeScript board widget ([ADR 0033](../../docs/decisions/0033-board-package.md)). Spec: [board-widget.md](../../docs/domain/board-widget.md). Position is an XGID, parsed with isomorphic `positionFromXgid` ([board-representation.md](../../docs/domain/board-representation.md)). Do not add a fourth representation. Do not add React.
+
+- From `board/`. Host commands: [README.md](../../README.md) (http://localhost:5174). Do not run `test:inner` / `dev` on the host.
+- One entry: `<backgammon-board>` (open shadow root, adopted stylesheet). Props: `xgid`, `usedDice`, `movable`, `swap`. Events: `point`, `swap`, `settled`. No React component export.
+- Motion is a diff of the previous position. Paint the destination, hide arriving checkers, fly, then unhide the checker in the same turn the flyer is removed. Dice spin when the faces change (a swap of the same two faces does not). Do not rebuild the dice cubes for `usedDice` or `swap`. Cube value or owner pulses. Checker flights use a matching `generateLegalSequences` play when one reaches the new layout, otherwise pair losses to gains in bearing-off direction. A hit blot is already on the bar; only the checker that hit it flies. First paint does not animate. Animations always run.
+- Look: solid colors, no gradients, no decorative shadows. Dice land flat, with no tilt. `p1` light, bottom, bears off toward 1.
+- `gui` mounts the element and does not redraw the board. Do not import Node-only `ts-core` exports.

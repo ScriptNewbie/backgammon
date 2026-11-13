@@ -19,3 +19,5 @@ The browser package `replay-player` ([ADR 0010](0010-replay-player.md)) was styl
 ## Consequences
 
 Run from `gui/` (`docker compose up --build`, http://localhost:5173). Rules: `.cursor/rules/gui.mdc`, `.grok/rules/gui.md`, `.claude/rules/gui.md`. The old `replay_player_node_modules` Compose volume is orphaned; remove it with `docker volume rm` if wanted. No domain contract changes.
+
+[0033](0033-board-package.md) moves the board into the `board` package. This app stays vanilla and mounts `<backgammon-board>`.

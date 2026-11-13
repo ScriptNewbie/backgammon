@@ -2,6 +2,6 @@
 
 Follow [docs/domain/board-representation.md](docs/domain/board-representation.md), [docs/domain/features.md](docs/domain/features.md), and [docs/domain/evaluation.md](docs/domain/evaluation.md).
 
-Exactly three representations: position JSON (source of truth), feature tensor (train/infer), XGID (gnubg and the XG sidecar wire only). Convert XGID at the boundary. Featurize JSON → length-206 STM vector; do not invent another tensor layout.
+Exactly three representations: position JSON (source of truth), feature tensor (train/infer), XGID (gnubg, the XG sidecar, and the `board` widget). Convert XGID at the boundary (`positionFromXgid` / `positionToXgid`). Featurize JSON → length-206 STM vector; do not invent another tensor layout.
 
 Players are `p1` / `p2`. JSON `points` are absolute (positive = p1). Point ids in moves are 1–24. Dumper dumps use `match: null` and a dead cube — schema only, not live match/cube labels. GNU SGF is replay-only, not a fourth encoding.

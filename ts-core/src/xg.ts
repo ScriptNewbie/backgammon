@@ -1,20 +1,24 @@
 import { flipStmCubeless, makeCubeless } from "./eval";
 import { MOVE_TOKEN, matchNotationPlay } from "./notation";
 import type { Cubeless, Position, Step } from "./types";
+import { positionToXgid } from "./xgid";
+
+export { positionToXgid };
 
 /**
  * Wire encoding and text parsing for the eXtreme Gammon 2 GUI sidecar
- * (docs/domain/xg.md). XGID is representation 3: built here, sent once, never stored.
- * p1 is XG's bottom player (uppercase, bears off toward 1); the checker string does not
- * flip when p2 is on roll, the turn field does. XG writes analysis text from the
- * mover's side: "Player" is whoever is on roll, and points are mover-relative.
+ * (docs/domain/xg.md). The XGID codec itself is isomorphic (`./xgid`); this
+ * module is the sidecar client. XGID is representation 3: built, sent once,
+ * never stored. p1 is XG's bottom player (uppercase, bears off toward 1); the
+ * checker string does not flip when p2 is on roll, the turn field does. XG
+ * writes analysis text from the mover's side: "Player" is whoever is on roll,
+ * and points are mover-relative.
  */
 
 export const XG_TIMEOUT_MS = 180_000;
 const XG_QUERY_ATTEMPTS = 3;
 /** Sidecar errors that mean "XG did not respond in time", not "XG disagrees". */
 const XG_TRANSIENT = /did not answer|did not load|did not finish|fetch failed/;
-const MAX_CUBE_EXP = 6;
 
 export type XgQueryKind = "checker" | "cube";
 
@@ -38,51 +42,6 @@ export type XgCubeAnalysis = {
   offer: "double" | "no-double";
   take: "take" | "drop";
 };
-
-function cubeExponent(value: number): number {
-  const exp = Math.round(Math.log2(value));
-  if (2 ** exp !== value || exp < 0 || exp > MAX_CUBE_EXP) {
-    throw new Error(`cube value must be 1,2,4,8,16,32,64 (got ${value})`);
-  }
-  return exp;
-}
-
-function checkerChar(count: number, upper: boolean): string {
-  if (count === 0) return "-";
-  if (count < 0 || count > 15) throw new Error(`invalid checker count ${count}`);
-  const base = upper ? 65 : 97;
-  return String.fromCharCode(base + count - 1);
-}
-
-/** XGID for a position. Dice null means "to roll or double" (`00`). */
-export function positionToXgid(position: Position): string {
-  if (position.points.length !== 24) throw new Error("position.points must have length 24");
-  let board = checkerChar(position.bar.p2, false);
-  for (const v of position.points) board += v >= 0 ? checkerChar(v, true) : checkerChar(-v, false);
-  board += checkerChar(position.bar.p1, true);
-
-  const exp = cubeExponent(position.cube.value);
-  const owner = position.cube.owner === "p1" ? 1 : position.cube.owner === "p2" ? -1 : 0;
-  const turn = position.onRoll === "p1" ? 1 : -1;
-  const dice = position.dice ? `${position.dice[0]}${position.dice[1]}` : "00";
-  const match = position.match;
-  const crawford = match?.crawford ? 1 : 0;
-  // XG has no dead-cube flag. Outside Crawford, a cube nobody may turn is capped at its value.
-  const dead = !crawford && !position.cube.mayDouble.p1 && !position.cube.mayDouble.p2;
-  const maxCube = dead ? exp : MAX_CUBE_EXP;
-  return [
-    `XGID=${board}`,
-    exp,
-    owner,
-    turn,
-    dice,
-    match?.score.p1 ?? 0,
-    match?.score.p2 ?? 0,
-    crawford,
-    match?.length ?? 0,
-    maxCube,
-  ].join(":");
-}
 
 function num(raw: string): number {
   const n = Number(raw.replace(",", "."));

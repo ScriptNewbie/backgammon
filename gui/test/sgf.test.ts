@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { applySteps, applyTake, openingPosition } from "ts-core";
-import { actionNotice, dimFlags } from "../src/render.ts";
+import { actionNotice } from "../src/render.ts";
 import { buildFrames } from "../src/replay.ts";
 import { parseMatchSgf } from "../src/sgf.ts";
 
@@ -135,16 +135,6 @@ RE[B+1]
   assert.equal(actionNotice(frames.at(-1)!), "p1 dropped");
   assert.equal(frames.at(-1)?.position.cube.value, 1);
   assert.equal(frames.length, 6);
-});
-
-test("each shown double die covers two of the four uses", () => {
-  assert.deepEqual(dimFlags([6, 6], []), ["none", "none"]);
-  assert.deepEqual(dimFlags([6, 6], [6]), ["half", "none"]);
-  assert.deepEqual(dimFlags([6, 6], [6, 6]), ["used", "none"]);
-  assert.deepEqual(dimFlags([6, 6], [6, 6, 6]), ["used", "half"]);
-  assert.deepEqual(dimFlags([6, 6], [6, 6, 6, 6]), ["used", "used"]);
-  assert.deepEqual(dimFlags([3, 1], [3]), ["used", "none"]);
-  assert.deepEqual(dimFlags([3, 1], [3, 1]), ["used", "used"]);
 });
 
 test("fixture stub is a single empty game", () => {

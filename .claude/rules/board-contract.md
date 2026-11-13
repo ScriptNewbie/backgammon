@@ -5,6 +5,7 @@ paths:
   - "training-ground/**"
   - "game-engine/**"
   - "gui/**"
+  - "board/**"
   - "battle-arena/**"
   - "docs/domain/**"
 ---

@@ -4,7 +4,7 @@ import { fetchWithRetry } from "./http";
 import { generateLegalPlays } from "./moves";
 import { legalPlaysByBoard, matchNotationPlay } from "./notation";
 import type { Cubeless, LegalPlay, Position, Step } from "./types";
-import { positionToXgid } from "./xg";
+import { positionToXgid } from "./xgid";
 
 /**
  * Client for the GNU Backgammon command-line sidecar (docs/domain/gnubg.md, ADR 0031).

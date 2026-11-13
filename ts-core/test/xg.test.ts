@@ -167,3 +167,7 @@ test("unrecognised XG text fails instead of guessing", () => {
   assert.throws(() => matchXgPlay(pos, "Cannot Move"), /Cannot Move/);
   assert.throws(() => matchXgPlay(pos, "20/17 6/5"), /does not apply/);
 });
+
+test("positionFromXgid rejects a short board", () => {
+  assert.throws(() => positionFromXgid("XGID=abc:0:0:1:00:0:0:0:0:6"), /26 characters/);
+});

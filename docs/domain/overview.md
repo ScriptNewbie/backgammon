@@ -12,7 +12,7 @@ gnubg sidecar (GNU Backgammon 1.07 CLI over HTTP, ADR 0031)
         ▼                              ▼
   training-ground                gui
   PyTorch — cubeless net,        Vite + Tailwind — play vs game-engine,
-  export ONNX                    SGF stepper (dumps or arena replays)
+  export ONNX                    SGF stepper; board is the `board` widget
         │
         ▼
   game-engine          TypeScript HTTP (Hono) + onnxruntime-node
@@ -46,3 +46,4 @@ Canonical specs:
 - Game-engine HTTP: [game-engine.md](game-engine.md)
 - Arena matches: [battle-arena.md](battle-arena.md)
 - GUI (play + replay): [gui.md](gui.md)
+- Embeddable board: [board-widget.md](board-widget.md)

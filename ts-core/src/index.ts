@@ -29,6 +29,7 @@ export {
   parseCheckerMove,
 } from "./sgf-codec";
 export type { SgfEvent, SgfGame } from "./sgf-codec";
+export { positionFromXgid, positionToXgid } from "./xgid";
 export type {
   Cube,
   CubeActionFlag,

@@ -1,6 +1,6 @@
 # Backgammon
 
-A backgammon engine split into seven packages. **Docker** (Engine + Compose v2) is the only supported runtime — do not install Python or a Node toolchain on the host ([ADR 0011](docs/decisions/0011-docker-only.md)). Run every command from that package’s directory.
+A backgammon engine split into eight packages. **Docker** (Engine + Compose v2) is the only supported runtime — do not install Python or a Node toolchain on the host ([ADR 0011](docs/decisions/0011-docker-only.md)). Run every command from that package’s directory.
 
 | Package | Role |
 | --- | --- |
@@ -9,7 +9,8 @@ A backgammon engine split into seven packages. **Docker** (Engine + Compose v2) 
 | `training-ground` | PyTorch training of the cubeless eval net; exports ONNX and ExecuTorch `.pte` ([ADR 0014](docs/decisions/0014-export-onnx-and-pte.md)). CUDA image ([ADR 0013](docs/decisions/0013-training-cuda.md)) |
 | `game-engine` | TypeScript HTTP API (Hono): board + dice → legal moves with evaluations; infers the net via ONNX Runtime |
 | `game-engine-fast` | CUDA C++ HTTP API on the GPU: same `/evaluate` contract plus ply search; arena driver ([ADR 0028](docs/decisions/0028-game-engine-fast.md)) |
-| `gui` | Vite + Tailwind web app: play a match against `game-engine`, or step through GNU Backgammon SGF dumps (dumper or arena) ([ADR 0027](docs/decisions/0027-gui-play-vs-engine.md)) |
+| `board` | `<backgammon-board>` custom element; XGID in, animated checkers and dice ([ADR 0033](docs/decisions/0033-board-package.md)) |
+| `gui` | Vite + Tailwind web app: play a match against `game-engine`, or step through GNU Backgammon SGF dumps (dumper or arena). Mounts `board` ([ADR 0027](docs/decisions/0027-gui-play-vs-engine.md)) |
 | `battle-arena` | Play any driver against any driver (default: our engine vs GNU Backgammon); win summary + SGF ([ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0023](docs/decisions/0023-arena-any-driver.md)) |
 
 Money play includes a doubling cube in the engine and arena. **Dumper dumps are money games without a cube** ([ADR 0020](docs/decisions/0020-dumper-games-no-cube.md)). Players are `p1` / `p2`. Agent instructions: [AGENTS.md](AGENTS.md) and `docs/`. Cursor, Grok Build, and Claude Code all use that file; Grok-native copies live under `.grok/`, Claude Code reads `AGENTS.md` natively and `.claude/` holds pointers into `.cursor/`. In a Grok terminal: `grok` then `grok inspect`. In Claude Code: `claude` from the repo root.
@@ -154,6 +155,20 @@ docker compose --profile gpu-info run --rm gpu-info
 ```
 
 http://localhost:3001 — `GET /health`, `POST /evaluate?ply=N`, `POST /cube?ply=N`. Contract: [docs/domain/game-engine-fast.md](docs/domain/game-engine-fast.md). Optional tuning from the host environment, for example `SEARCH_MAX_LEAF_VISITS=40000000 docker compose up` (leaf budget per request; heavy 4-ply positions over it get a `400`). All variables: the domain doc, section Limits.
+
+## board
+
+Embeddable board ([ADR 0033](docs/decisions/0033-board-package.md)). A `<backgammon-board>` custom element. The position is an XGID; checkers, dice, and the cube animate when it changes. Spec: [docs/domain/board-widget.md](docs/domain/board-widget.md). From `board/`:
+
+```sh
+docker compose up --build
+docker compose down
+
+docker compose --profile test run --rm test
+docker compose --profile install-host run --rm install-host
+```
+
+http://localhost:5174 — demo page: **Roll 3-1** spins the dice, **Step** flies one checker.
 
 ## gui
 

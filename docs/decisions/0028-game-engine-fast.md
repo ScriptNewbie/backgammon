@@ -24,7 +24,7 @@
 
 ## Consequences
 
-AGENTS.md lists seven packages. Spec: [game-engine-fast.md](../domain/game-engine-fast.md). When the package lands: add its README section, a `.cursor/rules/game-engine-fast.mdc` rule with `.grok/` copy and `.claude/` pointer, the `game-engine-fast` driver and its `ply` range in `battle-arena` and [battle-arena.md](../domain/battle-arena.md), and the `cubeless-fast.onnx` export in the `train-model` skill.
+AGENTS.md listed seven packages when this ADR was accepted. Spec: [game-engine-fast.md](../domain/game-engine-fast.md). [0033](0033-board-package.md) adds `board`; the list is now eight. When the package lands: add its README section, a `.cursor/rules/game-engine-fast.mdc` rule with `.grok/` copy and `.claude/` pointer, the `game-engine-fast` driver and its `ply` range in `battle-arena` and [battle-arena.md](../domain/battle-arena.md), and the `cubeless-fast.onnx` export in the `train-model` skill.
 
 At `ply >= 1` the response no longer lists every legal play; a `pruned` flag on moves may be added later instead. Match play inside the tree is approximate. Low-ply arena runs underuse the GPU until arena concurrency lands. The GUI keeps using `game-engine`.
 

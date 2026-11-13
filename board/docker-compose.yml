@@ -1,0 +1,30 @@
+services:
+  board:
+    build: .
+    working_dir: /repo/board
+    volumes:
+      - ..:/repo
+      - board_node_modules:/repo/board/node_modules
+    ports:
+      - "5174:5174"
+
+  test:
+    build: .
+    working_dir: /repo/board
+    volumes:
+      - ..:/repo
+      - board_node_modules:/repo/board/node_modules
+    command: ["npm", "run", "test:inner"]
+    profiles: ["test"]
+
+  install-host:
+    build: .
+    working_dir: /repo/board
+    volumes:
+      - ..:/repo
+    entrypoint: ["npm"]
+    command: ["install"]
+    profiles: ["install-host"]
+
+volumes:
+  board_node_modules:

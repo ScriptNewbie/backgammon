@@ -12,7 +12,8 @@
     "test:inner": "tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "ts-core": "file:../ts-core"
+    "ts-core": "file:../ts-core",
+    "board": "file:../board"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

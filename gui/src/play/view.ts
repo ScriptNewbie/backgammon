@@ -9,6 +9,7 @@ import {
   nextPhase,
   openingPosition,
   pointsAwarded,
+  positionToXgid,
   stepsKey,
   type LegalSequence,
   type MatchPhase,
@@ -16,9 +17,8 @@ import {
   type Position,
   type Step,
 } from "ts-core";
-import { animateCheckerPlay, animateCube, cancelMoveAnimation, measureCheckerTip, rollDice } from "../animate";
+import { boardEl, resetBoard, settled, syncBoard } from "../board-host";
 import { dom, showError, type Screen } from "../dom";
-import { renderBoard } from "../render";
 import { cube, evaluate } from "./engine";
 import {
   chooseStep,
@@ -196,8 +196,8 @@ function reviewHtml(): string {
     <span class="text-stone-500">Best ${r.best} ${fmt(r.bestEquity)}</span>`;
 }
 
-function render(): void {
-  if (!active) return;
+function render(): Promise<void> {
+  if (!active) return Promise.resolve();
   showError(state.error);
   dom.hud.hidden = false;
   dom.board.hidden = false;
@@ -206,35 +206,42 @@ function render(): void {
   dom.hud.innerHTML = hudHtml();
   const moving = state.mode === "moving";
   const dice = state.pos.dice;
-  dom.board.innerHTML = renderBoard(state.pos, state.usedDice, {
-    movable: moving ? movableFrom(state.seqs, state.played) : undefined,
-    swap: moving && state.played.length === 0 && dice !== null && dice[0] !== dice[1],
-  });
   dom.caption.innerHTML = reviewHtml();
   dom.caption.title = state.review ? "Your last move: cubeful equity for you (scaled by the cube) from game-engine" : "";
   dom.notice.textContent = state.status;
   controls.innerHTML = controlsHtml();
+  return syncBoard(state.pos, {
+    usedDice: state.usedDice,
+    movable: moving ? [...movableFrom(state.seqs, state.played)] : [],
+    swap: moving && state.played.length === 0 && dice !== null && dice[0] !== dice[1],
+  });
 }
 
-async function animateStep(player: Player, step: Step, reverse: boolean, apply: () => void): Promise<void> {
-  const origin = reverse ? step.to : step.from;
-  const from = active ? measureCheckerTip(dom.board, origin, player) : null;
+async function animateStep(_player: Player, _step: Step, _reverse: boolean, apply: () => void): Promise<void> {
   apply();
-  render();
-  if (!active) return;
-  await animateCheckerPlay({ root: dom.board, player, steps: [step], reverse, from: from ?? undefined });
+  await render();
 }
 
 async function showRoll(): Promise<void> {
-  render();
-  if (active) await rollDice(dom.board);
+  const el = boardEl();
+  if (active && !el.xgid) {
+    const quiet = clonePosition(state.pos);
+    quiet.dice = null;
+    const done = settled(el);
+    el.usedDice = [];
+    el.movable = [];
+    el.swap = false;
+    el.xgid = positionToXgid(quiet);
+    await done;
+  }
+  await render();
 }
 
 // ---------- match flow ----------
 
 function newMatch(): void {
   state.gen += 1;
-  cancelMoveAnimation();
+  resetBoard();
   state.length = Number(lengthSelect.value) || 5;
   state.score = { p1: 0, p2: 0 };
   state.phase = initialPhase(state.length);
@@ -384,7 +391,6 @@ async function engineTurn(gen: number): Promise<void> {
     state.mode = "answer-double";
     state.status = `Engine doubles to ${state.pos.cube.value * 2}. Take or drop?`;
     render();
-    if (active) animateCube(dom.board);
     return;
   }
   await engineRoll(gen);
@@ -401,7 +407,6 @@ async function answerDouble(take: boolean): Promise<void> {
   state.pos = applyTake(state.pos, ENGINE);
   state.status = `You take. Cube at ${state.pos.cube.value}`;
   render();
-  if (active) animateCube(dom.board);
   await sleep(500);
   if (stale(gen)) return;
   await engineRoll(gen);
@@ -459,7 +464,6 @@ async function humanDouble(): Promise<void> {
   state.mode = "busy";
   state.status = `You double to ${state.pos.cube.value * 2}…`;
   render();
-  if (active) animateCube(dom.board);
   await sleep(700);
   if (stale(gen)) return;
   await engineAnswersDouble(gen);
@@ -519,20 +523,15 @@ function endGame(
 
 // ---------- input ----------
 
-dom.board.addEventListener("click", (ev) => {
+dom.board.addEventListener("point", (ev) => {
+  if (!active || state.mode !== "moving") return;
+  const point = (ev as CustomEvent<{ point: number | "bar" }>).detail.point;
+  void humanStep(point);
+});
+
+dom.board.addEventListener("swap", () => {
   if (!active) return;
-  const target = ev.target as HTMLElement;
-  if (target.closest('[data-action="swap"]')) {
-    swapDice();
-    return;
-  }
-  if (state.mode !== "moving") return;
-  const point = target.closest<HTMLElement>("[data-point]");
-  if (point) {
-    void humanStep(Number(point.dataset.point));
-    return;
-  }
-  if (target.closest('[data-slot="bar-p1"]')) void humanStep("bar");
+  swapDice();
 });
 
 controls.addEventListener("click", (ev) => {
@@ -582,12 +581,12 @@ export const playScreen: Screen = {
     active = true;
     tools.hidden = false;
     controls.hidden = false;
+    resetBoard();
     render();
   },
   deactivate() {
     active = false;
     tools.hidden = true;
     controls.hidden = true;
-    cancelMoveAnimation();
   },
 };

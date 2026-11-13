@@ -19,6 +19,8 @@
 
 ## Consequences
 
-Allowed top-level packages: `ts-core`, `move-dumper`, `training-ground`, `game-engine`, `gui`, `battle-arena`. Do not add a seventh. Spec: [battle-arena.md](../domain/battle-arena.md). `gui` file picker accepts GM[6] from dumper dumps or arena replays. Never commit `battle-arena/replays/`.
+Allowed top-level packages at the time: `ts-core`, `move-dumper`, `training-ground`, `game-engine`, `gui`, `battle-arena`. Spec: [battle-arena.md](../domain/battle-arena.md). `gui` file picker accepts GM[6] from dumper dumps or arena replays. Never commit `battle-arena/replays/`.
+
+[0028](0028-game-engine-fast.md) adds `game-engine-fast`. [0033](0033-board-package.md) adds `board`. AGENTS.md lists those eight. Do not add a ninth.
 
 [0023](0023-arena-any-driver.md) generalizes pairing: any driver versus any driver, with per-side parameters.

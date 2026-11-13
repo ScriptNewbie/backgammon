@@ -62,7 +62,7 @@ Menu command ids default to XG 2.10's numbering (`-CmdImportClipboard 123`, `-Cm
 | nobody may double, not Crawford | maxcube = current cube exponent (XG has no dead-cube flag) |
 | otherwise | maxcube `6` (64) |
 
-p1 is XG's bottom player and bears off toward 1. The pending-double dice field (`D`) is not used: XG does not import it.
+p1 is XG's bottom player and bears off toward 1. The pending-double dice field (`D`) is not used: XG does not import it. The reader accepts any non-negative maxcube (GNU writes `10`). The cube is dead when that field equals the current exponent. Our encoder still writes `0`–`6`.
 
 ## Analysis text
 
@@ -76,7 +76,7 @@ Any other wording throws. There is no closest-match guess.
 
 ## Our client
 
-- `positionToXgid(position)`.
+- `positionToXgid(position)` and `positionFromXgid(xgid)` (isomorphic `ts-core` `src/xgid.ts`; this module re-exports the encoder).
 - `matchXgPlay(position, notation)` replays the notation on our board (a chain without `*` jumps to its end, which leaves the same board) and returns the legal play that leaves the same board, choosing the smallest `stepsKey` among equals. `Cannot Move` must match an empty legal-play list.
 - `xgResultCubeless(line)` turns the best line's `Player` / `Opponent` percentages into mover cubeless probabilities and flips them to the player about to move, the same as Hedgehog.
 - `XgClient.cubeAction(position)` queries with the doubler on roll and dice cleared. Offer and take use the same analysis, and the last one is cached by XGID, so XG against XG asks once.

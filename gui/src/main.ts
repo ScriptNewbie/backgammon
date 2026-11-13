@@ -1,4 +1,5 @@
 import "./style.css";
+import "board/element";
 import type { Screen } from "./dom";
 import { playScreen } from "./play/view";
 import { replayScreen } from "./replay-view";

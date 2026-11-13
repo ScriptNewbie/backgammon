@@ -1,15 +1,16 @@
 # Agent instructions
 
-This is a seven-package monorepo. Do not add other top-level packages.
+This is an eight-package monorepo. Do not add other top-level packages.
 
 | Package | Stack | Job |
 | --- | --- | --- |
-| `ts-core` | TypeScript | Shared board types, apply-steps, legal moves, featurizer; Node match/MWC/cube formula, sim, gnubg sidecar client, hedgehog client, XG sidecar client, SGF writer |
+| `ts-core` | TypeScript | Shared board types, apply-steps, legal moves, featurizer, XGID codec; Node match/MWC/cube formula, sim, gnubg sidecar client, hedgehog client, XG sidecar client, SGF writer |
 | `move-dumper` | TypeScript | Simulate games (no cube); dump checker positions/moves labelled by the GNU Backgammon CLI sidecar (`docs/integrations/gnubg`) |
 | `training-ground` | PyTorch → ONNX + ExecuTorch `.pte` | Train the cubeless eval net |
 | `game-engine` | TypeScript + Hono + `onnxruntime-node` | Board + dice → legal moves with cubeful evals |
 | `game-engine-fast` | CUDA C++ | GPU ply search; same `/evaluate` contract; arena driver only ([ADR 0028](docs/decisions/0028-game-engine-fast.md)). ply 0-4 with gnubg-style move filters, multithreaded; GPU move generation is next |
-| `gui` | Vite + TypeScript + Tailwind CSS | Web UI: play a match against `game-engine`; replay GNU SGF dumps |
+| `gui` | Vite + TypeScript + Tailwind CSS | Web UI: play a match against `game-engine`; replay GNU SGF dumps. The board is the `board` element |
+| `board` | TypeScript | Embeddable `<backgammon-board>` custom element ([ADR 0033](docs/decisions/0033-board-package.md)). XGID in; checkers, dice, and cube animate when it changes |
 | `battle-arena` | TypeScript | Play any driver against any driver (default: our engine vs GNU Backgammon); win summary + SGF |
 
 ## Docker

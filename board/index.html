@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Board</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #f5f5f4;
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        min-height: 520px;
+      }
+      #frame {
+        flex: 1;
+        min-height: 0;
+        margin: 12px;
+      }
+      nav {
+        display: flex;
+        gap: 8px;
+        padding: 0 12px 12px;
+      }
+      button {
+        cursor: pointer;
+        border: 0;
+        border-radius: 4px;
+        background: #1c1917;
+        color: #fff;
+        padding: 6px 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="frame">
+      <backgammon-board></backgammon-board>
+    </div>
+    <nav>
+      <button id="roll" type="button">Roll</button>
+      <button id="step" type="button">Step</button>
+      <button id="reset" type="button">Reset</button>
+    </nav>
+    <script type="module" src="/src/demo.ts"></script>
+  </body>
+</html>

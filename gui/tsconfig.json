@@ -12,9 +12,11 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "allowImportingTsExtensions": true,
+    "baseUrl": ".",
     "types": ["vite/client", "node"],
     "paths": {
-      "ts-core": ["../ts-core/src/index.ts"]
+      "ts-core": ["../ts-core/src/index.ts"],
+      "board/element": ["../board/src/element.ts"]
     }
   },
   "include": ["src/**/*.ts", "test/**/*.ts", "vite.config.ts"]
