@@ -44,7 +44,8 @@ export type Manifest = {
     settings: {
       play: "game";
       baseUrl: string;
-      cubefulLabels: true;
+      /** False since ADR 0036: gnubg labels with cubeful evaluation off. Older batches say true. */
+      cubefulLabels: false;
       /** GnuBG ply of the labels (the top plays' depth under `labelFilter: "gnubg"`). */
       ply: number;
       /** `gnubg`: GnuBG's own move filter (top plays at `ply`, the rest shallower). `all`: every play at `ply`. */

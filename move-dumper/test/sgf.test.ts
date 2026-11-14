@@ -74,7 +74,7 @@ test("manifest engine is gnubg game play with its ply", () => {
   assert.equal(manifest.engine.version, "GNU Backgammon 1.07.001");
   assert.equal(manifest.engine.settings.ply, 2);
   assert.equal(manifest.engine.settings.play, "game");
-  assert.equal(manifest.engine.settings.cubefulLabels, true);
+  assert.equal(manifest.engine.settings.cubefulLabels, false);
   assert.equal("met" in manifest.engine.settings, false);
   assert.equal("matchLengths" in manifest.engine.settings, false);
 });

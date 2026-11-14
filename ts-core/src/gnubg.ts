@@ -160,10 +160,11 @@ function isTerminal(probs: GnubgProbs): boolean {
 }
 
 /**
- * Teacher labels from `hint` lines: one `LegalPlay` per legal board, in gnubg's order. With
- * filter `all` every play must be searched at `ply`; with `gnubg` (its own move filter, how
- * bgweb-api labelled) its top candidates are at `ply` and the rest shallower. `cubeless` and `teacherDiff` are money cubeless; `cubefulEquity` is
- * gnubg's money cubeful equity, both flipped to the side to move after the play.
+ * Teacher labels from cubeless `hint` lines (ADR 0036): one `LegalPlay` per legal board, in
+ * gnubg's order. With filter `all` every play must be searched at `ply`; with `gnubg` (its own
+ * move filter, how bgweb-api labelled) its top candidates are at `ply` and the rest shallower.
+ * `cubeless` (flipped to the side to move after the play) and `teacherDiff` are money cubeless.
+ * Labels carry no cubeful equity, so `cubefulEquity` is 0.
  */
 export function gnubgLabels(
   position: Position,
@@ -174,7 +175,7 @@ export function gnubgLabels(
   const legal = legalPlaysByBoard(position);
   const seen = new Set<string>();
   const scored = lines.map((line) => {
-    if (!line.cubeful) throw new Error(`gnubg move ${line.rank} is not cubeful`);
+    if (line.cubeful) throw new Error(`gnubg move ${line.rank} is cubeful; labels must be cubeless`);
     // gnubg reports a finished game, and a forced play (nothing to choose), at its own depth.
     const tooDeep = line.ply > ply;
     const forced = lines.length === 1;
@@ -197,7 +198,7 @@ export function gnubgLabels(
     teacherDiff: moverEq - best,
     eval: {
       cubeless: gnubgResultCubeless(line.probs),
-      cubefulEquity: -line.equity,
+      cubefulEquity: 0,
       cubeAction: null,
       source: "gnubg",
     },
@@ -220,9 +221,10 @@ export class GnubgClient {
   }
 
   /**
-   * Teacher labels (move-dumper): every legal play at `ply` under `labelFilter`, valued as a
-   * money game with a centered live cube whatever the position's cube and match say. bgweb-api
-   * labelled the same way at 2-ply with gnubg's filter before ADR 0031.
+   * Teacher labels (move-dumper): every legal play at `ply` under `labelFilter`, evaluated
+   * cubeless (ADR 0036) as a money game whatever the position's match says. With cubeful
+   * evaluation off, gnubg also picks the replies inside its search by cubeless equity, so the
+   * cube sent (centered) does not affect the labels.
    */
   async getMoves(position: Position): Promise<{ plays: LegalPlay[]; ply: number }> {
     if (!position.dice) throw new Error("gnubg getMoves requires dice");
@@ -232,7 +234,7 @@ export class GnubgClient {
       cube: { value: 1, owner: "centered", mayDouble: { p1: true, p2: true } },
       match: null,
     };
-    const text = await this.query(positionToXgid(labelled), "checker", this.labelFilter);
+    const text = await this.query(positionToXgid(labelled), "checker", this.labelFilter, false);
     return { plays: gnubgLabels(position, parseGnubgHint(text), this.ply, this.labelFilter), ply: this.ply };
   }
 
@@ -240,7 +242,7 @@ export class GnubgClient {
   async chooseChecker(position: Position): Promise<{ steps: Step[]; cubeless: Cubeless | null }> {
     if (!position.dice) throw new Error("gnubg checker query requires dice");
     if (generateLegalPlays(position).length === 0) return { steps: [], cubeless: null };
-    const text = await this.query(positionToXgid(position), "checker", "gnubg");
+    const text = await this.query(positionToXgid(position), "checker", "gnubg", true);
     const best = parseGnubgHint(text)[0];
     if (!best) throw new Error("gnubg found no play where we have legal plays");
     return { steps: matchNotationPlay(position, best.notation, "gnubg"), cubeless: gnubgResultCubeless(best.probs) };
@@ -250,7 +252,7 @@ export class GnubgClient {
   async cubeAction(position: Position): Promise<GnubgCubeAnalysis> {
     const xgid = positionToXgid({ ...position, dice: null });
     if (this.lastCube?.xgid === xgid) return this.lastCube;
-    const analysis = parseGnubgCube(xgid, await this.query(xgid, "cube", "gnubg"));
+    const analysis = parseGnubgCube(xgid, await this.query(xgid, "cube", "gnubg", true));
     this.lastCube = analysis;
     return analysis;
   }
@@ -274,13 +276,14 @@ export class GnubgClient {
     this.version = body.version ?? "";
   }
 
-  private async query(xgid: string, kind: GnubgQueryKind, filter: GnubgFilter): Promise<string> {
+  /** `cubeful: false` turns off gnubg's cubeful checker-play evaluation (teacher labels only). */
+  private async query(xgid: string, kind: GnubgQueryKind, filter: GnubgFilter, cubeful: boolean): Promise<string> {
     const res = await fetchWithRetry(
       this.url("/v1/query"),
       {
         method: "POST",
         headers: { accept: "application/json", "content-type": "application/json" },
-        body: JSON.stringify({ xgid, kind, ply: this.ply, filter }),
+        body: JSON.stringify({ xgid, kind, ply: this.ply, filter, cubeful }),
       },
       { name: "gnubg", hint: "Keep docker compose up -d (gnubg service).", timeoutMs: GNUBG_TIMEOUT_MS },
     );

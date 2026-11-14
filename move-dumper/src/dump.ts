@@ -30,7 +30,7 @@ export function buildManifest(opts: {
   const settings: Manifest["engine"]["settings"] = {
     play: "game",
     baseUrl: opts.baseUrl,
-    cubefulLabels: true,
+    cubefulLabels: false,
     ply: opts.ply,
     labelFilter: opts.labelFilter,
     seed: opts.seed,

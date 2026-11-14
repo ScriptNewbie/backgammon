@@ -10,7 +10,7 @@ from typing import Any, Literal
 
 import numpy as np
 
-from training_ground.cubeless import CUBELESS_OUTPUT_SIZE
+from training_ground.cubeless import CUBELESS_OUTPUT_SIZE, consistent_label
 from training_ground.dumpio import iter_records_file, record_files
 from training_ground.features import FEATURE_SIZE
 from training_ground.log import info
@@ -251,6 +251,7 @@ def _build_batch(
     writers = {split: _SplitWriter(building, split, chunk_size) for split in SPLITS}
     records_scanned = 0
     records_in_split = {split: 0 for split in SPLITS}
+    dropped = 0
     try:
         for rec in iter_records_file(rec_path):
             records_scanned += 1
@@ -259,7 +260,13 @@ def _build_batch(
                 raise ValueError(f"unknown split {split!r} in record {rec.get('id')!r}")
             records_in_split[split] += 1
             for feat, label in iter_samples_for_record(rec):
+                # Impossible teacher probabilities (old bgweb-api batch) are not trained on (ADR 0036).
+                if not consistent_label(label):
+                    dropped += 1
+                    continue
                 writers[split].append(feat, label)
+        if dropped:
+            info(f"feature cache {batch_id}: dropped {dropped} play(s) with impossible probabilities")
         chunks = {split: writers[split].close() for split in SPLITS}
         fingerprint: dict[str, Any] = {
             "v": CACHE_FORMAT_VERSION,
@@ -268,6 +275,7 @@ def _build_batch(
             "sha256": file_digest,
             "records_scanned": records_scanned,
             "records_in_split": records_in_split,
+            "dropped_inconsistent": dropped,
             "chunks": chunks,
         }
         (building / "fingerprint.json").write_text(

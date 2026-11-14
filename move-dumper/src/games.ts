@@ -10,6 +10,7 @@ import {
   type TurnContext,
 } from "ts-core/sim";
 import { DumpWriter } from "./dump";
+import { consistentPlays } from "./labels";
 import { sampleCheckerIndex, sampleLevelPair, type RankedPlay } from "./levels";
 import type { DumpRecord, Level } from "./types";
 
@@ -42,7 +43,7 @@ class DumpingTeacher implements MatchPlayer {
   ) {}
 
   async chooseChecker(pos: Position, ctx: TurnContext): Promise<{ steps: Step[]; cubeless: Cubeless | null }> {
-    const { plays } = await this.client.getMoves(pos);
+    const plays = consistentPlays((await this.client.getMoves(pos)).plays);
 
     const ranked: RankedPlay[] = plays.map((play) => ({
       rankScore: -play.eval.cubeless.equity,

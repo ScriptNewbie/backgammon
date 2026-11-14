@@ -29,12 +29,17 @@ test("money 3-1 at 0-ply lists every play with 6-digit probabilities", () => {
   assert.equal(lines.length, 16);
   assert.deepEqual(lines[0], {
     rank: 1,
-    cubeful: true,
+    cubeful: false,
     ply: 0,
     notation: "8/5 6/5",
-    equity: 0.218154,
+    equity: 0.159013,
     probs: { win: 0.550952, gammon: 0.173708, backgammon: 0.012809, lose: 0.449048, loseGammon: 0.124388, loseBackgammon: 0.005021 },
   });
+});
+
+test("cubeful hint lines (gnubg's own play) parse as cubeful", () => {
+  const [best] = parseGnubgHint(fixture("checker-p2-42-match").text);
+  assert.equal(best!.cubeful, true);
 });
 
 test("labels flip to the side to move after the play and match bgweb-api's 0-ply numbers", () => {
@@ -46,13 +51,19 @@ test("labels flip to the side to move after the play and match bgweb-api's 0-ply
   assert.deepEqual(new Set(best.steps.map((s) => `${s.from}/${s.to}`)), new Set(["8/5", "6/5"]));
   assert.equal(best.eval.source, "gnubg");
   assert.equal(best.eval.cubeAction, null);
-  assert.equal(best.eval.cubefulEquity, -0.218154);
+  // Cubeless labels carry no cubeful equity (ADR 0036).
+  assert.equal(best.eval.cubefulEquity, 0);
   assert.equal(best.eval.cubeless.win, 0.449048);
   assert.equal(best.eval.cubeless.loseGammon, 0.173708);
-  // bgweb-api (same nets, 0-ply, 3 decimals): cubeless eq +0.159 for the mover, cubeful +0.218.
+  // bgweb-api (same nets, 0-ply, 3 decimals): cubeless eq +0.159 for the mover.
   assert.ok(Math.abs(best.eval.cubeless.equity + 0.159) < 0.001);
   assert.equal(best.teacherDiff, 0);
   assert.ok(plays.slice(1).every((p) => p.teacherDiff <= 0));
+});
+
+test("cubeful lines are not labels", () => {
+  const { xgid, text } = fixture("checker-p2-42-match");
+  assert.throws(() => gnubgLabels(positionFromXgid(xgid), parseGnubgHint(text), 0), /labels must be cubeless/);
 });
 
 test("all-moves labels at 1-ply are all 1-ply; asking for another depth fails", () => {
@@ -76,7 +87,7 @@ test("gnubg's own filter leaves some plays at lower ply: only the gnubg label fi
 });
 
 test("p2's play is mover-relative and lands on our board", () => {
-  const { xgid, text } = fixture("checker-p2-42-match");
+  const { xgid, text } = fixture("checker-p2-42-match-cubeless");
   const pos = positionFromXgid(xgid);
   assert.equal(pos.onRoll, "p2");
   const lines = parseGnubgHint(text);
@@ -122,7 +133,7 @@ test("unrecognised gnubg text fails instead of guessing", () => {
 
 // --- client against a fake sidecar -----------------------------------------------------
 
-type Query = { xgid: string; kind: string; ply: number; filter: string };
+type Query = { xgid: string; kind: string; ply: number; filter: string; cubeful: boolean };
 const queries: Query[] = [];
 let health: Record<string, unknown> = {};
 let server: Server;
@@ -143,7 +154,7 @@ before(async () => {
       const name =
         body.kind === "cube"
           ? "cube-double-take"
-          : body.filter === "all"
+          : !body.cubeful
             ? "checker-money-31-ply0-all"
             : "checker-p2-42-match";
       res.end(JSON.stringify({ ok: true, text: fixture(name).text }));
@@ -162,25 +173,24 @@ beforeEach(() => {
   health = { ok: true, version: "GNU Backgammon 1.07.001", api: 1 };
 });
 
-test("getMoves labels a money game with a live centered cube, every play at the client's ply", async () => {
+test("getMoves asks for cubeless labels of a money game, every play at the client's ply", async () => {
   const pos = openingMoneyPosition();
   pos.dice = [3, 1];
-  // The dumper turns the cube off; labels still price a live centered cube, as bgweb-api did.
   pos.cube.mayDouble = { p1: false, p2: false };
   const { plays, ply } = await new GnubgClient(baseUrl, 0, "all").getMoves(pos);
   assert.equal(ply, 0);
   assert.equal(plays.length, 16);
   assert.deepEqual(queries, [
-    { xgid: "XGID=-b----E-C---eE---c-e----B-:0:0:1:31:0:0:0:0:6", kind: "checker", ply: 0, filter: "all" },
+    { xgid: "XGID=-b----E-C---eE---c-e----B-:0:0:1:31:0:0:0:0:6", kind: "checker", ply: 0, filter: "all", cubeful: false },
   ]);
 });
 
 test("getMoves defaults to gnubg's own filter", async () => {
   const pos = openingMoneyPosition();
   pos.dice = [3, 1];
-  // The fake sidecar answers this filter with another position's text; only the request matters.
-  await new GnubgClient(baseUrl, 0).getMoves(pos).catch(() => undefined);
+  await new GnubgClient(baseUrl, 0).getMoves(pos);
   assert.equal(queries[0]!.filter, "gnubg");
+  assert.equal(queries[0]!.cubeful, false);
 });
 
 test("getMoves skips the sidecar for a dance", async () => {
@@ -195,6 +205,7 @@ test("chooseChecker is gnubg's top play with its own filter, at the real score a
   const choice = await new GnubgClient(baseUrl, 2).chooseChecker(pos);
   assert.equal(queries.length, 1);
   assert.equal(queries[0]!.filter, "gnubg");
+  assert.equal(queries[0]!.cubeful, true);
   assert.equal(queries[0]!.ply, 2);
   assert.equal(queries[0]!.xgid, positionToXgid(pos));
   assert.ok(choice.cubeless);

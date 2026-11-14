@@ -10,7 +10,7 @@
     "settings": {
       "play": "game",
       "baseUrl": "http://127.0.0.1:8080",
-      "cubefulLabels": true,
+      "cubefulLabels": false,
       "ply": 2,
       "labelFilter": "gnubg",
       "seed": 1,

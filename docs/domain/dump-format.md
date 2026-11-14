@@ -40,7 +40,7 @@ Do not use a JSON array of all records, Parquet, or SQLite as the dumper’s for
     "settings": {
       "play": "game",
       "baseUrl": "http://127.0.0.1:8080",
-      "cubefulLabels": true,
+      "cubefulLabels": false,
       "ply": 2,
       "labelFilter": "gnubg",
       "seed": 1,
@@ -62,6 +62,7 @@ Do not use a JSON array of all records, Parquet, or SQLite as the dumper’s for
 
 - `engine.name` is `"gnubg"` and `version` is gnubg's own banner. `settings.ply` is the GnuBG ply and `settings.labelFilter` is `gnubg` (its own move filter: top plays at `ply`, the rest shallower, as bgweb-api labelled) or `all` (every play at `ply`) ([gnubg.md](gnubg.md)). Batches written before [ADR 0031](../decisions/0031-gnubg-cli-sidecar.md) say `"bgweb-api"`, with the image tag as `version` and bgweb's `plies` (its 3 is GnuBG 2-ply, its 1 is 0-ply; it reports only the last play).
 - `play` is `"game"` ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)). Do not emit `matchLengths` or `met`. `position.match` is `null`.
+- `cubefulLabels` is `false`: gnubg labels with cubeful evaluation off ([ADR 0036](../decisions/0036-cubeless-teacher-labels.md)). Batches written before ADR 0036 say `true` (cubeful search, live centered cube; their probabilities are still cubeless).
 - Extra keys under `engine.settings` are allowed. Do not remove `play` / `cubefulLabels`.
 - Update `recordCount` after **each committed game** (and again when the batch finishes) so a crash still has a usable count. If a run dies mid-game, count the JSONL lines; do not trust a stale manifest. Gzip is concatenated members, one per finished game — `gunzip` still yields one JSONL stream.
 
@@ -103,7 +104,7 @@ One line = one checker decision. Additive fields from ADR 0009; keep `"v": 1`. [
 | `chosen` | `{ "steps": [...] }` for the sampled checker play. |
 | `position` | Full position JSON. Cube is always dead (`value` 1, centered, `mayDouble` both false). `match` is **`null`**. **Do not train on the dead cube as live cube state.** `dice` is `[d1, d2]`. |
 | `eval` | Eval of this checker position for STM, or **`null`**. The teacher scores **plays**, not the static pre-move board; leave `null` and train from `moves[]`. |
-| `moves` | All legal plays, each with `steps` and teacher `eval` of the **result** (result STM). `source` is `"gnubg"` (`"bgweb-api"` in older batches). `cubeAction` is `null`. |
+| `moves` | All legal plays, each with `steps` and teacher `eval` of the **result** (result STM). `source` is `"gnubg"` (`"bgweb-api"` in older batches). `cubeAction` is `null`. `cubefulEquity` is 0 when `cubefulLabels` is false. Probabilities are clamped so each of the six exclusive outcomes is non-negative ([move-dumper.md](move-dumper.md)). |
 | `xgid` | Optional debug string. The dumper writes `null`. **Training must ignore it.** |
 
 Do not write cube-decision rows. Teacher `eval.cubeAction` stays `null`.
@@ -117,8 +118,8 @@ GNU Backgammon files: `FF[4]`, `GM[6]`, UTF-8. One **game** per `replay/<gameId>
 ## Training use
 
 - Value net: `decision == "checker"` only. Apply each move’s `steps` to `position`, then `moves[].eval.cubeless` (STM of the result). Ignore `position.match` (`null` on new dumps) and `position.cube` (dead) except as schema.
-- Cube wrapper: `moves[].eval.cubefulEquity` when present (money eq from the teacher). Do not expect `cubeAction` from the teacher.
-- Move ranking in new dumps is by negated result cubeless equity ([move-dumper.md](move-dumper.md)). The stored labels remain cubeless probs + money `cubefulEquity`.
+- Nothing trains on `moves[].eval.cubefulEquity`: it is 0 in new dumps and gnubg's cubeful money `Eq.` in batches with `cubefulLabels: true`. Do not expect `cubeAction` from the teacher.
+- Move ranking in new dumps is by negated result cubeless equity ([move-dumper.md](move-dumper.md)). The stored labels are cubeless probs.
 
 ## Training layout
 

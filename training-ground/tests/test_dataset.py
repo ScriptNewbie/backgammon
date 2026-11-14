@@ -200,6 +200,22 @@ def test_cache_chunks_samples(tmp_path: Path) -> None:
     assert not (batch_dir / "train-000003.features.npy").exists()
 
 
+def test_cache_drops_plays_with_impossible_probabilities(tmp_path: Path) -> None:
+    broken = checker_record(game_id_for("train"), "broken", 0.922)
+    broken["moves"][0]["eval"]["cubeless"].update(
+        {"gammon": 0.499, "loseGammon": 0.485, "loseBackgammon": 0.025}
+    )
+    write_batch(tmp_path, [checker_record(game_id_for("train"), "ok", 0.55), broken])
+    cache_dir = tmp_path / "cache"
+    ensure_feature_cache(tmp_path, cache_dir)
+    ds = CubelessDumpDataset(tmp_path, "train", cache_dir)
+    assert len(ds) == 1
+    assert float(ds[0][1][0]) == pytest.approx(0.55)
+    batch_dir = cache_root(cache_dir) / "batches" / "2026-08-22T000000Z-bgweb-api"
+    fingerprint = json.loads((batch_dir / "fingerprint.json").read_text(encoding="utf-8"))
+    assert fingerprint["dropped_inconsistent"] == 1
+
+
 def test_rebuild_cache_flag_rebuilds_even_when_fresh(tmp_path: Path) -> None:
     write_batch(tmp_path, [checker_record(game_id_for("train"), "t1", 0.55)])
     cache_dir = tmp_path / "cache"
