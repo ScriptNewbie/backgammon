@@ -10,7 +10,7 @@ TypeScript + Hono + `onnxruntime-node` ([ADR 0004](docs/decisions/0004-game-engi
 ## Contract
 
 - **Request:** `POST /evaluate` position JSON with dice ([docs/domain/game-engine.md](docs/domain/game-engine.md), [docs/domain/board-representation.md](docs/domain/board-representation.md)).
-- **Infer:** JSON → 206-vector ([docs/domain/features.md](docs/domain/features.md)) → ONNX → cubeless probs.
+- **Infer:** JSON → 196-vector ([docs/domain/features.md](docs/domain/features.md)) → ONNX → cubeless probs.
 - **Response:** legal moves + eval object ([docs/domain/evaluation.md](docs/domain/evaluation.md)), including cubeful equity (`equity * cube.value`); `cubeAction` stays null.
 - **Cube:** `POST /cube` with the doubler on roll and `dice: null` → `{available, offer, take, noDouble, doubleTake, doubleDrop, cubeless}` from the net's probs of that position and the cube formula (`ts-core/match` `cubeDecision`: dead-cube MWC in a match, Janowski money cube for money, `currency` says which).
 

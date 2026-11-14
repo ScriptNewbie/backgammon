@@ -303,8 +303,8 @@ Mlp parseOnnxMlp(const std::string& bytes) {
     }
   }
   if (mlp.layers.empty() || mlp.layers.back().relu) fail("graph must end with Gemm → Sigmoid");
-  if (mlp.inputSize() != 206 || mlp.outputSize() != 5) {
-    fail("expected [N, 206] → [N, 5], got " + std::to_string(mlp.inputSize()) + " → " +
+  if (mlp.inputSize() != kFeatureSize || mlp.outputSize() != 5) {
+    fail("expected [N, " + std::to_string(kFeatureSize) + "] → [N, 5], got " + std::to_string(mlp.inputSize()) + " → " +
          std::to_string(mlp.outputSize()));
   }
   return mlp;

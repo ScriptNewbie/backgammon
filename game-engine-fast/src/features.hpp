@@ -1,10 +1,10 @@
 #pragma once
-// Board → length-206 float32 STM vector (docs/domain/features.md). Cube block fixed (ADR 0029).
+// Board → length-196 float32 STM vector (docs/domain/features.md). Board only (ADR 0037).
 #include "board.hpp"
 
 namespace bg {
 
-constexpr int kFeatureSize = 206;
+constexpr int kFeatureSize = 196;
 
 BG_HD inline void encodeCount(int n, float* out) {
   out[0] = n >= 1 ? 1.0f : 0.0f;
@@ -23,8 +23,6 @@ BG_HD inline void featurize(const Board& b, float* out) {
   out[193] = static_cast<float>(b.opp[kBar]) / 2.0f;
   out[194] = static_cast<float>(b.me[kOff]) / 15.0f;
   out[195] = static_cast<float>(b.opp[kOff]) / 15.0f;
-  for (int i = 196; i < kFeatureSize; i++) out[i] = 0.0f;
-  out[197] = 1.0f;  // dead cube: centered
 }
 
 }  // namespace bg

@@ -77,7 +77,7 @@ def export_fast_onnx(model: torch.nn.Module, dest_stem: Path | str) -> Path:
     """Write `<stem>-fast.onnx` for game-engine-fast (ADR 0028).
 
     Same module and weights as `export_onnx_and_pte`, but the batch dimension
-    is dynamic: input `features` `[N, 206]`, output `cubeless` `[N, 5]`.
+    is dynamic: input `features` `[N, 196]`, output `cubeless` `[N, 5]`.
     The batch-1 `<stem>.onnx` / `<stem>.pte` contract is untouched.
     """
     path = fast_onnx_path(dest_stem)

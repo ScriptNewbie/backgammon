@@ -1,6 +1,6 @@
 # 0029 Cube features are fixed constants
 
-- Status: accepted
+- Status: superseded by [0037](0037-board-only-feature-tensor.md)
 - Date: 2026-11-06
 - Amends: [0002](0002-board-representations.md) (feature tensor cube block)
 

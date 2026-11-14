@@ -8,7 +8,7 @@ from training_ground.features import FEATURE_SIZE
 
 
 class CubelessNet(nn.Module):
-    """Teacher MLP: 206 STM features → 5 cubeless probs (ADR 0015)."""
+    """Teacher MLP: 196 STM features → 5 cubeless probs (ADR 0015)."""
 
     def __init__(self, hidden_size: int = 512, layers: int = 3) -> None:
         super().__init__()

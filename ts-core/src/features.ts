@@ -1,6 +1,6 @@
 import type { Position } from "./types";
 
-export const FEATURE_SIZE = 206;
+export const FEATURE_SIZE = 196;
 
 function encodeCount(n: number, out: Float32Array, offset: number): void {
   out[offset] = n >= 1 ? 1 : 0;
@@ -9,7 +9,10 @@ function encodeCount(n: number, out: Float32Array, offset: number): void {
   out[offset + 3] = n > 3 ? (n - 3) / 2 : 0;
 }
 
-/** Position JSON → length-206 float32 STM vector (docs/domain/features.md). */
+/**
+ * Position JSON → length-196 float32 STM vector (docs/domain/features.md). Board only: the
+ * net is cubeless, so cube, score, and dice are not inputs (ADR 0037).
+ */
 export function featurize(position: Position): Float32Array {
   const onRoll = position.onRoll;
   if (onRoll !== "p1" && onRoll !== "p2") {
@@ -40,9 +43,5 @@ export function featurize(position: Position): Float32Array {
   vec[193] = position.bar[opp] / 2;
   vec[194] = position.off[stm] / 15;
   vec[195] = position.off[opp] / 15;
-
-  // Cube block is fixed to the dead cube every training sample has (ADR 0029).
-  // position.cube is ignored; 196 and 198-205 stay 0.
-  vec[197] = 1;
   return vec;
 }

@@ -6,7 +6,7 @@ The net sees **side-to-move (STM)**. Build the tensor from position JSON by trea
 
 ## Layout
 
-One `float32` vector, length **206**, in this order.
+One `float32` vector, length **196**, in this order. It encodes the board only ([ADR 0037](../decisions/0037-board-only-feature-tensor.md)).
 
 ### Points — 192 floats
 
@@ -32,18 +32,9 @@ STM’s 1-point is JSON point 1 when `onRoll == "p1"`, and JSON point 24 when `o
 | 194 | STM off / 15 |
 | 195 | Opponent off / 15 |
 
-### Cube — 10 floats
+### Not inputs
 
-Fixed constants ([ADR 0029](../decisions/0029-fixed-cube-features.md)). The featurizer **ignores `position.cube`** and always writes the dead-cube values that every training sample has. The net is cubeless; the real cube is used only by the cube wrap and the arena ([evaluation.md](evaluation.md)).
-
-| Index | Value |
-| --- | --- |
-| 196 | `0` |
-| 197 | `1` |
-| 198–201 | `0` |
-| 202–205 | `0` |
-
-The block keeps the length at 206 so exported nets keep their input shape. Cube state, match score, and Jacoby are **not** net inputs; MWC is derived outside the net ([match-play.md](match-play.md)).
+The net is cubeless, so the featurizer ignores `position.cube`, `position.match`, and `position.dice`. Cube state, match score, and Jacoby are **not** net inputs: the cube wrap and MWC are derived outside the net ([evaluation.md](evaluation.md), [match-play.md](match-play.md)). Who is on roll is not an input either, because the tensor is always from STM's side. Nets exported before ADR 0037 took 206 floats (a 10-float cube block, fixed by [ADR 0029](../decisions/0029-fixed-cube-features.md)) and do not load any more.
 
 ## Output of the net
 

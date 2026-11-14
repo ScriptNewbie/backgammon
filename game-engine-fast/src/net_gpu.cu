@@ -35,7 +35,7 @@ int envInt(const char* name, int fallback) {
   return n > 0 ? n : fallback;
 }
 
-// One thread per board: STM board → 206 features, row-major [n, 206]. Same code as the CPU.
+// One thread per board: STM board → 196 features, row-major [n, 196]. Same code as the CPU.
 __global__ void featurizeBoards(const Board* boards, int n, float* features) {
   const int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= n) return;
@@ -207,9 +207,9 @@ void GpuNet::inferBoards(const Board* boards, int n, float* out) {
   if (n <= 0) return;
   std::lock_guard<std::mutex> lock(mutex_);
   Impl& m = *impl_;
-  if (m.layers.front().in != kFeatureSize) throw std::runtime_error("net input is not the 206-float tensor");
+  if (m.layers.front().in != kFeatureSize) throw std::runtime_error("net input is not the 196-float tensor");
   m.run(n, out, [&](Lane& l, int off, int rows) {
-    // 52 bytes per board over PCIe instead of 824 bytes of features.
+    // 52 bytes per board over PCIe instead of 784 bytes of features.
     std::memcpy(l.pinIn, boards + off, sizeof(Board) * static_cast<size_t>(rows));
     check(cudaMemcpyAsync(l.boards, l.pinIn, sizeof(Board) * static_cast<size_t>(rows), cudaMemcpyHostToDevice,
                           l.stream),

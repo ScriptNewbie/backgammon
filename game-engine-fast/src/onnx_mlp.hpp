@@ -1,7 +1,7 @@
 #pragma once
 // Loads the cubeless MLP from cubeless-fast.onnx (ADR 0028) without ONNX Runtime.
 // Accepts only the exported shape: Gemm(transB=1) → Relu → … → Gemm → Sigmoid,
-// input `features` [N, 206], output `cubeless` [N, 5]. Anything else is rejected.
+// input `features` [N, 196], output `cubeless` [N, 5]. Anything else is rejected.
 #include <string>
 #include <vector>
 

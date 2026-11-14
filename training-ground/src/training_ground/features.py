@@ -4,7 +4,7 @@ from typing import Any, Mapping
 
 import numpy as np
 
-FEATURE_SIZE = 206
+FEATURE_SIZE = 196
 
 
 def _encode_count(n: int, out: np.ndarray, offset: int) -> None:
@@ -15,7 +15,10 @@ def _encode_count(n: int, out: np.ndarray, offset: int) -> None:
 
 
 def featurize(position: Mapping[str, Any]) -> np.ndarray:
-    """Position JSON → length-206 float32 STM vector ([docs/domain/features.md])."""
+    """Position JSON → length-196 float32 STM vector ([docs/domain/features.md]).
+
+    Board only: the net is cubeless, so cube, score, and dice are not inputs (ADR 0037).
+    """
     points = position["points"]
     on_roll = position["onRoll"]
     if on_roll not in ("p1", "p2"):
@@ -45,8 +48,4 @@ def featurize(position: Mapping[str, Any]) -> np.ndarray:
     vec[193] = bar[opp] / 2.0
     vec[194] = off[stm] / 15.0
     vec[195] = off[opp] / 15.0
-
-    # Cube block is fixed to the dead cube every training sample has (ADR 0029).
-    # position["cube"] is ignored; 196 and 198-205 stay 0.
-    vec[197] = 1.0
     return vec
