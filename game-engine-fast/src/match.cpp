@@ -81,18 +81,6 @@ double deadCubeMwc(const Cubeless& c, const MatchView& me, int cubeValue, Phase 
          clamp01(c.loseGammon - c.loseBackgammon) * after(0, 2 * C) + clamp01(c.loseBackgammon) * after(0, 3 * C);
 }
 
-CubeVerdict decideCube(const Cubeless& doubler, const MatchView& v, int cubeValue, Phase phase) {
-  CubeVerdict out{};
-  out.noDouble = deadCubeMwc(doubler, v, cubeValue, phase);
-  out.doubleTake = deadCubeMwc(doubler, v, 2 * cubeValue, phase);
-  out.doubleDrop = met().equity(v.length - (v.myScore + cubeValue), v.length - v.oppScore, phase);
-  const bool wouldDrop = (1 - out.doubleTake) < (1 - out.doubleDrop);
-  const bool tooGood = out.noDouble > out.doubleTake;
-  const double offerValue = wouldDrop ? out.doubleDrop : out.doubleTake;
-  out.doubles = !tooGood && offerValue > out.noDouble;
-  out.takes = !wouldDrop;
-  return out;
-}
 
 }  // namespace bg
 
@@ -129,6 +117,150 @@ CubeVerdict decideMoneyCube(const Cubeless& doubler, CubeView view, int cubeValu
   const int doubled = 2 * cubeValue;
   out.doubleTake = moneyCubeful(doubler, doubled >= 64 ? CubeView::Dead : CubeView::Theirs, doubled);
   out.doubleDrop = cubeValue;
+  out.doubles = std::min(out.doubleTake, out.doubleDrop) > out.noDouble;
+  out.takes = out.doubleTake < out.doubleDrop;
+  return out;
+}
+
+}  // namespace bg
+
+namespace bg {
+namespace {
+
+struct Split {
+  double single, gammon, backgammon;
+};
+
+Split splitOf(double total, double gammon, double backgammon) {
+  if (total <= 0) return Split{1, 0, 0};
+  const double g = std::max(0.0, gammon - backgammon) / total;
+  const double b = std::max(0.0, backgammon) / total;
+  return Split{std::max(0.0, 1 - g - b), g, b};
+}
+
+int levelOf(int cubeValue) {
+  int level = 0;
+  while ((1 << level) < cubeValue) level++;
+  return level;
+}
+
+// The x on [x0, x1] where the line through (x0, y0) and (x1, y1) reaches y, clamped.
+double solve(double y, double x0, double y0, double x1, double y1) {
+  if (y1 == y0) return y <= y0 ? x0 : x1;
+  const double t = std::min(1.0, std::max(0.0, (y - y0) / (y1 - y0)));
+  return x0 + t * (x1 - x0);
+}
+
+// One evaluation: side 0 = the player whose probs these are, side 1 = the opponent.
+class Live {
+ public:
+  Live(const MatchCubeTables::Side (&sides)[2], const Cubeless& c)
+      : sides_(sides),
+        wins_(splitOf(c.win, c.gammon, c.backgammon)),
+        loses_(splitOf(1 - c.win, c.loseGammon, c.loseBackgammon)) {
+    for (auto& row : tp_)
+      for (double& v : row) v = -1;
+  }
+
+  double w(int s, int lv) const {
+    const Split& sp = s == 0 ? wins_ : loses_;
+    const double* m = sides_[s].win[lv];
+    return sp.single * m[0] + sp.gammon * m[1] + sp.backgammon * m[2];
+  }
+  double l(int s, int lv) const {
+    const Split& sp = s == 0 ? loses_ : wins_;
+    const double* m = sides_[s].lose[lv];
+    return sp.single * m[0] + sp.gammon * m[1] + sp.backgammon * m[2];
+  }
+  double cash(int s, int lv) const { return sides_[s].win[lv][0]; }
+  double oppCash(int s, int lv) const { return sides_[s].lose[lv][0]; }
+
+  // Side s owning cube level lv cashes at 1 - (the other side's take point at lv + 1).
+  double cashPoint(int s, int lv) { return 1 - takePoint(1 - s, lv + 1); }
+
+  double ownLive(int s, double q, int lv) {
+    const double lo = l(s, lv), hi = w(s, lv);
+    if (lv + 1 >= MatchCubeTables::kLevels) return lo + q * (hi - lo);
+    const double cp = cashPoint(s, lv);
+    const double c = cash(s, lv);
+    if (q < cp) return lo + (c - lo) * (q / cp);
+    return cp >= 1 ? c : c + (hi - c) * ((q - cp) / (1 - cp));
+  }
+
+  // Side s doubled to level lv (owns it): where owning it live equals dropping one level lower.
+  double takePoint(int s, int lv) {
+    double& memo = tp_[s][lv];
+    if (memo >= 0) return memo;
+    const double target = sides_[s].drop[lv];
+    const double lo = l(s, lv), hi = w(s, lv);
+    if (lv + 1 >= MatchCubeTables::kLevels) {
+      memo = solve(target, 0, lo, 1, hi);
+    } else {
+      const double cp = cashPoint(s, lv);
+      const double c = cash(s, lv);
+      memo = target <= c ? solve(target, 0, lo, cp, c) : solve(target, cp, c, 1, hi);
+    }
+    return memo;
+  }
+
+  double live(double p, int lv, CubeView view) {
+    if (view == CubeView::Mine) return ownLive(0, p, lv);
+    if (view == CubeView::Theirs) return 1 - ownLive(1, 1 - p, lv);
+    const double lo = l(0, lv), hi = w(0, lv);
+    if (lv + 1 >= MatchCubeTables::kLevels) return lo + p * (hi - lo);
+    const double tp = takePoint(0, lv + 1);
+    const double cp = cashPoint(0, lv);
+    if (tp >= cp) return lo + p * (hi - lo);
+    const double oc = oppCash(0, lv), c = cash(0, lv);
+    if (p < tp) return lo + (oc - lo) * (p / tp);
+    if (p <= cp) return oc + (c - oc) * ((p - tp) / (cp - tp));
+    return c + (hi - c) * ((p - cp) / (1 - cp));
+  }
+
+  double dead(double p, int lv) const { return (1 - p) * l(0, lv) + p * w(0, lv); }
+
+ private:
+  const MatchCubeTables::Side (&sides_)[2];
+  Split wins_, loses_;
+  double tp_[2][MatchCubeTables::kLevels];
+};
+
+}  // namespace
+
+MatchCubeTables::MatchCubeTables(const MatchView& me, Phase phase) {
+  const Met& table = met();
+  for (int s = 0; s < 2; s++) {
+    const int myScore = s == 0 ? me.myScore : me.oppScore;
+    const int oppScore = s == 0 ? me.oppScore : me.myScore;
+    auto after = [&](int myPts, int oppPts) {
+      return table.equity(me.length - (myScore + myPts), me.length - (oppScore + oppPts), phase);
+    };
+    for (int lv = 0; lv < kLevels; lv++) {
+      const int k = 1 << lv;
+      for (int m = 0; m < 3; m++) {
+        side_[s].win[lv][m] = after((m + 1) * k, 0);
+        side_[s].lose[lv][m] = after(0, (m + 1) * k);
+      }
+      side_[s].drop[lv] = lv == 0 ? 0 : after(0, k / 2);
+    }
+  }
+}
+
+double MatchCubeTables::cubeful(const Cubeless& c, CubeView view, int cubeValue, double x) const {
+  Live live(side_, c);
+  const double p = std::min(1.0, std::max(0.0, c.win));
+  const int lv = levelOf(cubeValue);
+  const double dead = live.dead(p, lv);
+  if (view == CubeView::Dead) return dead;
+  return (1 - x) * dead + x * live.live(p, lv, view);
+}
+
+CubeVerdict MatchCubeTables::decide(const Cubeless& doubler, CubeView view, int cubeValue, double x) const {
+  CubeVerdict out{};
+  out.noDouble = cubeful(doubler, view, cubeValue, x);
+  const int doubled = 2 * cubeValue;
+  out.doubleTake = cubeful(doubler, doubled >= 64 ? CubeView::Dead : CubeView::Theirs, doubled, x);
+  out.doubleDrop = side_[0].win[levelOf(cubeValue)][0];
   out.doubles = std::min(out.doubleTake, out.doubleDrop) > out.noDouble;
   out.takes = out.doubleTake < out.doubleDrop;
   return out;

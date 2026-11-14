@@ -29,3 +29,5 @@ AGENTS.md listed seven packages when this ADR was accepted. Spec: [game-engine-f
 At `ply >= 1` the response no longer lists every legal play; a `pruned` flag on moves may be added later instead. Match play inside the tree is approximate. Low-ply arena runs underuse the GPU until arena concurrency lands. The GUI keeps using `game-engine`.
 
 [0032](0032-engines-own-decisions.md) adds match code to the engine: the returned plays are ordered by mover MWC in a match, and `POST /cube?ply=N` makes its own cube decision. The search itself still ignores the match.
+
+[0035](0035-live-cube-match-and-score-aware-search.md): the search now chooses replies and filters by the request's score and cube (live-cube MWC or Janowski equity), not cubeless money equity.

@@ -116,7 +116,7 @@ Search::Ref Search::Store::leaf(const Board& board) {
   return Ref{k, Kind::Leaf};
 }
 
-Search::Ref Search::Store::expand(const Board& board, int depth) {
+Search::Ref Search::Store::expand(const Board& board, int depth, bool rootSide) {
   // Over budget: stop building. The tree is thrown away (evaluate throws), so a placeholder is fine.
   if (budget != nullptr && budget->exceeded.load(std::memory_order_relaxed)) return Ref{0, Kind::Leaf};
   if (depth == 0) return leaf(board);
@@ -135,7 +135,7 @@ Search::Ref Search::Store::expand(const Board& board, int depth) {
     bool needsFilter = false;
     legalPlays(board, rollList[r].die1, rollList[r].die2, plays);
     if (plays.empty()) {
-      const Ref pass = expand(flipped(board), childDepth);
+      const Ref pass = expand(flipped(board), childDepth, !rootSide);
       local.push_back(Child{pass.index, pass.kind, 1});
     } else {
       int open = 0;  // plays that do not end the game
@@ -151,7 +151,7 @@ Search::Ref Search::Store::expand(const Board& board, int depth) {
         // With more than one open play and depth left, start with a 0-ply leaf; filterEntry()
         // expands the survivors once values are in.
         const bool provisional = childDepth >= 1 && open > 1;
-        const Ref ref = provisional ? leaf(child) : expand(child, childDepth);
+        const Ref ref = provisional ? leaf(child) : expand(child, childDepth, !rootSide);
         needsFilter = needsFilter || provisional;
         local.push_back(Child{ref.index, ref.kind, 1});
       }
@@ -162,6 +162,7 @@ Search::Ref Search::Store::expand(const Board& board, int depth) {
     children.insert(children.end(), local.begin(), local.end());
     rolls[entry].childEnd = static_cast<int32_t>(children.size());
     rolls[entry].childDepth = static_cast<int8_t>(childDepth);
+    rolls[entry].moverRoot = rootSide ? 1 : 0;
     if (needsFilter) pending.push_back(entry);
   }
   return Ref{node, Kind::Node};
@@ -177,7 +178,8 @@ void Search::filterEntry(int32_t entry, Store& chunk) {
   std::vector<double> equities;
   equities.reserve(e.childEnd - e.childBegin);
   for (int32_t c = e.childBegin; c < e.childEnd; c++) {
-    equities.push_back(flipProbs(value(tree_.children[c].ref())).equity());  // mover's view
+    // 0-ply values (leaf or exact), so the side argument of value() does not matter here.
+    equities.push_back(scorer_->value(flipProbs(value(tree_.children[c].ref(), !e.moverRoot)), e.moverRoot != 0));
   }
   const std::vector<int> kept = applyFilter(equities, inner_);
   for (int32_t c = e.childBegin; c < e.childEnd; c++) tree_.children[c].active = 0;
@@ -185,7 +187,7 @@ void Search::filterEntry(int32_t entry, Store& chunk) {
     const int32_t c = e.childBegin + k;
     tree_.children[c].active = 1;
     if (tree_.children[c].kind == Kind::Leaf) {
-      const Ref deep = chunk.expand(tree_.leafBoards[tree_.children[c].index], e.childDepth);
+      const Ref deep = chunk.expand(tree_.leafBoards[tree_.children[c].index], e.childDepth, e.moverRoot == 0);
       chunk.fixups.push_back(Fixup{c, deep});
     }
   }
@@ -301,7 +303,7 @@ void Search::flushLeaves() {
   stats_.leaves = static_cast<int64_t>(total);
 }
 
-Probs Search::value(const Ref& ref) const {
+Probs Search::value(const Ref& ref, bool rootSide) const {
   switch (ref.kind) {
     case Kind::Leaf:
       return leafValues_[ref.index];
@@ -320,8 +322,8 @@ Probs Search::value(const Ref& ref) const {
     bool have = false;
     for (int32_t c = entry.childBegin; c < entry.childEnd; c++) {
       if (!tree_.children[c].active) continue;
-      const Probs v = flipProbs(value(tree_.children[c].ref()));  // mover's point of view
-      const double e = v.equity();
+      const Probs v = flipProbs(value(tree_.children[c].ref(), !rootSide));  // mover's point of view
+      const double e = scorer_->value(v, rootSide);
       if (!have || e > bestEquity) {
         best = v;
         bestEquity = e;
@@ -335,13 +337,15 @@ Probs Search::value(const Ref& ref) const {
   return out;
 }
 
-std::vector<Probs> Search::evaluate(const std::vector<Board>& boards, int depth) {
+std::vector<Probs> Search::evaluate(const std::vector<Board>& boards, int depth, const Scorer* scorer) {
   if (depth < 0 || depth > kMaxDepth) throw std::invalid_argument("search depth out of range");
+  static const Scorer kMoneyEquity;
+  scorer_ = scorer != nullptr ? scorer : &kMoneyEquity;
   stats_.threads = pool_.size();
   std::vector<Ref> roots;
   parallelRound(
       static_cast<int>(boards.size()),
-      [&](int i, Store& chunk) { chunk.roots.push_back(chunk.expand(boards[i], depth)); }, &roots);
+      [&](int i, Store& chunk) { chunk.roots.push_back(chunk.expand(boards[i], depth, true)); }, &roots);
 
   while (!tree_.pending.empty()) {
     flushLeaves();
@@ -354,7 +358,7 @@ std::vector<Probs> Search::evaluate(const std::vector<Board>& boards, int depth)
 
   const auto t = Clock::now();
   std::vector<Probs> values(roots.size());
-  pool_.run(static_cast<int>(roots.size()), [&](int i) { values[i] = value(roots[i]); });
+  pool_.run(static_cast<int>(roots.size()), [&](int i) { values[i] = value(roots[i], true); });
   stats_.backupMs += msSince(t);
   return values;
 }

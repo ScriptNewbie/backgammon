@@ -1,6 +1,6 @@
 # Match play
 
-Locked by [ADR 0008](../decisions/0008-match-play.md) for **battle-arena** and the engine cube wrap. Since [ADR 0032](../decisions/0032-engines-own-decisions.md) the checker ranking and cube formula below run **inside** `game-engine` (`ts-core/match`) and `game-engine-fast` (`src/match.cpp`); the arena only plays what each engine decides. [ADR 0020](../decisions/0020-dumper-games-no-cube.md) removed match play and cube policy from `move-dumper` and made `Position.match` `MatchInfo | null`; this file applies when `match` is set. Cube skill noise for arena: [ADR 0007](../decisions/0007-skill-levels-and-pairing.md) names; arena itself is infallible ([ADR 0019](../decisions/0019-battle-arena.md)).
+Locked by [ADR 0008](../decisions/0008-match-play.md) for **battle-arena** and the engine cube wrap. The engines' match cube and checker ranking use the live-cube model below ([ADR 0035](../decisions/0035-live-cube-match-and-score-aware-search.md)). Since [ADR 0032](../decisions/0032-engines-own-decisions.md) the checker ranking and cube formula below run **inside** `game-engine` (`ts-core/match`) and `game-engine-fast` (`src/match.cpp`); the arena only plays what each engine decides. [ADR 0020](../decisions/0020-dumper-games-no-cube.md) removed match play and cube policy from `move-dumper` and made `Position.match` `MatchInfo | null`; this file applies when `match` is set. Cube skill noise for arena: [ADR 0007](../decisions/0007-skill-levels-and-pairing.md) names; arena itself is infallible ([ADR 0019](../decisions/0019-battle-arena.md)).
 
 This file is **not** dumper policy. Money play (`match: null`: Janowski cube, Jacoby off, no beavers) is in [money-play.md](money-play.md) ([ADR 0034](../decisions/0034-money-play.md)).
 
@@ -48,17 +48,26 @@ mwc = P(win_single) * MET(after single win)
 
 `P(win_single) = win - gammon`, `P(gammon_only) = gammon - backgammon`, and the lose split likewise (`lose = 1 - win`).
 
-Live-cube recube value is out of scope for v1.
+This is the **dead-cube** MWC: no further cube action. The engines decide with the live-cube MWC below, which starts from it.
+
+## Live-cube MWC (engines, ADR 0035)
+
+Janowski's money model ([money-play.md](money-play.md)) carried over to match winning chances, for the player whose probs they are, at cube `C` (`ts-core/match-cube`, `game-engine-fast/src/match.cpp`). Gammon rates are fixed as the win chance `p` moves, so the dead-cube MWC is the straight line from `L(C)` (MWC if this player loses at `C`, gammons included) at `p = 0` to `W(C)` at `p = 1`.
+
+- **Take point** of a player doubled to `K`: the `p` where owning `K` (fully live) is worth as much as dropping `K/2`.
+- **Cash point** of a player owning `K`: one minus the opponent's take point at `2K`. At 64 the cube cannot be turned, so the owner's value is the dead line. Points are worked out from 64 down, one level at a time.
+- **Fully live MWC:** piecewise linear in `p`: centered through `(0, L)`, `(TP, MET after losing C)`, `(CP, MET after winning C)`, `(1, W)`; when I own the cube through `(0, L)`, `(CP, MET after winning C)`, `(1, W)`; when the opponent owns it, one minus their owned value. If a take point is not below the cash point, the dead line is used.
+- **Cubeful MWC:** `(1 - x) · dead + x · live`, `x = 0.68` (as money). Dead when nobody may double.
 
 ## Checker ranking (mover)
 
-Each legal play’s eval is the **result** with opponent to move. Convert that result’s cubeless probs to MWC for the **opponent**, then
+Each legal play’s eval is the **result** with opponent to move. Convert that result’s cubeless probs to the **opponent**'s live-cube MWC (cube unchanged, their cube view from `mayDouble`), then
 
 `moverMwc = 1 - opponentMwc`
 
 (after applying the play, cube unchanged). **The engines** order `/evaluate` by `moverMwc` (ties: `stepsKey`) when `match` is set (`rankForMover`, which also reports it as `moverValue`); `moves[0]` is their play. The **dumper** does not rank by MWC; it uses negated result cubeless equity ([move-dumper.md](move-dumper.md), [ADR 0020](../decisions/0020-dumper-games-no-cube.md)).
 
-## Cube heuristic
+## Cube decision
 
 Decide **before the roll** when `mayDouble` is true for on-roll. Skip the **opening roll of a game**. Skip (and leave `mayDouble` false) when `cube.value` is already **64** — doubling to 128 is illegal.
 
@@ -68,14 +77,14 @@ Actions:
 
 | Action | MWC for the player on roll |
 | --- | --- |
-| no-double | dead-cube MWC at current `C` |
-| double, opponent drops | MET after they gain `C` points (game over) |
-| double, opponent takes | dead-cube MWC at `2C` (taker owns the cube). `2C` is at most 64. |
+| no-double (`ND`) | live-cube MWC at current `C` (centered, or mine if I own it) |
+| double, opponent drops (`DP`) | MET after I gain `C` points (game over) |
+| double, opponent takes (`DT`) | live-cube MWC at `2C` with the taker owning the cube (dead at 64) |
 
-- **Drop** if taker’s MWC after take `<` MWC after drop (drop MWC for the taker is `1 -` dropper’s MET).
-- **Too good:** no-double MWC `>` double-and-take MWC → do not offer (play for gammon).
-- Otherwise **double** if double-and-take (or drop, if they would drop) MWC `>` no-double MWC.
+- **Double** when `min(DT, DP) > ND` (so "too good" plays on when `ND > DP`).
+- **Take** when `DT < DP` (the taker keeps more MWC by taking).
+- The same rule as money play ([money-play.md](money-play.md)).
 
-The engines take that action (`cubeDecision` in `ts-core/match`, `decideCube` in `game-engine-fast`). Skill-level cube noise is not used: the dumper has no cube and the arena plays at max strength.
+The engines take that action (`cubeDecision` / `matchCubeVerdict` in `ts-core/match`, `MatchCubeTables::decide` in `game-engine-fast`). Skill-level cube noise is not used: the dumper has no cube and the arena plays at max strength.
 
 Teacher `eval.cubeAction` stays `null`. The dumper does not persist cube actions ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)). Engine `eval.cubeAction` is also `null`; the decision is the `/cube` response ([ADR 0032](../decisions/0032-engines-own-decisions.md)).

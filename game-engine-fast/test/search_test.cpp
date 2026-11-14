@@ -1,3 +1,4 @@
+#include <atomic>
 #include <cmath>
 #include <random>
 #include <set>
@@ -101,6 +102,13 @@ void checkClose(const bg::Probs& a, const bg::Probs& b) {
 }
 
 bg::Board boardOf(const Abs& a, const char* onRoll) { return bg::parseEvalRequest(toJson(a, onRoll, 1, 2)).board; }
+
+// Nobody may double: the engine's money scorer is then plain cubeless equity, which the reference
+// search uses (a live cube switches the engine to Janowski, ADR 0035).
+nlohmann::json deadCube(nlohmann::json j) {
+  j["cube"]["mayDouble"] = {{"p1", false}, {"p2", false}};
+  return j;
+}
 
 const Abs kOpening = pos({{1, -2}, {6, 5}, {8, 3}, {12, -5}, {13, 5}, {17, -3}, {19, -5}, {24, 2}}, 0, 0, 0, 0);
 
@@ -239,7 +247,7 @@ TEST_CASE("batched search with filters equals the reference: 2-ply contact, inne
 
 TEST_CASE("evaluate at ply 1 returns every play with searched evals") {
   FakeNet net;
-  const bg::EvalRequest req = bg::parseEvalRequest(toJson(kOpening, "p1", 3, 1));
+  const bg::EvalRequest req = bg::parseEvalRequest(deadCube(toJson(kOpening, "p1", 3, 1)));
   bg::SearchStats stats;
   const auto out = bg::evaluate(req, 1, net, &stats);
   const auto plays = bg::legalPlays(req.board, 3, 1);
@@ -258,7 +266,7 @@ TEST_CASE("evaluate at ply 1 returns every play with searched evals") {
 
 TEST_CASE("evaluate at ply 2 returns only root-filter survivors, each searched at 2-ply") {
   FakeNet net;
-  const bg::EvalRequest req = bg::parseEvalRequest(toJson(kOpening, "p1", 3, 1));
+  const bg::EvalRequest req = bg::parseEvalRequest(deadCube(toJson(kOpening, "p1", 3, 1)));
   const auto plays = bg::legalPlays(req.board, 3, 1);
   // Expected survivors: mover equity at 0-ply, kRootFilter (independent copy of the rule).
   std::vector<std::pair<double, size_t>> ranked;
@@ -329,4 +337,41 @@ TEST_CASE("leaf budget: over the limit throws SearchTooLarge, under it searches 
   }
   bg::Search oneShort(net, bg::kInnerFilter, &bg::ThreadPool::shared(), visits - 1);
   CHECK_THROWS_AS(oneShort.evaluate(boards, 2), bg::SearchTooLarge);
+}
+
+namespace {
+
+// Money equity, counting which side asked (the search is multithreaded).
+struct CountingScorer : bg::Scorer {
+  mutable std::atomic<int64_t> calls[2] = {0, 0};
+  double value(const bg::Probs& mine, bool rootSide) const override {
+    calls[rootSide ? 0 : 1]++;
+    return mine.equity();
+  }
+};
+
+// The roots' side plays its worst play; the other side its best.
+struct SpitefulRootScorer : bg::Scorer {
+  double value(const bg::Probs& mine, bool rootSide) const override { return rootSide ? -mine.equity() : mine.equity(); }
+};
+
+}  // namespace
+
+TEST_CASE("a Scorer drives play choices and filters for both sides (ADR 0035)") {
+  FakeNet net;
+  const std::vector<bg::Board> boards = {boardOf(kContact, "p1")};
+  bg::Search plain(net);
+  const bg::Probs base = plain.evaluate(boards, 2)[0];
+  CountingScorer counting;
+  bg::Search counted(net);
+  const bg::Probs same = counted.evaluate(boards, 2, &counting)[0];
+  for (int k = 0; k < 5; k++) CHECK(same.p[k] == base.p[k]);
+  // 2-ply from the roots: the roots' side picks its replies, then the other side filters/picks.
+  CHECK(counting.calls[0].load() > 0);
+  CHECK(counting.calls[1].load() > 0);
+  SpitefulRootScorer spite;
+  bg::Search spiteful(net);
+  const bg::Probs worse = spiteful.evaluate(boards, 1, &spite)[0];
+  bg::Search plain1(net);
+  CHECK(worse.equity() < plain1.evaluate(boards, 1)[0].equity());
 }

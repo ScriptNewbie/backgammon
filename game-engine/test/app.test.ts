@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { openingMoneyPosition, openingPosition, stepsKey, type CubeDecision } from "ts-core";
-import { evaluateCube, moverMwc } from "ts-core/match";
+import { matchCubeVerdict, moverMwc } from "ts-core/match";
 import { createApp } from "../src/app.ts";
 import { cubePosition, evaluatePosition, type Infer } from "../src/evaluate.ts";
 
@@ -72,8 +72,8 @@ function varying(): Infer {
 
 function assertMwcOrder(moves: Awaited<ReturnType<typeof evaluatePosition>>["moves"], pos: ReturnType<typeof opening31>) {
   for (let i = 1; i < moves.length; i++) {
-    const a = moverMwc(moves[i - 1]!.eval.cubeless, pos, "pre");
-    const b = moverMwc(moves[i]!.eval.cubeless, pos, "pre");
+    const a = moverMwc(moves[i - 1]!.eval.cubeless, pos);
+    const b = moverMwc(moves[i]!.eval.cubeless, pos);
     assert.ok(a > b || (a === b && stepsKey(moves[i - 1]!.steps) < stepsKey(moves[i]!.steps)));
   }
 }
@@ -84,7 +84,7 @@ test("match play: evaluatePosition orders by mover MWC at the score", async () =
   const { moves, moverValueKind } = await evaluatePosition(pos, varying());
   assertMwcOrder(moves, pos);
   assert.equal(moverValueKind, "mwc");
-  assert.ok(moves.every((m) => m.moverValue === moverMwc(m.eval.cubeless, pos, "pre")));
+  assert.ok(moves.every((m) => m.moverValue === moverMwc(m.eval.cubeless, pos)));
   assert.ok(moves.every((m) => m.eval.cubeAction === null));
 });
 
@@ -175,10 +175,10 @@ test("POST /cube: the net's own probs for the doubler through the cube formula",
   const body = (await res.json()) as CubeDecision;
   // `even` infers [0.55, 0.1, 0, 0.05, 0] for any position: those are the doubler's probs.
   assert.ok(Math.abs(body.cubeless.win - 0.55) < 1e-6);
-  const ev = evaluateCube(body.cubeless, pos, "pre");
+  const ev = matchCubeVerdict(body.cubeless, pos, "centered");
   assert.equal(body.available, true);
-  assert.equal(body.offer, ev.infallibleOffer);
-  assert.equal(body.take, ev.infallibleTake);
+  assert.equal(body.offer, ev.offer);
+  assert.equal(body.take, ev.take);
   assert.equal(body.noDouble, ev.noDouble);
 });
 

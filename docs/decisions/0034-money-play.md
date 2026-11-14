@@ -26,3 +26,5 @@ Only matches could be played: the arena took a match length, the GUI offered mat
 Every driver can play money in the arena, with its own cube. Our engines' money cube is Janowski on a cubeless net, not a learned cubeful head. Match play is unchanged (dead-cube MWC formula, [0018](0018-cube-wrap-formula.md)). The dumper still plays money without a cube ([0020](0020-dumper-games-no-cube.md)); teacher labels are unchanged.
 
 Engine `cubefulEquity` for a live cube changes from `equity × value` to Janowski, so money rankings change. `game-engine-fast` gains the same money code in C++, tested against `ts-core` values.
+
+[0035](0035-live-cube-match-and-score-aware-search.md) gives matches the same live-cube treatment, and makes `game-engine-fast` choose money replies inside its search by Janowski equity.

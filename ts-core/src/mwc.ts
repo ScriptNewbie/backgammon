@@ -1,6 +1,8 @@
 import type { Cubeless, EngineMoves, Eval, MatchPhase, Player, Position, Step } from "./types";
-import { matchPhase, stepsKey } from "./board";
+import { stepsKey } from "./board";
 import { matchEquity, stmAwayAfter } from "./met";
+import { matchCubeful } from "./match-cube";
+import { cubeView } from "./money";
 
 function clamp01(n: number): number {
   if (n < 0) return 0;
@@ -41,40 +43,33 @@ export function deadCubeMwc(
   );
 }
 
-/** Result eval is opponent-to-move; mover MWC is the complement. */
-export function moverMwc(
-  resultCubeless: Cubeless,
-  positionBeforePlay: Position,
-  phase: MatchPhase,
-): number {
-  const opp = positionBeforePlay.onRoll === "p1" ? "p2" : "p1";
-  const oppMwc = deadCubeMwc(
-    resultCubeless,
-    positionBeforePlay,
-    positionBeforePlay.cube.value,
-    opp,
-    phase,
-  );
-  return 1 - oppMwc;
+/**
+ * The mover's cubeful MWC after a play (ADR 0035): the result eval is opponent-to-move, so this is
+ * 1 minus the opponent's live-cube MWC at the unchanged cube (`matchCubeful`).
+ */
+export function moverMwc(resultCubeless: Cubeless, positionBeforePlay: Position): number {
+  const opp: Player = positionBeforePlay.onRoll === "p1" ? "p2" : "p1";
+  const view = cubeView(positionBeforePlay, opp);
+  return 1 - matchCubeful(resultCubeless, positionBeforePlay, opp, view, positionBeforePlay.cube.value);
 }
 
 /**
  * Engine checker order (ADR 0032, ADR 0034): best first for the mover at the position's match
- * state, each with the `moverValue` it was ranked by. Match play: mover dead-cube MWC of each
- * result. Money (`match` null): negated `cubefulEquity` (Janowski). Exact ties break by
+ * state, each with the `moverValue` it was ranked by. Match play: mover live-cube MWC of each
+ * result (`moverMwc`). Money (`match` null): negated `cubefulEquity` (Janowski). Exact ties break by
  * `stepsKey`. `moves[0]` is the engine's play.
  */
 export function rankForMover(
   moves: readonly { steps: Step[]; eval: Eval }[],
   positionBeforePlay: Position,
 ): EngineMoves {
-  const phase = positionBeforePlay.match ? matchPhase(positionBeforePlay) : null;
+  const isMatch = positionBeforePlay.match !== null;
   const scored = moves.map((move) => ({
     move: {
       steps: move.steps,
       eval: move.eval,
       moverValue:
-        phase === null ? -move.eval.cubefulEquity : moverMwc(move.eval.cubeless, positionBeforePlay, phase),
+        isMatch ? moverMwc(move.eval.cubeless, positionBeforePlay) : -move.eval.cubefulEquity,
     },
     key: stepsKey(move.steps),
   }));
@@ -82,5 +77,5 @@ export function rankForMover(
     if (a.move.moverValue !== b.move.moverValue) return b.move.moverValue - a.move.moverValue;
     return a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
   });
-  return { moves: scored.map((s) => s.move), moverValueKind: phase === null ? "money" : "mwc" };
+  return { moves: scored.map((s) => s.move), moverValueKind: isMatch ? "mwc" : "money" };
 }

@@ -4,5 +4,5 @@ TypeScript HTTP API (Hono, [ADR 0017](../../docs/decisions/0017-hono.md)). Cube 
 
 - Bodies: `docs/domain/game-engine.md`, `docs/domain/board-representation.md`, `docs/domain/evaluation.md`.
 - Tensor: `docs/domain/features.md` (must match Python; implemented in `ts-core`).
-- Legal moves only. The engine decides (ADR 0032): `/evaluate` orders plays best first for the mover at the match state (mover MWC in a match, negated Janowski cubeful equity for money, via `ts-core/match` `rankForMover`, each move with its `moverValue`), and `POST /cube` (doubler on roll, no dice) returns its own offer and take via `cubeDecision` (match formula, or Janowski money cube; ADR 0034). `eval.cubeAction` stays null.
+- Legal moves only. The engine decides (ADR 0032): `/evaluate` orders plays best first for the mover at the match state (mover live-cube MWC in a match, ADR 0035; negated Janowski cubeful equity for money; via `ts-core/match` `rankForMover`, each move with its `moverValue`), and `POST /cube` (doubler on roll, no dice) returns its own offer and take via `cubeDecision` (live-cube match model or Janowski money cube; ADR 0034, ADR 0035). `eval.cubeAction` stays null.
 - Docker only, from `game-engine/`. Host commands: [README.md](../../README.md) (http://localhost:3000). Port 3000 is the Compose publish port, not an HTTP-framework decision. Do not run host `tsx`.

@@ -31,3 +31,5 @@ The arena now measures each engine as it plays, including ours: our cube is our 
 Cube decisions on `game-engine-fast` at `ply >= 1` cost a search of the pre-roll position. Money play still has no engine cube (Jacoby and beavers stay open). Spec: [game-engine.md](../domain/game-engine.md), [game-engine-fast.md](../domain/game-engine-fast.md), [evaluation.md](../domain/evaluation.md), [match-play.md](../domain/match-play.md), [battle-arena.md](../domain/battle-arena.md), [move-dumper.md](../domain/move-dumper.md), [gui.md](../domain/gui.md).
 
 [0034](0034-money-play.md): `/cube` is also available for money (Janowski), and `/evaluate` returns each move's `moverValue`.
+
+[0035](0035-live-cube-match-and-score-aware-search.md): match ranking and `/cube` use live-cube MWC, and `game-engine-fast`'s search is score-aware.

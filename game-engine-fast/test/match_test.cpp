@@ -70,46 +70,66 @@ TEST_CASE("MET lookups match docs/domain/data/kazaross-xg2-met.json") {
   CHECK(m.equity(3, 0, bg::Phase::Pre) == 0);
 }
 
-TEST_CASE("cube formula equals ts-core on the same probs") {
+TEST_CASE("live-cube match equity and cube decisions equal ts-core on the same probs") {
+  // ts-core matchCubeful / matchCubeVerdict for kDoubler, p1 the doubler (ADR 0035).
   struct Case {
-    int length, myScore, oppScore, cube;
+    int length, myScore, oppScore;
     bg::Phase phase;
+    double centered, mine, theirs, dead, theirs2;
     bool doubles, takes;
-    double noDouble, doubleTake, doubleDrop;
+    double doubleDrop;
   };
   const Case cases[] = {
-      {7, 0, 0, 1, bg::Phase::Pre, true, false, 0.5325603, 0.56667345, 0.56261},
-      {7, 4, 2, 2, bg::Phase::Pre, false, true, 0.7459164, 0.7398176, 0.84179},
-      {5, 2, 4, 1, bg::Phase::Post, true, true, 0.3444938, 0.45, 0.48803},
-      {9, 3, 7, 4, bg::Phase::Pre, true, false, 0.45, 0.68, 0.5},
+      {7, 0, 0, bg::Phase::Pre, 0.54523972663356313, 0.54726248010627332, 0.52538868825999430, 0.53256030000000010,
+       0.55215237900285619, true, true, 0.56261},
+      {7, 4, 2, bg::Phase::Pre, 0.71095108152339348, 0.71724779477473022, 0.69324655310210315, 0.70707205000000006,
+       0.70686299690368004, false, true, 0.74359},
+      {5, 2, 4, bg::Phase::Post, 0.41623801600000010, 0.41623801600000010, 0.34449379999999996, 0.34449380000000002,
+       0.45000000000000007, true, true, 0.48803},
+      {9, 3, 7, bg::Phase::Pre, 0.24650412551048154, 0.24650412551048154, 0.21780369565983415, 0.21926480000000004,
+       0.27239800000000003, true, false, 0.25641},
+      {11, 5, 5, bg::Phase::Pre, 0.55038165593195232, 0.55209100253652499, 0.52747016096266952, 0.53562169999999998,
+       0.56011039982556798, true, true, 0.56635},
   };
   for (const Case& c : cases) {
-    const bg::CubeVerdict v = bg::decideCube(kDoubler, bg::MatchView{c.length, c.myScore, c.oppScore}, c.cube, c.phase);
-    CHECK(v.noDouble == doctest::Approx(c.noDouble).epsilon(1e-9));
-    CHECK(v.doubleTake == doctest::Approx(c.doubleTake).epsilon(1e-9));
+    INFO(c.length << " " << c.myScore << "-" << c.oppScore);
+    const bg::MatchCubeTables t(bg::MatchView{c.length, c.myScore, c.oppScore}, c.phase);
+    CHECK(t.cubeful(kDoubler, bg::CubeView::Centered, 1) == doctest::Approx(c.centered).epsilon(1e-12));
+    CHECK(t.cubeful(kDoubler, bg::CubeView::Mine, 1) == doctest::Approx(c.mine).epsilon(1e-12));
+    CHECK(t.cubeful(kDoubler, bg::CubeView::Theirs, 1) == doctest::Approx(c.theirs).epsilon(1e-12));
+    CHECK(t.cubeful(kDoubler, bg::CubeView::Dead, 1) == doctest::Approx(c.dead).epsilon(1e-12));
+    CHECK(t.cubeful(kDoubler, bg::CubeView::Theirs, 2) == doctest::Approx(c.theirs2).epsilon(1e-12));
+    // The dead value is the existing dead-cube MWC.
+    CHECK(t.cubeful(kDoubler, bg::CubeView::Dead, 1) ==
+          doctest::Approx(bg::deadCubeMwc(kDoubler, bg::MatchView{c.length, c.myScore, c.oppScore}, 1, c.phase)));
+    const bg::CubeVerdict v = t.decide(kDoubler, bg::CubeView::Centered, 1);
+    CHECK(v.noDouble == doctest::Approx(c.centered).epsilon(1e-12));
+    CHECK(v.doubleTake == doctest::Approx(c.theirs2).epsilon(1e-12));
     CHECK(v.doubleDrop == doctest::Approx(c.doubleDrop).epsilon(1e-9));
     CHECK(v.doubles == c.doubles);
     CHECK(v.takes == c.takes);
   }
 }
 
-TEST_CASE("cubeDecision: the engine's own probs of the position, through the formula") {
+TEST_CASE("cubeDecision: the engine's own probs of the position, through the live-cube formula") {
   ConstProbsNet net(0.68f, 0.22f, 0.02f, 0.08f, 0.005f);
-  // p2 on roll, p2 owns a 2-cube, 7-point match at p1 2 / p2 4: too good, ts-core says no-double.
-  const auto req = bg::parseCubeRequest(matchBody("p2", 7, 2, 4, false, 2, "p2", false));
+  // p1 on roll, 7-point match at p1 4 / p2 2, centered cube: ts-core says no double, take.
+  const auto req = bg::parseCubeRequest(matchBody("p1", 7, 4, 2, false, 1, "centered", false));
   const auto ply0 = bg::cubeDecision(req, 0, net);
   CHECK(ply0["available"] == true);
+  CHECK(ply0["currency"] == "mwc");
   CHECK(ply0["offer"] == "no-double");
   CHECK(ply0["take"] == "take");
-  CHECK(ply0["noDouble"].get<double>() == doctest::Approx(0.7459164).epsilon(1e-6));
+  CHECK(ply0["noDouble"].get<double>() == doctest::Approx(0.71095108152339348).epsilon(1e-6));
   CHECK(ply0["cubeless"]["win"].get<double>() == doctest::Approx(0.68));
   // Deeper, the decision is the same formula on whatever the search returns for the doubler (with
   // this constant net, 1-ply sees the opponent's probs flipped and 2-ply flips them back).
+  const bg::MatchCubeTables t(bg::MatchView{7, 4, 2}, bg::Phase::Pre);
   for (int ply : {1, 2}) {
     const auto out = bg::cubeDecision(req, ply, net);
     const auto& c = out["cubeless"];
     const bg::Cubeless mine{c["win"], c["gammon"], c["backgammon"], c["loseGammon"], c["loseBackgammon"]};
-    const bg::CubeVerdict v = bg::decideCube(mine, bg::MatchView{7, 4, 2}, 2, bg::Phase::Pre);
+    const bg::CubeVerdict v = t.decide(mine, bg::CubeView::Centered, 1);
     CHECK(out["noDouble"].get<double>() == doctest::Approx(v.noDouble));
     CHECK(out["offer"] == (v.doubles ? "double" : "no-double"));
     CHECK(out["take"] == (v.takes ? "take" : "drop"));
@@ -139,6 +159,7 @@ TEST_CASE("cubeDecision: not available in the Crawford game, on the opponent's c
 
 TEST_CASE("/evaluate order: mover MWC at the score in a match, money equity otherwise") {
   VaryingNet net;
+  const bg::MatchCubeTables oppTables(bg::MatchView{5, 3, 0}, bg::Phase::Pre);
   for (int ply : {0, 1, 2}) {
     const auto req = bg::parseEvalRequest(matchBody("p1", 5, 0, 3, false, 1, "centered", true));
     const auto moves = bg::evaluate(req, ply, net)["moves"];
@@ -147,8 +168,9 @@ TEST_CASE("/evaluate order: mover MWC at the score in a match, money equity othe
     for (const auto& m : moves) {
       const auto& c = m["eval"]["cubeless"];
       const bg::Cubeless opp{c["win"], c["gammon"], c["backgammon"], c["loseGammon"], c["loseBackgammon"]};
-      // Result STM is p2 (score 3 of 5); the mover's MWC is 1 minus theirs.
-      const double mover = 1 - bg::deadCubeMwc(opp, bg::MatchView{5, 3, 0}, 1, bg::Phase::Pre);
+      // Result STM is p2 (score 3 of 5); the mover's MWC is 1 minus their live-cube MWC.
+      const double mover = 1 - oppTables.cubeful(opp, bg::CubeView::Centered, 1);
+      CHECK(m["moverValue"].get<double>() == doctest::Approx(mover));
       CHECK(mover <= prev + 1e-12);
       prev = mover;
       CHECK(m["eval"]["cubeAction"].is_null());

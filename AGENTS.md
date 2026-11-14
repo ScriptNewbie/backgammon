@@ -42,5 +42,6 @@ This repo is used in **Cursor**, **Grok Build**, and **Claude Code** ([ADR 0024]
 - Host commands: [README.md](README.md)
 - Domain facts: `docs/domain/`
 - Architecture Decision Records: `docs/decisions/`
+- Possible improvements (understood, not scheduled; not open decisions): [docs/improvements.md](docs/improvements.md)
 - Workflows: `.cursor/skills/` (copies in `.grok/skills/`, pointers in `.claude/skills/`)
 - Standing constraints: `.cursor/rules/` (copies in `.grok/rules/`, pointers in `.claude/rules/`)

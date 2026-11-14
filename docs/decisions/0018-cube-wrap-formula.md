@@ -22,3 +22,5 @@ A learned cube head needs a later ADR. Jacoby / beavers stay open. Dumper checke
 [0032](0032-engines-own-decisions.md) moves the checker ranking and the cube decision into the engines: `/evaluate` orders by mover MWC in a match, `POST /cube` returns the engine's offer and take, and `eval.cubeAction` is always `null`.
 
 [0034](0034-money-play.md): money `cubefulEquity` on engine evals is Janowski money equity (x = 0.68), not `equity × value`, except when nobody may double.
+
+[0035](0035-live-cube-match-and-score-aware-search.md) replaces the dead-cube match formula for engine decisions with a live-cube match model (Janowski carried over to MWC).

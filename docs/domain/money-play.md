@@ -35,7 +35,7 @@ Cubeful equity in points: `value · ((1 - x) · equity + x · live)`. When nobod
 
 ## Engine decisions
 
-- **Checker play:** `/evaluate` orders plays by the mover's cubeful equity, `-cubefulEquity` of the result (`moverValue`, `moverValueKind: "money"`).
+- **Checker play:** `/evaluate` orders plays by the mover's cubeful equity, `-cubefulEquity` of the result (`moverValue`, `moverValueKind: "money"`). `game-engine-fast` also picks every reply inside its search and applies its move filters by Janowski equity ([ADR 0035](../decisions/0035-live-cube-match-and-score-aware-search.md)).
 - **Cube:** `/cube` (doubler on roll, `dice: null`), available when the doubler may double and the cube is below 64. With `ND` = no double at the current cube, `DT` = double/take (the taker then owns a cube at twice the value; dead at 64), `DP` = double/drop (`+value`), all for the doubler in points:
   - offer when `min(DT, DP) > ND` (so "too good" plays on when `ND > DP`);
   - take when `DT < DP`.

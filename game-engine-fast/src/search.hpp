@@ -7,7 +7,8 @@
 //   d = 1: best play by the 0-ply value of its resulting position (all plays are leaves).
 //   d ≥ 2: rank the plays by 0-ply, keep the inner filter's survivors, search those at d - 1,
 //          and take the best of the survivors. Filtered-out plays never take part.
-//   "Best" = highest cubeless money equity for the mover. Game-ending plays use exact probs;
+//   "Best" = highest value for the mover by the Scorer (default cubeless money equity; the engine
+//   passes MWC in a match and Janowski equity in money, ADR 0035). Game-ending plays use exact probs;
 //   a roll with no legal play passes the turn. Probabilities (not equity) are averaged.
 //
 // Runs in rounds: expand, evaluate all new leaves in one batch, apply the filters that were
@@ -66,6 +67,19 @@ constexpr MoveFilter kInnerFilter{1, 0.0};
 // Indices of `equities` (higher is better) that pass `filter`, best first.
 std::vector<int> applyFilter(const std::vector<double>& equities, const MoveFilter& filter);
 
+// How the side to move values a position from its own probabilities: what the search maximises
+// and filters by (ADR 0035). `rootSide` is true for the side to move at the root boards and
+// alternates with depth. The default is cubeless money equity at cube 1. Values are compared with
+// the filters' equity thresholds, so a scorer returns money-equity units (match play: EMG).
+class Scorer {
+ public:
+  virtual ~Scorer() = default;
+  virtual double value(const Probs& mine, bool rootSide) const {
+    (void)rootSide;
+    return mine.equity();
+  }
+};
+
 struct SearchStats {
   int64_t nodes = 0;       // positions expanded over all 21 rolls
   int64_t leaves = 0;      // boards sent to the net (deduplicated within each chunk)
@@ -106,9 +120,10 @@ class Search {
       : net_(net), inner_(inner), pool_(*pool), budget_{maxLeafVisits} {}
 
   // Values of `boards` (each: side to move about to roll), searched `depth` plies, from that
-  // side's point of view. Stats accumulate over calls on the same Search. Throws SearchTooLarge
-  // once the leaf visits of this Search pass its budget.
-  std::vector<Probs> evaluate(const std::vector<Board>& boards, int depth);
+  // side's point of view. Plays are chosen and filtered by `scorer` (default: cubeless money
+  // equity). Stats accumulate over calls on the same Search. Throws SearchTooLarge once the leaf
+  // visits of this Search pass its budget.
+  std::vector<Probs> evaluate(const std::vector<Board>& boards, int depth, const Scorer* scorer = nullptr);
 
   const SearchStats& stats() const { return stats_; }
 
@@ -128,6 +143,7 @@ class Search {
     int32_t childBegin;  // children[childBegin, childEnd): one per legal play, or one pass
     int32_t childEnd;
     int8_t childDepth;   // depth the children are searched at
+    uint8_t moverRoot;   // 1 when the side choosing here is the root boards' side to move
   };
   struct Node {
     int32_t rollBegin;  // rolls[rollBegin, rollBegin + 21)
@@ -164,7 +180,7 @@ class Search {
 
     void clear();
     Ref leaf(const Board& board);
-    Ref expand(const Board& board, int depth);
+    Ref expand(const Board& board, int depth, bool rootSide);
 
     // Add unreported visits to the shared budget; true once it is exceeded.
     bool overBudget();
@@ -178,10 +194,11 @@ class Search {
   // Run `items` work items in chunks on the pool, then merge the chunk stores in order.
   void parallelRound(int items, const std::function<void(int item, Store& chunk)>& work, std::vector<Ref>* roots);
   void flushLeaves();
-  Probs value(const Ref& ref) const;
+  Probs value(const Ref& ref, bool rootSide) const;
 
   Net& net_;
   MoveFilter inner_;
+  const Scorer* scorer_ = nullptr;  // set by evaluate()
   ThreadPool& pool_;
   Budget budget_;
   SearchStats stats_;

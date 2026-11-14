@@ -49,8 +49,7 @@ struct CubeVerdict {
   bool doubles;  // the doubler's offer
   bool takes;    // the taker's answer
 };
-// The infallible dead-cube decision for the doubler (ts-core evaluateCube). Cube value below 64.
-CubeVerdict decideCube(const Cubeless& doubler, const MatchView& doublerView, int cubeValue, Phase phase);
+// The cube decision values for the doubler (no double, double/take, double/drop) and its result.
 
 // ---- Money play (ADR 0034, docs/domain/money-play.md): Janowski, x = 0.68, Jacoby off, no beavers.
 
@@ -66,5 +65,32 @@ double moneyCubeful(const Cubeless& c, CubeView view, int cubeValue, double x = 
 // The doubler's money decision (view Centered or Mine, cube below 64), as ts-core moneyCubeVerdict:
 // double when min(double/take, double/drop) > no double; take when double/take < double/drop.
 CubeVerdict decideMoneyCube(const Cubeless& doubler, CubeView view, int cubeValue);
+
+// ---- Live-cube match equity (ADR 0035), as ts-core match-cube.ts: Janowski carried over to MWC.
+// Take and cash points come from the MET one cube level at a time (an owner of cube K may redouble
+// to 2K up to 64); MWC = (1 - x) * dead + x * live. MET values depend only on the score, so they
+// are tabled once per request; each call then costs a few dozen flops.
+class MatchCubeTables {
+ public:
+  // `me`: the player whose probabilities will be passed in.
+  MatchCubeTables(const MatchView& me, Phase phase);
+
+  // Cubeful MWC for that player at cube `cubeValue` (a power of two up to 64) in `view`.
+  double cubeful(const Cubeless& c, CubeView view, int cubeValue, double x = kCubeEfficiency) const;
+
+  // The doubler's live-cube decision (view Centered or Mine, cube below 64), same rule as money.
+  CubeVerdict decide(const Cubeless& doubler, CubeView view, int cubeValue, double x = kCubeEfficiency) const;
+
+  static constexpr int kLevels = 7;  // cube 1, 2, 4, ..., 64
+  // MWC for side s (0 = me, 1 = the opponent) after it gains `pts[0]` and the other `pts[1]`, per level.
+  struct Side {
+    double win[kLevels][3];   // after winning K, 2K, 3K
+    double lose[kLevels][3];  // after losing K, 2K, 3K
+    double drop[kLevels];     // after losing K / 2 (dropping a double to K); unused at level 0
+  };
+
+ private:
+  Side side_[2];
+};
 
 }  // namespace bg

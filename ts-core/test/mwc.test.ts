@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { openingMoneyPosition, openingPosition } from "../src/board.ts";
-import { cubeDecision, evaluateCube, wrapModelEval } from "../src/cube.ts";
+import { cubeDecision, wrapModelEval } from "../src/cube.ts";
+import { matchCubeVerdict } from "../src/match-cube.ts";
 import { matchEquity } from "../src/met.ts";
 import { deadCubeMwc, moverMwc, rankForMover } from "../src/mwc.ts";
 import type { Cubeless, Eval, Step } from "../src/types.ts";
@@ -41,22 +42,8 @@ test("certain win at 1-away is MWC 1", () => {
 test("mover MWC is 1 minus opponent result MWC", () => {
   const pos = openingPosition(7, { p1: 0, p2: 0 }, "pre");
   pos.onRoll = "p1";
-  const mwc = moverMwc(even, pos, "pre");
+  const mwc = moverMwc(even, pos);
   assert.ok(mwc > 0.45 && mwc < 0.55);
-});
-
-test("cube too-good and drop follow the spec inequalities", () => {
-  const pos = openingPosition(7, { p1: 0, p2: 0 }, "pre");
-  pos.onRoll = "p1";
-  const eval_ = evaluateCube(even, pos, "pre");
-  assert.equal(eval_.wouldDrop, eval_.takerTake < eval_.takerDrop);
-  assert.equal(eval_.tooGood, eval_.noDouble > eval_.doubleTake);
-  if (eval_.tooGood) assert.equal(eval_.infallibleOffer, "no-double");
-  else {
-    const offer = eval_.wouldDrop ? eval_.doubleDrop : eval_.doubleTake;
-    assert.equal(eval_.infallibleOffer, offer > eval_.noDouble ? "double" : "no-double");
-  }
-  assert.equal(eval_.infallibleTake, eval_.wouldDrop ? "drop" : "take");
 });
 
 test("cube at 64 cannot be offered", () => {
@@ -65,27 +52,10 @@ test("cube at 64 cannot be offered", () => {
   pos.cube.value = 64;
   pos.cube.owner = "p1";
   pos.cube.mayDouble = { p1: false, p2: false };
-  const eval_ = evaluateCube(even, pos, "pre");
-  assert.equal(eval_.infallibleOffer, "no-double");
-  assert.equal(eval_.doubleTake, eval_.noDouble);
+  assert.equal(cubeDecision(pos, even).available, false);
   const wrapped = wrapModelEval(even, pos);
   assert.equal(wrapped.cubeAction, null);
   assert.equal(wrapped.cubefulEquity, 0);
-});
-
-test("infallible takes a drop when take MWC is worse", () => {
-  const pos = openingPosition(7, { p1: 6, p2: 0 }, "pre");
-  pos.onRoll = "p2";
-  const crushing: Cubeless = {
-    equity: -0.9,
-    win: 0.05,
-    gammon: 0.01,
-    backgammon: 0,
-    loseGammon: 0.4,
-    loseBackgammon: 0.1,
-  };
-  const eval_ = evaluateCube(crushing, pos, "pre");
-  assert.equal(eval_.infallibleTake, eval_.takerTake < eval_.takerDrop ? "drop" : "take");
 });
 
 test("cubefulEquity is cubeless equity times cube value when nobody may double", () => {
@@ -145,21 +115,21 @@ test("rankForMover: match play orders by mover MWC, not money equity", () => {
   const moves = [move(8, plain), move(6, swingy)];
   const ranked = rankForMover(moves, pos);
   assert.equal(ranked.moverValueKind, "mwc");
-  const byMwc = [...moves].sort((a, b) => moverMwc(b.eval.cubeless, pos, "pre") - moverMwc(a.eval.cubeless, pos, "pre"));
+  const byMwc = [...moves].sort((a, b) => moverMwc(b.eval.cubeless, pos) - moverMwc(a.eval.cubeless, pos));
   assert.deepEqual(ranked.moves.map((m) => m.steps), byMwc.map((m) => m.steps));
-  assert.equal(ranked.moves[0]!.moverValue, moverMwc(byMwc[0]!.eval.cubeless, pos, "pre"));
-  assert.notEqual(moverMwc(plain, pos, "pre"), moverMwc(swingy, pos, "pre"));
+  assert.equal(ranked.moves[0]!.moverValue, moverMwc(byMwc[0]!.eval.cubeless, pos));
+  assert.notEqual(moverMwc(plain, pos), moverMwc(swingy, pos));
 });
 
-test("cubeDecision is evaluateCube on the doubler's own probs, or unavailable", () => {
+test("cubeDecision is the live-cube match verdict on the doubler's own probs, or unavailable", () => {
   const pos = openingPosition(7, { p1: 0, p2: 0 }, "pre");
   pos.onRoll = "p1";
   pos.dice = null;
-  const ev = evaluateCube(gammonish, pos, "pre");
+  const ev = matchCubeVerdict(gammonish, pos, "centered");
   assert.deepEqual(cubeDecision(pos, gammonish), {
     available: true,
-    offer: ev.infallibleOffer,
-    take: ev.infallibleTake,
+    offer: ev.offer,
+    take: ev.take,
     noDouble: ev.noDouble,
     doubleTake: ev.doubleTake,
     doubleDrop: ev.doubleDrop,
