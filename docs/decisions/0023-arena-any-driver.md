@@ -25,3 +25,5 @@ Battle-arena played our game-engine against one opponent (`teacher` or `hedgehog
 [0031](0031-gnubg-cli-sidecar.md) renames `teacher` to `gnubg` (alias kept), gives it `ply` 0-4, and lets that side play GNU Backgammon's own checker ranking and cube.
 
 [0032](0032-engines-own-decisions.md) does the same for `game-engine` and `game-engine-fast`: they play their engine's `moves[0]` and its own `/cube`. The shared heuristic and the arena re-rank are gone.
+
+[0034](0034-money-play.md): any pair of drivers can also play money games (`--money --games N`).

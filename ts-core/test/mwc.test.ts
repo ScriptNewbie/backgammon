@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { openingMoneyPosition, openingPosition } from "../src/board.ts";
 import { cubeDecision, evaluateCube, wrapModelEval } from "../src/cube.ts";
 import { matchEquity } from "../src/met.ts";
-import { deadCubeMwc, moverMwc, sortForMover } from "../src/mwc.ts";
+import { deadCubeMwc, moverMwc, rankForMover } from "../src/mwc.ts";
 import type { Cubeless, Eval, Step } from "../src/types.ts";
 
 const even: Cubeless = {
@@ -88,9 +88,10 @@ test("infallible takes a drop when take MWC is worse", () => {
   assert.equal(eval_.infallibleTake, eval_.takerTake < eval_.takerDrop ? "drop" : "take");
 });
 
-test("cubefulEquity is cubeless equity times cube value", () => {
+test("cubefulEquity is cubeless equity times cube value when nobody may double", () => {
   const pos = openingPosition(7, { p1: 0, p2: 0 }, "pre");
   pos.cube.value = 4;
+  pos.cube.mayDouble = { p1: false, p2: false };
   const strong: Cubeless = {
     equity: 0.5,
     win: 0.7,
@@ -110,7 +111,7 @@ test("wrapModelEval with match null leaves cubeAction null", () => {
   pos.cube.mayDouble = { p1: true, p2: true };
   const wrapped = wrapModelEval(even, pos);
   assert.equal(wrapped.cubeAction, null);
-  assert.equal(wrapped.cubefulEquity, 0);
+  assert.ok(Math.abs(wrapped.cubefulEquity) < 1e-12);
 });
 
 const gammonish: Cubeless = {
@@ -126,22 +127,27 @@ function move(key: number, cubeless: Cubeless, cubefulEquity = cubeless.equity):
   return { steps: [{ from: key, to: key - 1 }], eval: { cubeless, cubefulEquity, cubeAction: null, source: "model" } };
 }
 
-test("sortForMover: money orders by negated result cubeful equity, ties by stepsKey", () => {
+test("rankForMover: money orders by negated result cubeful equity, ties by stepsKey", () => {
   const pos = openingMoneyPosition();
-  const sorted = sortForMover([move(8, even, 0.1), move(6, even, -0.2), move(13, even, -0.2)], pos);
+  const ranked = rankForMover([move(8, even, 0.1), move(6, even, -0.2), move(13, even, -0.2)], pos);
+  assert.equal(ranked.moverValueKind, "money");
+  assert.deepEqual(ranked.moves.map((m) => m.moverValue), [0.2, 0.2, -0.1]);
+  const sorted = ranked.moves;
   assert.deepEqual(sorted.map((m) => m.steps[0]!.from), [13, 6, 8]);
 });
 
-test("sortForMover: match play orders by mover MWC, not money equity", () => {
+test("rankForMover: match play orders by mover MWC, not money equity", () => {
   const pos = openingPosition(5, { p1: 0, p2: 3 }, "pre");
   pos.onRoll = "p1";
   // Result STM is p2 (2-away). Same money equity, different gammon mix, so different MWC.
   const plain: Cubeless = { equity: 0, win: 0.5, gammon: 0, backgammon: 0, loseGammon: 0, loseBackgammon: 0 };
   const swingy: Cubeless = { equity: 0, win: 0.4, gammon: 0.2, backgammon: 0, loseGammon: 0, loseBackgammon: 0 };
   const moves = [move(8, plain), move(6, swingy)];
-  const sorted = sortForMover(moves, pos);
+  const ranked = rankForMover(moves, pos);
+  assert.equal(ranked.moverValueKind, "mwc");
   const byMwc = [...moves].sort((a, b) => moverMwc(b.eval.cubeless, pos, "pre") - moverMwc(a.eval.cubeless, pos, "pre"));
-  assert.deepEqual(sorted, byMwc);
+  assert.deepEqual(ranked.moves.map((m) => m.steps), byMwc.map((m) => m.steps));
+  assert.equal(ranked.moves[0]!.moverValue, moverMwc(byMwc[0]!.eval.cubeless, pos, "pre"));
   assert.notEqual(moverMwc(plain, pos, "pre"), moverMwc(swingy, pos, "pre"));
 });
 
@@ -158,11 +164,9 @@ test("cubeDecision is evaluateCube on the doubler's own probs, or unavailable", 
     doubleTake: ev.doubleTake,
     doubleDrop: ev.doubleDrop,
     cubeless: gammonish,
+    currency: "mwc",
   });
   const crawford = openingPosition(7, { p1: 6, p2: 0 }, "crawford");
   assert.equal(cubeDecision(crawford, gammonish).available, false);
   assert.equal(cubeDecision(crawford, gammonish).take, null);
-  const money = openingMoneyPosition();
-  money.cube.mayDouble = { p1: true, p2: true };
-  assert.equal(cubeDecision(money, gammonish).available, false);
 });

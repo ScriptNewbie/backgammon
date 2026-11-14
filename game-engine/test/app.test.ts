@@ -81,8 +81,10 @@ function assertMwcOrder(moves: Awaited<ReturnType<typeof evaluatePosition>>["mov
 test("match play: evaluatePosition orders by mover MWC at the score", async () => {
   const pos = opening31();
   pos.match = { length: 5, score: { p1: 3, p2: 0 }, crawford: false };
-  const { moves } = await evaluatePosition(pos, varying());
+  const { moves, moverValueKind } = await evaluatePosition(pos, varying());
   assertMwcOrder(moves, pos);
+  assert.equal(moverValueKind, "mwc");
+  assert.ok(moves.every((m) => m.moverValue === moverMwc(m.eval.cubeless, pos, "pre")));
   assert.ok(moves.every((m) => m.eval.cubeAction === null));
 });
 
@@ -90,10 +92,13 @@ test("money play: evaluatePosition orders by negated cubeful equity", async () =
   const pos = openingMoneyPosition();
   pos.onRoll = "p1";
   pos.dice = [3, 1];
-  const { moves } = await evaluatePosition(pos, varying());
+  const { moves, moverValueKind } = await evaluatePosition(pos, varying());
+  assert.equal(moverValueKind, "money");
   for (let i = 1; i < moves.length; i++) {
     assert.ok(moves[i - 1]!.eval.cubefulEquity <= moves[i]!.eval.cubefulEquity);
   }
+  // The mover value is the mover's Janowski cubeful equity: minus the result's.
+  assert.ok(moves.every((m) => m.moverValue === -m.eval.cubefulEquity));
 });
 
 test("POST /evaluate with match null returns cubeAction null", async () => {
@@ -177,7 +182,7 @@ test("POST /cube: the net's own probs for the doubler through the cube formula",
   assert.equal(body.noDouble, ev.noDouble);
 });
 
-test("POST /cube: unavailable in the Crawford game and for money; 400 with dice", async () => {
+test("POST /cube: unavailable in the Crawford game, Janowski money cube for money; 400 with dice", async () => {
   const crawford = openingPosition(7, { p1: 6, p2: 0 }, "crawford");
   crawford.dice = null;
   const decided = await cubePosition(crawford, even);
@@ -185,7 +190,10 @@ test("POST /cube: unavailable in the Crawford game and for money; 400 with dice"
   const money = openingMoneyPosition();
   money.dice = null;
   money.cube.mayDouble = { p1: true, p2: true };
-  assert.equal((await cubePosition(money, even)).available, false);
+  const moneyCube = await cubePosition(money, even);
+  assert.equal(moneyCube.available, true);
+  assert.equal(moneyCube.currency, "money");
+  assert.equal(typeof moneyCube.noDouble, "number");
 
   const logs: string[] = [];
   const app = testApp(even, logs);

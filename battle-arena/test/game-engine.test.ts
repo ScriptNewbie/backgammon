@@ -53,6 +53,7 @@ beforeEach(() => {
     doubleTake: 0.7,
     doubleDrop: 0.65,
     cubeless: probs(0.7),
+    currency: "mwc",
   };
 });
 

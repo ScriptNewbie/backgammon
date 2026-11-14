@@ -10,7 +10,7 @@ A backgammon engine split into eight packages. **Docker** (Engine + Compose v2) 
 | `game-engine` | TypeScript HTTP API (Hono): board + dice → legal moves with evaluations; infers the net via ONNX Runtime |
 | `game-engine-fast` | CUDA C++ HTTP API on the GPU: same `/evaluate` contract plus ply search; arena driver ([ADR 0028](docs/decisions/0028-game-engine-fast.md)) |
 | `board` | `<backgammon-board>` custom element; XGID in, animated checkers and dice ([ADR 0033](docs/decisions/0033-board-package.md)) |
-| `gui` | Vite + Tailwind web app: play a match against `game-engine`, or step through GNU Backgammon SGF dumps (dumper or arena). Mounts `board` ([ADR 0027](docs/decisions/0027-gui-play-vs-engine.md)) |
+| `gui` | Vite + Tailwind web app: play a match or money session against `game-engine`, or step through GNU Backgammon SGF dumps (dumper or arena). Mounts `board` ([ADR 0027](docs/decisions/0027-gui-play-vs-engine.md)) |
 | `battle-arena` | Play any driver against any driver (default: our engine vs GNU Backgammon); win summary + SGF ([ADR 0019](docs/decisions/0019-battle-arena.md), [ADR 0023](docs/decisions/0023-arena-any-driver.md)) |
 
 Money play includes a doubling cube in the engine and arena. **Dumper dumps are money games without a cube** ([ADR 0020](docs/decisions/0020-dumper-games-no-cube.md)). Players are `p1` / `p2`. Agent instructions: [AGENTS.md](AGENTS.md) and `docs/`. Cursor, Grok Build, and Claude Code all use that file; Grok-native copies live under `.grok/`, Claude Code reads `AGENTS.md` natively and `.claude/` holds pointers into `.cursor/`. In a Grok terminal: `grok` then `grok inspect`. In Claude Code: `claude` from the repo root.
@@ -194,6 +194,7 @@ docker compose up -d
 docker compose --profile test run --rm test
 
 docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --length 7
+docker compose --profile arena run --rm arena npm run battle:inner -- --money --games 20 --seed 1
 docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --no-cube
 docker compose --profile arena run --rm arena npm run battle:inner -- --a game-engine --b hedgehog --b-ply 0 --matches 1 --seed 1
 docker compose --profile arena run --rm -e XG_BASE_URL=http://host.docker.internal:8091 arena npm run battle:inner -- --a game-engine --b xg --matches 1 --seed 1 --length 1

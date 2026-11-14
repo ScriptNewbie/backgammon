@@ -19,15 +19,16 @@ Cubeless terminalCubelessForLoser(Result moverWon);
 
 // Legal plays with the eval of the resulting position (opponent is STM), searched `ply` plies.
 // ply 0-1: every play. ply >= 2: only plays that pass kRootFilter at 0-ply, plus game-ending plays.
-// Sorted best-first for the mover at the match state (ADR 0032): mover dead-cube MWC when `match`
-// is set, negated cubefulEquity for money; ties by stepsKey. moves[0] is the engine's play.
+// Sorted best-first for the mover at the match state (ADR 0032, 0034): mover dead-cube MWC when
+// `match` is set, negated cubefulEquity (Janowski money) otherwise; ties by stepsKey. Each move
+// carries that `moverValue`; the response has `moverValueKind`. moves[0] is the engine's play.
 // Throws std::invalid_argument for ply above kMaxSearchPly. `stats` (optional) gets search counts.
 nlohmann::ordered_json evaluate(const EvalRequest& req, int ply, Net& net, SearchStats* stats = nullptr);
 
 // POST /cube (ADR 0032): the position (doubler on roll, no dice) searched `ply` plies, through the
-// dead-cube formula. {available, offer, take, noDouble, doubleTake, doubleDrop, cubeless}, as
-// game-engine. Not available (no offer, take null) for money, when the doubler may not double, or
-// at cube 64.
+// cube formula (dead-cube MWC in a match, Janowski money otherwise, ADR 0034). {available, offer,
+// take, noDouble, doubleTake, doubleDrop, cubeless, currency}, as game-engine. Not available (no
+// offer, take null) when the doubler may not double or at cube 64.
 nlohmann::ordered_json cubeDecision(const EvalRequest& req, int ply, Net& net, SearchStats* stats = nullptr);
 
 }  // namespace bg

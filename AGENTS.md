@@ -9,7 +9,7 @@ This is an eight-package monorepo. Do not add other top-level packages.
 | `training-ground` | PyTorch → ONNX + ExecuTorch `.pte` | Train the cubeless eval net |
 | `game-engine` | TypeScript + Hono + `onnxruntime-node` | Board + dice → legal moves with cubeful evals |
 | `game-engine-fast` | CUDA C++ | GPU ply search; same `/evaluate` contract; arena driver only ([ADR 0028](docs/decisions/0028-game-engine-fast.md)). ply 0-4 with gnubg-style move filters, multithreaded; GPU move generation is next |
-| `gui` | Vite + TypeScript + Tailwind CSS | Web UI: play a match against `game-engine`; replay GNU SGF dumps. The board is the `board` element |
+| `gui` | Vite + TypeScript + Tailwind CSS | Web UI: play a match or money session against `game-engine`; replay GNU SGF dumps. The board is the `board` element |
 | `board` | TypeScript | Embeddable `<backgammon-board>` custom element ([ADR 0033](docs/decisions/0033-board-package.md)). XGID in; checkers, dice, and cube animate when it changes |
 | `battle-arena` | TypeScript | Play any driver against any driver (default: our engine vs GNU Backgammon); win summary + SGF |
 

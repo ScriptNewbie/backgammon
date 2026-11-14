@@ -34,6 +34,8 @@ export type {
   Cube,
   CubeActionFlag,
   CubeDecision,
+  EngineMove,
+  EngineMoves,
   Cubeless,
   Eval,
   LegalPlay,

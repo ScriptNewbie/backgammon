@@ -46,10 +46,10 @@ Store the probabilities **and** `equity`; do not store equity alone. The trained
 ```
 
 - `source`: `"gnubg"` | `"bgweb-api"` | `"hedgehog"` | `"model"` | `"heuristic"` | `"unknown"`. `"gnubg"` is the teacher ([gnubg.md](gnubg.md)); `"bgweb-api"` marks teacher evals in batches written before [ADR 0031](../decisions/0031-gnubg-cli-sidecar.md). `"hedgehog"` is an arena opponent eval and stays out of training dumps; those plays leave `cubefulEquity` at 0 ([hedgehog.md](hedgehog.md)).
-- `cubefulEquity`: expected **money** points per game **for STM**, with the cube in its current state. Teacher dumps hold gnubg's cubeful money `Eq.` (live centered cube) after the mover→STM flip in [gnubg.md](gnubg.md). The engine uses dead-cube money `cubeless.equity * cube.value` ([ADR 0018](../decisions/0018-cube-wrap-formula.md)). This is **not** match-winning chance.
+- `cubefulEquity`: expected **money** points per game **for STM**, with the cube in its current state. Teacher dumps hold gnubg's cubeful money `Eq.` (live centered cube) after the mover→STM flip in [gnubg.md](gnubg.md). The engines use Janowski money equity (x = 0.68) in the position's cube state, `cubeless.equity * cube.value` when nobody may double ([ADR 0034](../decisions/0034-money-play.md), [money-play.md](money-play.md)). This is **not** match-winning chance.
 - `cubeAction`: reserved for STM’s double decision and the opponent’s take/drop. It is always `null` today: **teacher labels never carry cube actions**, and both engines leave it `null` because their cube decisions come from `POST /cube` ([ADR 0032](../decisions/0032-engines-own-decisions.md), [game-engine.md](game-engine.md)). The dumper does not simulate cube actions ([ADR 0020](../decisions/0020-dumper-games-no-cube.md)).
 
-Dumps store cubeless probabilities (and cubeful `eq` when requested). Training the net uses `cubeless.*`. The engines rank by MWC (match) or `cubefulEquity` (money) and decide the cube with the MWC formula on their own evals; nothing uses teacher `cubeAction`.
+Dumps store cubeless probabilities (and cubeful `eq` when requested). Training the net uses `cubeless.*`. The engines rank by MWC (match) or `cubefulEquity` (money) and decide the cube on their own evals (MWC formula in a match, Janowski money cube for money); nothing uses teacher `cubeAction`.
 
 Do not store MWC on the shared eval object. The engines derive it from cubeless probs + `position.match` + the MET when `match` is set. The dumper samples by negated result cubeless equity; its infallible level plays gnubg’s own first line.
 
@@ -63,6 +63,6 @@ The **dumper** samples simulated checker plays by **negated result cubeless equi
 
 Engine cube decisions (double / no-double, take / drop) come from `POST /cube` (doubler on roll, no dice), computed from the engine’s own cubeless probs of that position. Teacher dumps still have `cubeAction: null`. Engine evals set `source` to `"model"`.
 
-## Out of scope until an ADR
+## Money rules
 
-Jacoby, beavers.
+Jacoby off, no beavers ([ADR 0034](../decisions/0034-money-play.md)).

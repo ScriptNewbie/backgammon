@@ -3,6 +3,7 @@ import {
   applySteps,
   applyTake,
   clonePosition,
+  openingMoneyPosition,
   openingPosition,
   opponent,
   stepsKey,
@@ -127,7 +128,8 @@ function pushFrame(
 export function buildFrames(games: readonly SgfGame[]): Frame[] {
   const frames: Frame[] = [];
   for (const game of games) {
-    let pos = openingPosition(game.length, { p1: game.ws, p2: game.bs }, game.phase);
+    // length 0 is a money game (ADR 0034).
+    let pos = game.length === 0 ? openingMoneyPosition() : openingPosition(game.length, { p1: game.ws, p2: game.bs }, game.phase);
     frames.push(openingFrame(game, clonePosition(pos)));
     let eventIndex = 0;
     for (const event of game.events) {

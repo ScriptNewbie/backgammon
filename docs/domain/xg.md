@@ -9,6 +9,7 @@ eXtreme Gammon 2 (XG) is a licensed Windows program. Its licence forbids reverse
 On the Windows host, in the interactive session:
 
 1. Start eXtreme Gammon 2 and close its start dialog. Set the analysis level you want under **Analyze → Set Analyze Level**. The sidecar does not change it.
+   For money play ([money-play.md](money-play.md)), also turn the Jacoby rule and beavers off in XG's settings; the money XGID says so too, but XG's own options apply to its cube analysis.
 2. From the repo root, in Windows PowerShell 5.1:
 
    ```powershell

@@ -7,6 +7,7 @@ import {
   initialPhase,
   MAX_CUBE_VALUE,
   nextPhase,
+  openingMoneyPosition,
   openingPosition,
   pointsAwarded,
   positionToXgid,
@@ -25,7 +26,6 @@ import {
   movableFrom,
   reviewMove,
   turnComplete,
-  type EngineMove,
   type MoveReview,
   type PlayedStep,
 } from "./rules";
@@ -79,7 +79,7 @@ const state: State = {
   played: [],
   usedDice: [],
   review: null,
-  status: "Pick a match length and press New match.",
+  status: "Pick a match length or money play and press New match.",
   error: null,
   retry: null,
 };
@@ -102,7 +102,13 @@ function sleep(ms: number): Promise<void> {
 
 function canDouble(player: Player): boolean {
   const { pos } = state;
-  return Boolean(pos.match && !pos.match.crawford && pos.cube.mayDouble[player] && pos.cube.value < MAX_CUBE_VALUE);
+  // Money (ADR 0034) and match play alike; Crawford sets mayDouble false.
+  return Boolean(!pos.match?.crawford && pos.cube.mayDouble[player] && pos.cube.value < MAX_CUBE_VALUE);
+}
+
+/** Money session (ADR 0034): the setup's "Money" option, stored as length 0. */
+function isMoney(): boolean {
+  return state.length === 0;
 }
 
 function who(player: Player): string {
@@ -147,8 +153,8 @@ function hudHtml(): string {
   const item = (label: string, value: string) =>
     `<div class="flex gap-1.5"><dt class="text-stone-500">${label}</dt><dd class="font-medium">${value}</dd></div>`;
   return `<dl class="flex flex-wrap gap-x-5 gap-y-1.5">
-    ${item("Match to", String(length))}
-    ${item("Score", `You ${score.p1} – ${score.p2} Engine`)}
+    ${length === 0 ? item("Game", "Money · Jacoby off") : item("Match to", String(length))}
+    ${item(length === 0 ? "Points" : "Score", `You ${score.p1} – ${score.p2} Engine`)}
     ${item("Cube", cube)}
     ${pos.match?.crawford ? item("Game", "Crawford") : ""}
     ${item("You", "p1 · white · bear off bottom right")}
@@ -184,16 +190,20 @@ function controlsHtml(): string {
 }
 
 /**
- * Review of your last play, one block per line so it wraps instead of truncating.
- * Equity is cubeful for you, as the engine reports it (scaled by the cube value).
+ * Review of your last play, one block per line so it wraps instead of truncating. Values are what
+ * the engine ranked by (ADR 0034): match winning chance in a match (loss in percentage points),
+ * cubeful money equity in money play (loss in points, scaled by the cube).
  * Content is step keys and numbers only, so innerHTML is safe.
  */
 function reviewHtml(): string {
   const r = state.review;
   if (!r) return "";
-  if (r.loss < 0.0005) return `<span>You ${r.yours} ${fmt(r.yourEquity)} · best move</span>`;
-  return `<span>You ${r.yours} ${fmt(r.yourEquity)} · <span class="font-semibold text-amber-700">loss ${r.loss.toFixed(3)}</span></span>
-    <span class="text-stone-500">Best ${r.best} ${fmt(r.bestEquity)}</span>`;
+  const mwc = r.kind === "mwc";
+  const value = (v: number) => (mwc ? `${(v * 100).toFixed(1)}% to win the match` : fmt(v));
+  const loss = mwc ? `${(r.loss * 100).toFixed(1)}% match winning chance` : `${r.loss.toFixed(3)} points`;
+  if (r.loss < 0.0005) return `<span>You ${r.yours} ${value(r.yourValue)} · best move</span>`;
+  return `<span>You ${r.yours} ${value(r.yourValue)} · <span class="font-semibold text-amber-700">loss ${loss}</span></span>
+    <span class="text-stone-500">Best ${r.best} ${value(r.bestValue)}</span>`;
 }
 
 function render(): Promise<void> {
@@ -207,7 +217,11 @@ function render(): Promise<void> {
   const moving = state.mode === "moving";
   const dice = state.pos.dice;
   dom.caption.innerHTML = reviewHtml();
-  dom.caption.title = state.review ? "Your last move: cubeful equity for you (scaled by the cube) from game-engine" : "";
+  dom.caption.title = !state.review
+    ? ""
+    : state.review.kind === "mwc"
+      ? "Your last move: match winning chance from game-engine, against its choice"
+      : "Your last move: cubeful money equity for you (Janowski, scaled by the cube) from game-engine, against its choice";
   dom.notice.textContent = state.status;
   controls.innerHTML = controlsHtml();
   return syncBoard(state.pos, {
@@ -242,7 +256,8 @@ async function showRoll(): Promise<void> {
 function newMatch(): void {
   state.gen += 1;
   resetBoard();
-  state.length = Number(lengthSelect.value) || 5;
+  const chosen = Number(lengthSelect.value);
+  state.length = Number.isInteger(chosen) && chosen >= 0 ? chosen : 5;
   state.score = { p1: 0, p2: 0 };
   state.phase = initialPhase(state.length);
   state.review = null;
@@ -250,7 +265,7 @@ function newMatch(): void {
 }
 
 async function startGame(gen: number): Promise<void> {
-  state.pos = openingPosition(state.length, state.score, state.phase);
+  state.pos = isMoney() ? openingMoneyPosition() : openingPosition(state.length, state.score, state.phase);
   state.error = null;
   state.usedDice = [];
   state.mode = "busy";
@@ -360,9 +375,9 @@ async function finishHumanTurn(gen: number): Promise<void> {
   if (start && steps.length > 0) {
     state.status = "Engine is reviewing your move…";
     render();
-    const moves = await engineCall(gen, () => evaluate(start), () => void finishHumanTurn(gen));
-    if (stale(gen) || !moves) return;
-    state.review = reviewMove(moves, start, steps);
+    const ranked = await engineCall(gen, () => evaluate(start), () => void finishHumanTurn(gen));
+    if (stale(gen) || !ranked) return;
+    state.review = reviewMove(ranked, start, steps);
   }
   const ended = gameResult(state.pos);
   if (ended) {
@@ -427,10 +442,10 @@ async function engineMove(gen: number): Promise<void> {
   state.status = "Engine is thinking…";
   render();
   const start = clonePosition(state.pos);
-  const moves: EngineMove[] | null = await engineCall(gen, () => evaluate(start), () => void engineMove(gen));
-  if (stale(gen) || !moves) return;
+  const ranked = await engineCall(gen, () => evaluate(start), () => void engineMove(gen));
+  if (stale(gen) || !ranked) return;
   state.error = null;
-  const best = moves[0];
+  const best = ranked.moves[0];
   if (!best) {
     state.status = "Engine cannot move";
     render();
@@ -494,9 +509,10 @@ function endGame(
   kind: "single" | "gammon" | "backgammon" | "drop",
 ): void {
   if (stale(gen)) return;
-  const awarded = pointsAwarded(cubeValue, multiplier, state.length, state.score[winner]);
+  // Money: cube x result, no cap, no Crawford (ADR 0034).
+  const awarded = isMoney() ? cubeValue * multiplier : pointsAwarded(cubeValue, multiplier, state.length, state.score[winner]);
   state.score = { ...state.score, [winner]: state.score[winner] + awarded };
-  state.phase = nextPhase(state.phase, state.score, state.length);
+  if (!isMoney()) state.phase = nextPhase(state.phase, state.score, state.length);
   state.pos = clonePosition(state.pos);
   state.pos.dice = null;
   state.usedDice = [];
@@ -507,7 +523,7 @@ function endGame(
         ? ""
         : ` (${kind})`;
   const pts = `${awarded} point${awarded === 1 ? "" : "s"}`;
-  const matchOver = state.score[winner] >= state.length;
+  const matchOver = !isMoney() && state.score[winner] >= state.length;
   if (kind === "drop") {
     state.status = `${how}. ${who(winner)} ${winner === HUMAN ? "win" : "wins"} ${pts}`;
   } else {

@@ -2,7 +2,7 @@
 
 Locked by [ADR 0008](../decisions/0008-match-play.md) for **battle-arena** and the engine cube wrap. Since [ADR 0032](../decisions/0032-engines-own-decisions.md) the checker ranking and cube formula below run **inside** `game-engine` (`ts-core/match`) and `game-engine-fast` (`src/match.cpp`); the arena only plays what each engine decides. [ADR 0020](../decisions/0020-dumper-games-no-cube.md) removed match play and cube policy from `move-dumper` and made `Position.match` `MatchInfo | null`; this file applies when `match` is set. Cube skill noise for arena: [ADR 0007](../decisions/0007-skill-levels-and-pairing.md) names; arena itself is infallible ([ADR 0019](../decisions/0019-battle-arena.md)).
 
-This file is **not** dumper policy. Jacoby, beavers, and raccoons are money-play variants and stay unused.
+This file is **not** dumper policy. Money play (`match: null`: Janowski cube, Jacoby off, no beavers) is in [money-play.md](money-play.md) ([ADR 0034](../decisions/0034-money-play.md)).
 
 ## Length and score
 
@@ -56,7 +56,7 @@ Each legal play’s eval is the **result** with opponent to move. Convert that r
 
 `moverMwc = 1 - opponentMwc`
 
-(after applying the play, cube unchanged). **The engines** order `/evaluate` by `moverMwc` (ties: `stepsKey`) when `match` is set (`sortForMover`); `moves[0]` is their play. The **dumper** does not rank by MWC; it uses negated result cubeless equity ([move-dumper.md](move-dumper.md), [ADR 0020](../decisions/0020-dumper-games-no-cube.md)).
+(after applying the play, cube unchanged). **The engines** order `/evaluate` by `moverMwc` (ties: `stepsKey`) when `match` is set (`rankForMover`, which also reports it as `moverValue`); `moves[0]` is their play. The **dumper** does not rank by MWC; it uses negated result cubeless equity ([move-dumper.md](move-dumper.md), [ADR 0020](../decisions/0020-dumper-games-no-cube.md)).
 
 ## Cube heuristic
 

@@ -22,7 +22,9 @@ import {
   type SideId,
   type SideSpec,
 } from "./sides";
-import { formatSummary, summarize, winnerSide, type MatchSummaryRow } from "./summary";
+import { formatMoneySummary, formatSummary, summarize, summarizeMoney, winnerSide, type MatchSummaryRow, type MoneyGameRow } from "./summary";
+import { moneySessionId, playMoneyGame, renderMoneySgf } from "./money";
+import type { SgfGame } from "ts-core";
 
 export const MATCH_LENGTHS = [1, 3, 5, 7, 9, 11, 13, 15] as const;
 
@@ -35,6 +37,9 @@ const REMOVED: Record<string, string> = {
 };
 
 export type CliArgs = {
+  /** Money play (ADR 0034): `games` money games instead of `matches` matches. */
+  money: boolean;
+  games: number;
   matches: number;
   seed: number;
   length: number;
@@ -66,6 +71,10 @@ export function parseArgs(argv: string[]): CliArgs {
   let matches = 1;
   let seed = 1;
   let length = 7;
+  let money = false;
+  let games = 1;
+  const matchOnly: string[] = [];
+  let gamesSet = false;
   let allowCube = true;
   const aliasWarnings: string[] = [];
   const requested: Record<SideId, { driver: DriverName } & RequestedParams> = {
@@ -76,9 +85,18 @@ export function parseArgs(argv: string[]): CliArgs {
     const arg = argv[i]!;
     const removed = REMOVED[arg];
     if (removed) throw new Error(`${arg} was removed; ${removed}`);
-    if (arg === "--matches") matches = Number(take(argv, ++i, arg));
-    else if (arg === "--seed") seed = Number(take(argv, ++i, arg));
-    else if (arg === "--length") length = Number(take(argv, ++i, arg));
+    if (arg === "--matches") {
+      matches = Number(take(argv, ++i, arg));
+      matchOnly.push(arg);
+    } else if (arg === "--seed") seed = Number(take(argv, ++i, arg));
+    else if (arg === "--length") {
+      length = Number(take(argv, ++i, arg));
+      matchOnly.push(arg);
+    } else if (arg === "--money") money = true;
+    else if (arg === "--games") {
+      games = Number(take(argv, ++i, arg));
+      gamesSet = true;
+    }
     else if (arg === "--no-cube") allowCube = false;
     else if (arg === "--a" || arg === "--b") {
       const side: SideId = arg === "--a" ? "a" : "b";
@@ -101,6 +119,13 @@ export function parseArgs(argv: string[]): CliArgs {
       process.exit(0);
     }
   }
+  if (money && matchOnly.length > 0) {
+    throw new Error(`${matchOnly.join(" and ")} ${matchOnly.length > 1 ? "are" : "is"} for match play; with --money use --games`);
+  }
+  if (!money && gamesSet) throw new Error("--games needs --money (match play uses --matches)");
+  if (!Number.isInteger(games) || games < 1) {
+    throw new Error(`--games must be a positive integer (got ${games})`);
+  }
   if (!Number.isInteger(matches) || matches < 1) {
     throw new Error(`--matches must be a positive integer (got ${matches})`);
   }
@@ -113,6 +138,8 @@ export function parseArgs(argv: string[]): CliArgs {
   const a = resolveSide("a", requested.a.driver, requested.a);
   const b = resolveSide("b", requested.b.driver, requested.b);
   return {
+    money,
+    games,
     matches,
     seed,
     length,
@@ -124,7 +151,7 @@ export function parseArgs(argv: string[]): CliArgs {
 }
 
 function printHelp(): void {
-  console.log(`Usage: docker compose --profile arena run --rm arena npm run battle:inner -- [--matches N] [--seed N] [--length N] [--no-cube] [--a DRIVER] [--b DRIVER] [--a-url URL] [--b-url URL] [--a-ply N] [--b-ply N]
+  console.log(`Usage: docker compose --profile arena run --rm arena npm run battle:inner -- [--matches N] [--seed N] [--length N] [--money] [--games N] [--no-cube] [--a DRIVER] [--b DRIVER] [--a-url URL] [--b-url URL] [--a-ply N] [--b-ply N]
 
 Play any driver against any driver at max strength. Default is game-engine vs gnubg.
 The same driver may sit on both sides. Side a is p1 on even matches and p2 on odd matches.
@@ -132,6 +159,8 @@ The same driver may sit on both sides. Side a is p1 on even matches and p2 on od
   --matches       Number of matches (default 1)
   --seed          RNG seed (default 1)
   --length        Match length 1,3,5,7,9,11,13,15 (default 7)
+  --money         Money play instead of matches (Jacoby off, no beavers; docs/domain/money-play.md)
+  --games         With --money: number of money games (default 1); seats alternate each game
   --no-cube       Checker-only: never offer, take, or drop
   --a             Side a: game-engine, game-engine-fast, gnubg, hedgehog, or xg (default game-engine; teacher is an old name for gnubg)
   --b             Side b (default gnubg)
@@ -148,6 +177,7 @@ From battle-arena/ (see README.md):
   docker compose up -d
   docker compose --profile test run --rm test
   docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --length 7
+  docker compose --profile arena run --rm arena npm run battle:inner -- --money --games 20 --seed 1
   docker compose --profile arena run --rm arena npm run battle:inner -- --a game-engine --b hedgehog --b-ply 0 --matches 1 --seed 1
   docker compose up -d game-engine-fast
   docker compose --profile arena run --rm arena npm run battle:inner -- --a game-engine-fast --a-ply 0 --b game-engine --matches 1 --seed 1
@@ -246,7 +276,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   const packageRoot = fileURLToPath(new URL("..", import.meta.url));
   const replaysRoot = path.join(packageRoot, "replays");
-  const { batchId } = batchStamp(new Date(), args.a.label, args.b.label);
+  const { batchId } = batchStamp(new Date(), args.a.label, args.b.label, args.money);
   const playerA = createPlayer(args.a);
   const playerB = createPlayer(args.b);
   const rng = new Rng(args.seed);
@@ -259,6 +289,16 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   };
   process.once("SIGINT", requestStop);
   process.once("SIGTERM", requestStop);
+
+  if (args.money) {
+    try {
+      await runMoney(args, { replaysRoot, batchId, playerA, playerB, rng, stopped: () => stop });
+    } finally {
+      process.off("SIGINT", requestStop);
+      process.off("SIGTERM", requestStop);
+    }
+    return;
+  }
 
   try {
     for (let i = 0; i < args.matches; i++) {
@@ -314,6 +354,56 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       }),
     ),
   );
+}
+
+/** `--money`: N independent money games, seats alternating (ADR 0034). */
+async function runMoney(
+  args: CliArgs,
+  ctx: {
+    replaysRoot: string;
+    batchId: string;
+    playerA: MatchPlayer;
+    playerB: MatchPlayer;
+    rng: Rng;
+    stopped: () => boolean;
+  },
+): Promise<void> {
+  const sessionId = moneySessionId();
+  const rows: MoneyGameRow[] = [];
+  const games: SgfGame[] = [];
+  const total = { a: 0, b: 0 };
+  let file = "";
+  for (let i = 0; i < args.games; i++) {
+    if (ctx.stopped()) {
+      console.log(`stop after ${i} game(s)`);
+      break;
+    }
+    const { aSeat, labels } = seatsForMatch(i, args.a.label, args.b.label);
+    const running = aSeat === "p1" ? { p1: total.a, p2: total.b } : { p1: total.b, p2: total.a };
+    const played = await playMoneyGame({
+      rng: ctx.rng,
+      sessionId,
+      gameIndex: i,
+      aSeat,
+      players: playersForSeats(aSeat, ctx.playerA, ctx.playerB),
+      labels,
+      running,
+      allowCube: args.allowCube,
+    });
+    rows.push(played.row);
+    games.push(played.game);
+    if (played.row.winner === "a") total.a += played.points;
+    else total.b += played.points;
+    // Rewrite the session file after every game, so a stopped run keeps what it played.
+    file = await writeMatchSgf({ replaysRoot: ctx.replaysRoot, batchId: ctx.batchId, matchId: sessionId, sgf: renderMoneySgf(games) });
+    const winnerLabel = played.row.winner === "a" ? args.a.label : args.b.label;
+    const net = total.a - total.b;
+    console.log(
+      `game ${i + 1}/${args.games} ${labels.p1} vs ${labels.p2} winner=${winnerLabel} points=${played.points} net=${args.a.label} ${net >= 0 ? "+" : ""}${net}`,
+    );
+  }
+  if (file) console.log(`replay: ${file}`);
+  console.log(formatMoneySummary(summarizeMoney(rows, { seed: args.seed, allowCube: args.allowCube, sides: { a: args.a.label, b: args.b.label } })));
 }
 
 const thisFile = fileURLToPath(import.meta.url);

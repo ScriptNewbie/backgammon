@@ -1,6 +1,6 @@
 # Battle-arena
 
-Locked by [ADR 0019](../decisions/0019-battle-arena.md), [ADR 0023](../decisions/0023-arena-any-driver.md), [ADR 0025](../decisions/0025-xg-gui-sidecar.md), [ADR 0028](../decisions/0028-game-engine-fast.md), [ADR 0030](../decisions/0030-hedgehog-plays-itself.md), [ADR 0031](../decisions/0031-gnubg-cli-sidecar.md), and [ADR 0032](../decisions/0032-engines-own-decisions.md). Match math: [match-play.md](match-play.md). GNU Backgammon sidecar: [gnubg.md](gnubg.md). Engine HTTP: [game-engine.md](game-engine.md), [game-engine-fast.md](game-engine-fast.md). Shared loop: `ts-core/sim`.
+Locked by [ADR 0019](../decisions/0019-battle-arena.md), [ADR 0023](../decisions/0023-arena-any-driver.md), [ADR 0025](../decisions/0025-xg-gui-sidecar.md), [ADR 0028](../decisions/0028-game-engine-fast.md), [ADR 0030](../decisions/0030-hedgehog-plays-itself.md), [ADR 0031](../decisions/0031-gnubg-cli-sidecar.md), [ADR 0032](../decisions/0032-engines-own-decisions.md), and [ADR 0034](../decisions/0034-money-play.md). Match math: [match-play.md](match-play.md). Money: [money-play.md](money-play.md). GNU Backgammon sidecar: [gnubg.md](gnubg.md). Engine HTTP: [game-engine.md](game-engine.md), [game-engine-fast.md](game-engine-fast.md). Shared loop: `ts-core/sim`.
 
 TypeScript tool that plays match-play between two drivers, both at **max strength**. Default is our `game-engine` vs GNU Backgammon (`gnubg`). Either side may be `game-engine`, `game-engine-fast`, `gnubg`, `hedgehog`, or `xg` (`teacher` is accepted as an old name for `gnubg`, with a warning), including the same driver on both sides.
 
@@ -11,6 +11,7 @@ docker compose up -d
 docker compose --profile test run --rm test
 docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --length 7
 docker compose --profile arena run --rm arena npm run battle:inner -- --matches 1 --seed 1 --no-cube
+docker compose --profile arena run --rm arena npm run battle:inner -- --money --games 20 --seed 1
 docker compose --profile arena run --rm arena npm run battle:inner -- --a game-engine --b hedgehog --b-ply 0 --matches 1 --seed 1
 docker compose --profile arena run --rm arena npm run battle:inner -- --a hedgehog --a-ply 0 --b hedgehog --b-ply 1 --matches 1 --seed 1
 docker compose --profile arena run --rm -e XG_BASE_URL=http://host.docker.internal:8091 arena npm run battle:inner -- --a game-engine --b xg --matches 1 --seed 1 --length 1
@@ -28,6 +29,18 @@ docker compose --profile install-host run --rm install-host
 2. Play games until a player’s score `>= length` (CLI `--length`, default 7; allowed `{1,3,5,7,9,11,13,15}`).
 3. Every side plays its engine's own decisions ([ADR 0032](../decisions/0032-engines-own-decisions.md)): its engine's top checker play at the real cube, score, and Crawford state, and its engine's offer (doubler) and take (taker), each side asking its own engine. The arena never re-ranks a play or computes a cube decision. It only decides when a cube question is asked: never on the opening roll of a game, in the Crawford game, or at cube 64. **`--no-cube`:** never offer, take, or drop; `mayDouble` is false and the cube stays 1 (games play to bear-off / gammon / backgammon).
 4. Write `battle-arena/replays/<batch-id>/<matchId>.sgf`. The batch id names both sides (`game-engine-vs-gnubg-ply2`, `hedgehog-ply0-vs-hedgehog-ply1`). Print a summary of match wins (overall and by seat), games, and points when the batch finishes.
+
+## Money play
+
+`--money --games N` plays N independent money games instead of matches ([money-play.md](money-play.md)): Jacoby off, no beavers, cube cap 64, no Crawford. `--length` and `--matches` are rejected with `--money`; `--games` needs `--money`.
+
+1. Seats alternate each game (even index: a=`p1`).
+2. Each side plays its engine's own checker play and money cube (our engines: Janowski, `/cube` with `currency: "money"`). The loop asks cube questions as in matches (not on the opening roll, not at cube 64, never with `--no-cube`).
+3. A game scores `cube.value` × 1/2/3, uncapped; a drop scores the cube value.
+4. One SGF per run, `battle-arena/replays/<batch-id>-money/<sessionId>.sgf`, rewritten after every game: `MI[length:0][game:N][ws:..][bs:..]` with each seat's running points, no `RU`.
+5. Each game prints the running net for side a. The summary gives wins, points won, and side a's points per game with its standard error (side b's is the negative).
+
+An `xg` side plays money with XG's own Jacoby setting; set it off in XG.
 
 No skill levels. No training JSONL. Never commit `replays/`.
 

@@ -52,4 +52,19 @@ struct CubeVerdict {
 // The infallible dead-cube decision for the doubler (ts-core evaluateCube). Cube value below 64.
 CubeVerdict decideCube(const Cubeless& doubler, const MatchView& doublerView, int cubeValue, Phase phase);
 
+// ---- Money play (ADR 0034, docs/domain/money-play.md): Janowski, x = 0.68, Jacoby off, no beavers.
+
+constexpr double kCubeEfficiency = 0.68;
+
+// Who may turn the cube, from one player's side (read from mayDouble). Dead: nobody may.
+enum class CubeView { Centered, Mine, Theirs, Dead };
+
+// Cubeful money equity for the player whose probs `c` are, in points at `cubeValue` (ts-core
+// moneyCubeful): (1 - x) * dead + x * live; a dead cube is equity * value.
+double moneyCubeful(const Cubeless& c, CubeView view, int cubeValue, double x = kCubeEfficiency);
+
+// The doubler's money decision (view Centered or Mine, cube below 64), as ts-core moneyCubeVerdict:
+// double when min(double/take, double/drop) > no double; take when double/take < double/drop.
+CubeVerdict decideMoneyCube(const Cubeless& doubler, CubeView view, int cubeValue);
+
 }  // namespace bg

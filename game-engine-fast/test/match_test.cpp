@@ -117,12 +117,9 @@ TEST_CASE("cubeDecision: the engine's own probs of the position, through the for
   }
 }
 
-TEST_CASE("cubeDecision: not available for money, Crawford, the opponent's cube, or cube 64") {
+TEST_CASE("cubeDecision: not available in the Crawford game, on the opponent's cube, or at cube 64") {
   ConstProbsNet net(0.68f, 0.22f, 0.02f, 0.08f, 0.005f);
-  nlohmann::json money = toJson(kOpening, "p1", 3, 1);
-  money["dice"] = nullptr;
   const nlohmann::json unavailable[] = {
-      money,
       matchBody("p1", 7, 6, 0, true, 1, "centered", false),
       matchBody("p1", 7, 0, 0, false, 2, "p2", false),
       matchBody("p1", 7, 0, 0, false, 64, "p1", false),
@@ -161,4 +158,42 @@ TEST_CASE("/evaluate order: mover MWC at the score in a match, money equity othe
   for (size_t i = 1; i < money.size(); i++) {
     CHECK(money[i - 1]["eval"]["cubefulEquity"].get<double>() <= money[i]["eval"]["cubefulEquity"].get<double>());
   }
+}
+
+TEST_CASE("Janowski money equity and cube decisions equal ts-core") {
+  // ts-core moneyCubeful / moneyCubeVerdict on the same probs (ADR 0034).
+  CHECK(bg::moneyCubeful(kDoubler, bg::CubeView::Centered, 2) == doctest::Approx(1.4266666666666667).epsilon(1e-12));
+  CHECK(bg::moneyCubeful(kDoubler, bg::CubeView::Mine, 2) == doctest::Approx(1.4924).epsilon(1e-12));
+  CHECK(bg::moneyCubeful(kDoubler, bg::CubeView::Theirs, 2) == doctest::Approx(0.8124).epsilon(1e-12));
+  CHECK(bg::moneyCubeful(kDoubler, bg::CubeView::Dead, 2) == doctest::Approx(1.03).epsilon(1e-12));
+  const bg::CubeVerdict centered = bg::decideMoneyCube(kDoubler, bg::CubeView::Centered, 1);
+  CHECK(centered.noDouble == doctest::Approx(0.7133333333333334).epsilon(1e-12));
+  CHECK(centered.doubleTake == doctest::Approx(0.8124).epsilon(1e-12));
+  CHECK(centered.doubleDrop == 1);
+  CHECK(centered.doubles);
+  CHECK(centered.takes);
+  const bg::CubeVerdict race = bg::decideMoneyCube(bg::Cubeless{0.72, 0, 0, 0, 0}, bg::CubeView::Centered, 1);
+  CHECK(race.noDouble == doctest::Approx(0.6394666666666665).epsilon(1e-12));
+  CHECK(race.doubleTake == doctest::Approx(0.6896).epsilon(1e-12));
+  CHECK(race.doubles);
+  CHECK(race.takes);
+}
+
+TEST_CASE("money /cube: the engine's own probs through Janowski; money /evaluate carries mover values") {
+  ConstProbsNet net(0.68f, 0.22f, 0.02f, 0.08f, 0.005f);
+  nlohmann::json body = toJson(kOpening, "p1", 3, 1);
+  body["dice"] = nullptr;
+  const auto out = bg::cubeDecision(bg::parseCubeRequest(body), 0, net);
+  CHECK(out["available"] == true);
+  CHECK(out["currency"] == "money");
+  CHECK(out["offer"] == "double");
+  CHECK(out["take"] == "take");
+  CHECK(out["noDouble"].get<double>() == doctest::Approx(0.7133333333333334).epsilon(1e-6));
+  const auto moves = bg::evaluate(bg::parseEvalRequest(toJson(kOpening, "p1", 3, 1)), 0, net);
+  CHECK(moves["moverValueKind"] == "money");
+  for (const auto& m : moves["moves"]) {
+    CHECK(m["moverValue"].get<double>() == doctest::Approx(-m["eval"]["cubefulEquity"].get<double>()));
+  }
+  const auto match = bg::evaluate(bg::parseEvalRequest(matchBody("p1", 5, 0, 3, false, 1, "centered", true)), 0, net);
+  CHECK(match["moverValueKind"] == "mwc");
 }

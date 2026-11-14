@@ -5,6 +5,7 @@ export type SgfEvent =
   | { kind: "cube"; player: Player; action: "double" | "take" | "drop" };
 
 export type SgfGame = {
+  /** Match length; 0 is a money game (ADR 0034). */
   length: number;
   gameIndex: number;
   ws: number;

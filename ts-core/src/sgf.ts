@@ -13,7 +13,9 @@ function color(player: Player): "W" | "B" {
   return player === "p1" ? "W" : "B";
 }
 
+/** Money games (`length` 0, ADR 0034) have no Crawford rule; Jacoby and beavers are off, so no RU. */
 function ru(phase: MatchPhase, length: number): string {
+  if (length === 0) return "";
   if (phase === "crawford" || length === 1) return "RU[Crawford:CrawfordGame]";
   return "RU[Crawford]";
 }
@@ -33,7 +35,7 @@ function gameTree(game: SgfGame, app: string): string {
     `(;FF[4]GM[6]CA[UTF-8]AP[${app}]`,
     `MI[length:${game.length}][game:${game.gameIndex}][ws:${game.ws}][bs:${game.bs}]`,
     `PW[p1-${game.p1}]PB[p2-${game.p2}]`,
-    ru(game.phase, game.length),
+    ...(game.length === 0 ? [] : [ru(game.phase, game.length)]),
     resultProp(game.result),
     ...nodes,
     `)`,

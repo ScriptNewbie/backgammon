@@ -24,3 +24,5 @@ Allowed top-level packages at the time: `ts-core`, `move-dumper`, `training-grou
 [0028](0028-game-engine-fast.md) adds `game-engine-fast`. [0033](0033-board-package.md) adds `board`. AGENTS.md lists those eight. Do not add a ninth.
 
 [0023](0023-arena-any-driver.md) generalizes pairing: any driver versus any driver, with per-side parameters.
+
+[0034](0034-money-play.md) adds money play (`--money --games N`) next to matches.

@@ -145,7 +145,9 @@ TEST_CASE("POST /cube: the doubler on roll without dice; ply and dice are checke
   CHECK(post(c, "/cube?ply=1", body.dump(), 200)["available"] == true);
   CHECK(post(c, "/cube?ply=5", body.dump(), 400)["error"] == "ply must be an integer 0-4");
   body["match"] = nullptr;
-  CHECK(post(c, "/cube", body.dump(), 200)["available"] == false);
+  const auto money = post(c, "/cube", body.dump(), 200);
+  CHECK(money["available"] == true);
+  CHECK(money["currency"] == "money");
   CHECK(post(c, "/cube", openingBody(), 400)["error"] == "dice must be null (cube decisions are made before the roll)");
   CHECK(post(c, "/cube", "{not json", 400)["error"] == "invalid json");
 }

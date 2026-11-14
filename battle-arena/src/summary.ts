@@ -62,3 +62,59 @@ export function formatSummary(summary: BattleSummary): string {
   ];
   return lines.join("\n");
 }
+
+/** One money game (ADR 0034), from side A's point of view. */
+export type MoneyGameRow = {
+  aSeat: "p1" | "p2";
+  winner: SideId;
+  /** Points side A won (negative when it lost): cube value × 1/2/3. */
+  aPoints: number;
+};
+
+export type MoneySummary = {
+  games: number;
+  seed: number;
+  allowCube: boolean;
+  sides: { a: string; b: string };
+  wins: { a: number; b: number };
+  points: { a: number; b: number };
+  /** Side A's mean points per game and its standard error (0 with fewer than two games). */
+  ppg: number;
+  stdErr: number;
+};
+
+export function summarizeMoney(
+  rows: readonly MoneyGameRow[],
+  opts: { seed: number; allowCube?: boolean; sides: { a: string; b: string } },
+): MoneySummary {
+  const n = rows.length;
+  const net = rows.reduce((s, r) => s + r.aPoints, 0);
+  const ppg = n > 0 ? net / n : 0;
+  const variance = n > 1 ? rows.reduce((s, r) => s + (r.aPoints - ppg) ** 2, 0) / (n - 1) : 0;
+  return {
+    games: n,
+    seed: opts.seed,
+    allowCube: opts.allowCube !== false,
+    sides: opts.sides,
+    wins: { a: rows.filter((r) => r.winner === "a").length, b: rows.filter((r) => r.winner === "b").length },
+    points: {
+      a: rows.reduce((s, r) => s + Math.max(0, r.aPoints), 0),
+      b: rows.reduce((s, r) => s + Math.max(0, -r.aPoints), 0),
+    },
+    ppg,
+    stdErr: n > 1 ? Math.sqrt(variance / n) : 0,
+  };
+}
+
+function signed(x: number): string {
+  return `${x >= 0 ? "+" : ""}${x.toFixed(3)}`;
+}
+
+export function formatMoneySummary(s: MoneySummary): string {
+  return [
+    `a ${s.sides.a} vs b ${s.sides.b}`,
+    `money games: ${s.games}  seed: ${s.seed}  cube: ${s.allowCube ? "on" : "off"}`,
+    `a: ${s.wins.a} wins  points won: ${s.points.a}  ppg: ${signed(s.ppg)} ± ${s.stdErr.toFixed(3)}`,
+    `b: ${s.wins.b} wins  points won: ${s.points.b}  ppg: ${signed(-s.ppg)} ± ${s.stdErr.toFixed(3)}`,
+  ].join("\n");
+}

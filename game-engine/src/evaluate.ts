@@ -6,11 +6,12 @@ import {
   terminalCubeless,
   type CubeDecision,
   type Cubeless,
+  type EngineMoves,
   type Eval,
   type Position,
   type Step,
 } from "ts-core";
-import { cubeDecision, sortForMover, wrapModelEval } from "ts-core/match";
+import { cubeDecision, rankForMover, wrapModelEval } from "ts-core/match";
 
 export type Infer = {
   infer(features: Float32Array[]): Promise<Float32Array[]>;
@@ -24,9 +25,9 @@ export type ScoredMove = {
 export async function evaluatePosition(
   position: Position,
   infer: Infer,
-): Promise<{ moves: ScoredMove[] }> {
+): Promise<EngineMoves> {
   const plays = generateLegalPlays(position);
-  if (plays.length === 0) return { moves: [] };
+  if (plays.length === 0) return { moves: [], moverValueKind: position.match ? "mwc" : "money" };
 
   const results = plays.map((steps) => ({ steps, result: afterPlay(position, steps) }));
   const cubeless: (Cubeless | null)[] = results.map((row) => terminalCubeless(row.result));
@@ -49,8 +50,8 @@ export async function evaluatePosition(
     steps: row.steps,
     eval: wrapModelEval(cubeless[i]!, row.result),
   }));
-  // Best first for the mover at the position's match state (ADR 0032): moves[0] is our play.
-  return { moves: sortForMover(moves, position) };
+  // Best first for the mover at the match state (ADR 0032, 0034): moves[0] is our play.
+  return rankForMover(moves, position);
 }
 
 /**

@@ -5,8 +5,9 @@ info:
     Backgammon engine HTTP API (ADR 0032: the engine makes its own decisions). `/evaluate`
     takes a position JSON with dice, runs ONNX cubeless inference on legal checker plays, and
     returns moves best-first for the mover at the match state (mover MWC in a match, negated
-    cubeful equity for money); `moves[0]` is the engine's play. `/cube` returns the engine's
-    double/take decision for the position with the doubler on roll.
+    Janowski cubeful equity for money, ADR 0034); `moves[0]` is the engine's play and each move
+    has the `moverValue` it was ranked by. `/cube` returns the engine's double/take decision for
+    the position with the doubler on roll, in a match or a money game.
 
     Domain docs: `docs/domain/game-engine.md`, `docs/domain/board-representation.md`,
     `docs/domain/evaluation.md`.
@@ -101,6 +102,8 @@ paths:
                       cubefulEquity: 0.1
                       cubeAction: null
                       source: model
+                    moverValue: 0.47
+                moverValueKind: mwc
         "400":
           description: Invalid JSON, position, or dice
           content:
@@ -123,10 +126,10 @@ paths:
       summary: The engine's cube decision for the doubler on roll
       description: |
         Request body is a position JSON with the doubler on roll and `dice: null` (before the
-        roll). The net evaluates the position for the doubler and the dead-cube MWC formula
-        (docs/domain/match-play.md) gives the doubler's offer and the taker's answer. Not
-        available for money (`match` null), when the player on roll may not double, or at
-        cube 64.
+        roll). The net evaluates the position for the doubler; the dead-cube MWC formula
+        (docs/domain/match-play.md) in a match, or the Janowski money cube
+        (docs/domain/money-play.md) for money, gives the doubler's offer and the taker's
+        answer. Not available when the player on roll may not double or at cube 64.
       requestBody:
         required: true
         content:
@@ -154,6 +157,7 @@ paths:
                   backgammon: 0.02
                   loseGammon: 0.08
                   loseBackgammon: 0.005
+                currency: mwc
         "400":
           description: Invalid JSON or position, or dice not null
           content:
@@ -315,12 +319,12 @@ components:
 
     CubeDecision:
       type: object
-      required: [available, offer, take, noDouble, doubleTake, doubleDrop, cubeless]
+      required: [available, offer, take, noDouble, doubleTake, doubleDrop, cubeless, currency]
       additionalProperties: false
       properties:
         available:
           type: boolean
-          description: False for money, when the player on roll may not double, or at cube 64.
+          description: False when the player on roll may not double or at cube 64.
         offer:
           type: string
           enum: [double, no-double]
@@ -333,16 +337,20 @@ components:
           description: The taker's answer to a double; `null` when not available.
         noDouble:
           type: [number, "null"]
-          description: Doubler MWC without doubling.
+          description: Doubler value without doubling, in `currency`.
         doubleTake:
           type: [number, "null"]
-          description: Doubler MWC after double and take (dead cube at twice the value).
+          description: Doubler value after double and take (the taker owns twice the value).
         doubleDrop:
           type: [number, "null"]
-          description: Doubler MWC after double and drop.
+          description: Doubler value after double and drop.
         cubeless:
           $ref: "#/components/schemas/Cubeless"
           description: The doubler's cubeless probabilities the decision was made from.
+        currency:
+          type: string
+          enum: [mwc, money]
+          description: MWC in a match; money equity in points at the current cube for money play.
 
     StepFrom:
       oneOf:
@@ -430,8 +438,8 @@ components:
         cubefulEquity:
           type: number
           description: |
-            Dead-cube money equity for STM: `cubeless.equity * cube.value`. Not match-winning
-            chance.
+            Money equity for STM in points at the current cube: Janowski (x = 0.68) with a live
+            cube, `cubeless.equity * cube.value` when nobody may double. Not match-winning chance.
         cubeAction:
           oneOf:
             - $ref: "#/components/schemas/CubeAction"
@@ -445,7 +453,7 @@ components:
 
     ScoredMove:
       type: object
-      required: [steps, eval]
+      required: [steps, eval, moverValue]
       additionalProperties: false
       properties:
         steps:
@@ -454,10 +462,13 @@ components:
             $ref: "#/components/schemas/Step"
         eval:
           $ref: "#/components/schemas/Eval"
+        moverValue:
+          type: number
+          description: What the engine ranked the play by, for the mover (MWC in a match, cubeful money equity in money play).
 
     EvaluateResponse:
       type: object
-      required: [moves]
+      required: [moves, moverValueKind]
       additionalProperties: false
       properties:
         moves:
@@ -465,3 +476,7 @@ components:
           items:
             $ref: "#/components/schemas/ScoredMove"
           description: Legal checker plays sorted best-first for the mover at the match state; `moves[0]` is the engine's play.
+        moverValueKind:
+          type: string
+          enum: [mwc, money]
+          description: Unit of `moverValue`.

@@ -32,6 +32,16 @@ Phase phaseOf(const EvalRequest& req) {
   return matchPhase(req.matchLength, req.score[0], req.score[1], req.crawford);
 }
 
+// Who may turn the cube from `p`'s side, from mayDouble (as ts-core cubeView).
+CubeView cubeViewOf(const EvalRequest& req, Player p) {
+  const bool me = req.mayDouble[idx(p)];
+  const bool them = req.mayDouble[1 - idx(p)];
+  if (me && them) return CubeView::Centered;
+  if (me) return CubeView::Mine;
+  if (them) return CubeView::Theirs;
+  return CubeView::Dead;
+}
+
 nlohmann::ordered_json cubelessJson(const Cubeless& c) {
   nlohmann::ordered_json j;
   j["equity"] = c.equity();
@@ -95,11 +105,12 @@ nlohmann::ordered_json evaluate(const EvalRequest& req, int ply, Net& net, Searc
     }
   }
   if (stats) *stats = search.stats();
-  // Final order at the match state (ADR 0032). Each row's probs are for the opponent (STM of the
-  // result), so the mover's MWC is 1 minus theirs at the unchanged cube.
+  // Final order at the match state (ADR 0032, ADR 0034). Each row's probs are for the opponent (STM
+  // of the result): cubefulEquity is their Janowski money equity, and the mover's MWC is 1 minus
+  // theirs at the unchanged cube.
   const Player opponent = req.onRoll == Player::P1 ? Player::P2 : Player::P1;
   for (Row& row : rows) {
-    row.cubeful = row.cubeless.equity() * req.cubeValue;
+    row.cubeful = moneyCubeful(row.cubeless, cubeViewOf(req, opponent), req.cubeValue);
     row.rank = req.hasMatch ? 1 - deadCubeMwc(row.cubeless, viewOf(req, opponent), req.cubeValue, phaseOf(req))
                             : -row.cubeful;
   }
@@ -120,10 +131,12 @@ nlohmann::ordered_json evaluate(const EvalRequest& req, int ply, Net& net, Searc
     nlohmann::ordered_json move;
     move["steps"] = steps;
     move["eval"] = eval;
+    move["moverValue"] = row.rank;
     moves.push_back(move);
   }
   nlohmann::ordered_json response;
   response["moves"] = moves;
+  response["moverValueKind"] = req.hasMatch ? "mwc" : "money";
   return response;
 }
 
@@ -138,7 +151,7 @@ nlohmann::ordered_json cubeDecision(const EvalRequest& req, int ply, Net& net, S
   const Cubeless mine{p.p[0], p.p[1], p.p[2], p.p[3], p.p[4]};
 
   nlohmann::ordered_json out;
-  const bool available = req.hasMatch && req.mayDouble[idx(req.onRoll)] && req.cubeValue < 64;
+  const bool available = req.mayDouble[idx(req.onRoll)] && req.cubeValue < 64;
   out["available"] = available;
   if (!available) {
     out["offer"] = "no-double";
@@ -147,7 +160,10 @@ nlohmann::ordered_json cubeDecision(const EvalRequest& req, int ply, Net& net, S
     out["doubleTake"] = nullptr;
     out["doubleDrop"] = nullptr;
   } else {
-    const CubeVerdict v = decideCube(mine, viewOf(req, req.onRoll), req.cubeValue, phaseOf(req));
+    const CubeVerdict v =
+        req.hasMatch ? decideCube(mine, viewOf(req, req.onRoll), req.cubeValue, phaseOf(req))
+                     : decideMoneyCube(mine, cubeViewOf(req, req.onRoll) == CubeView::Mine ? CubeView::Mine : CubeView::Centered,
+                                       req.cubeValue);
     out["offer"] = v.doubles ? "double" : "no-double";
     out["take"] = v.takes ? "take" : "drop";
     out["noDouble"] = v.noDouble;
@@ -155,6 +171,7 @@ nlohmann::ordered_json cubeDecision(const EvalRequest& req, int ply, Net& net, S
     out["doubleDrop"] = v.doubleDrop;
   }
   out["cubeless"] = cubelessJson(mine);
+  out["currency"] = req.hasMatch ? "mwc" : "money";
   return out;
 }
 

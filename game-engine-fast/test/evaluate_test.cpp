@@ -52,10 +52,15 @@ TEST_CASE("0-ply: one batched net call, sorted best-first for the mover, cube wr
     const auto& ev = moves[i]["eval"];
     CHECK(ev["source"] == "model");
     CHECK(ev["cubeAction"].is_null());
-    CHECK(ev["cubefulEquity"].get<double>() == doctest::Approx(ev["cubeless"]["equity"].get<double>() * 2));
+    const auto& c = ev["cubeless"];
+    const bg::Cubeless cl{c["win"], c["gammon"], c["backgammon"], c["loseGammon"], c["loseBackgammon"]};
+    // Janowski money equity for the opponent (STM of the result), centered live cube at 2.
+    CHECK(ev["cubefulEquity"].get<double>() == doctest::Approx(bg::moneyCubeful(cl, bg::CubeView::Centered, 2)));
+    CHECK(moves[i]["moverValue"].get<double>() == doctest::Approx(-ev["cubefulEquity"].get<double>()));
     if (i > 0) CHECK(moves[i - 1]["eval"]["cubefulEquity"].get<double>() <= ev["cubefulEquity"].get<double>());
   }
   CHECK(moves[0]["steps"][0].contains("from"));
+  CHECK(out["moverValueKind"] == "money");
 }
 
 TEST_CASE("terminal results skip the net: gammon and backgammon") {

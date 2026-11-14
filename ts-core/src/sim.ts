@@ -174,7 +174,6 @@ export async function playGame(opts: {
     if (!opening) {
       if (
         allowCube &&
-        pos.match &&
         pos.cube.mayDouble[pos.onRoll] &&
         pos.cube.value < MAX_CUBE_VALUE
       ) {

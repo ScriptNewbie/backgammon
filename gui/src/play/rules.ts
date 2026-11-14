@@ -1,9 +1,9 @@
-import { applySteps, stepsKey, type Eval, type LegalSequence, type Position, type Step } from "ts-core";
+import { applySteps, stepsKey, type EngineMove, type EngineMoves, type LegalSequence, type Position, type Step } from "ts-core";
 
 /** One checker step the human has made this turn, with the die it used. */
 export type PlayedStep = { step: Step; die: number };
 
-export type EngineMove = { steps: Step[]; eval: Eval };
+export type { EngineMove, EngineMoves };
 
 function sameStep(a: Step | undefined, b: Step): boolean {
   return a !== undefined && a.from === b.from && a.to === b.to;
@@ -78,24 +78,31 @@ export function findMove(moves: readonly EngineMove[], start: Position, steps: r
   return moves.find((m) => boardKey(applySteps(start, m.steps)) === target) ?? null;
 }
 
-/** Cubeful equity for the mover. Engine evals are for the resulting position, opponent on roll. */
-export function moverEquity(move: EngineMove): number {
-  return -move.eval.cubefulEquity;
-}
+/**
+ * Your play against the engine's choice, on the engine's own scale (ADR 0034): `moverValue` is
+ * match winning chance in a match and cubeful money equity (points) in money play. `loss` is
+ * how much less your play is worth by that measure (0 when you matched the engine).
+ */
+export type MoveReview = {
+  kind: EngineMoves["moverValueKind"];
+  yours: string;
+  yourValue: number;
+  best: string;
+  bestValue: number;
+  loss: number;
+};
 
-export type MoveReview = { yours: string; yourEquity: number; best: string; bestEquity: number; loss: number };
-
-export function reviewMove(moves: readonly EngineMove[], start: Position, steps: readonly Step[]): MoveReview | null {
+export function reviewMove(engine: EngineMoves, start: Position, steps: readonly Step[]): MoveReview | null {
+  const { moves } = engine;
   const best = moves[0];
   const mine = findMove(moves, start, steps);
   if (!best || !mine) return null;
-  const yourEquity = moverEquity(mine);
-  const bestEquity = moverEquity(best);
   return {
+    kind: engine.moverValueKind,
     yours: stepsKey(steps),
-    yourEquity,
+    yourValue: mine.moverValue,
     best: stepsKey(best.steps),
-    bestEquity,
-    loss: Math.max(0, bestEquity - yourEquity),
+    bestValue: best.moverValue,
+    loss: Math.max(0, best.moverValue - mine.moverValue),
   };
 }

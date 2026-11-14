@@ -159,3 +159,14 @@ test("playersForSeats swaps drivers", () => {
   assert.equal(playersForSeats("p1", a, b).p1, a);
   assert.equal(playersForSeats("p2", a, b).p1, b);
 });
+
+test("--money plays --games money games; match flags are rejected with it", () => {
+  const args = parseArgs(["--money", "--games", "20"]);
+  assert.equal(args.money, true);
+  assert.equal(args.games, 20);
+  assert.equal(parseArgs([]).money, false);
+  assert.throws(() => parseArgs(["--money", "--length", "5"]), /--length is for match play; with --money use --games/);
+  assert.throws(() => parseArgs(["--money", "--matches", "3", "--length", "5"]), /--matches and --length are for match play/);
+  assert.throws(() => parseArgs(["--games", "3"]), /--games needs --money/);
+  assert.throws(() => parseArgs(["--money", "--games", "0"]), /--games must be a positive integer/);
+});

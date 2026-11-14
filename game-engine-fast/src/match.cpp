@@ -95,3 +95,43 @@ CubeVerdict decideCube(const Cubeless& doubler, const MatchView& v, int cubeValu
 }
 
 }  // namespace bg
+
+namespace bg {
+namespace {
+
+// Fully live-cube equity at cube 1, piecewise linear in p between the take and cash points.
+double liveEquity(const Cubeless& c, CubeView view) {
+  const double p = clamp01(c.win);
+  const double lose = 1 - p;
+  const double W = p > 0 ? (c.win + c.gammon + c.backgammon) / c.win : 1;
+  const double L = lose > 0 ? (lose + c.loseGammon + c.loseBackgammon) / lose : 1;
+  const double tp = (L - 0.5) / (W + L + 0.5);
+  const double cp = (L + 1) / (W + L + 0.5);
+  auto above = [&](double from, double at) { return from + (W - from) * ((p - at) / (1 - at)); };
+  if (view == CubeView::Mine) return p < cp ? -L + (L + 1) * (p / cp) : above(1, cp);
+  if (view == CubeView::Theirs) return p < tp ? -L + (L - 1) * (p / tp) : above(-1, tp);
+  if (p < tp) return -L + (L - 1) * (p / tp);
+  if (p <= cp) return -1 + 2 * ((p - tp) / (cp - tp));
+  return above(1, cp);
+}
+
+}  // namespace
+
+double moneyCubeful(const Cubeless& c, CubeView view, int cubeValue, double x) {
+  const double dead = c.equity();
+  if (view == CubeView::Dead) return dead * cubeValue;
+  return cubeValue * ((1 - x) * dead + x * liveEquity(c, view));
+}
+
+CubeVerdict decideMoneyCube(const Cubeless& doubler, CubeView view, int cubeValue) {
+  CubeVerdict out{};
+  out.noDouble = moneyCubeful(doubler, view, cubeValue);
+  const int doubled = 2 * cubeValue;
+  out.doubleTake = moneyCubeful(doubler, doubled >= 64 ? CubeView::Dead : CubeView::Theirs, doubled);
+  out.doubleDrop = cubeValue;
+  out.doubles = std::min(out.doubleTake, out.doubleDrop) > out.noDouble;
+  out.takes = out.doubleTake < out.doubleDrop;
+  return out;
+}
+
+}  // namespace bg

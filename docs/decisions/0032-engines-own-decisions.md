@@ -29,3 +29,5 @@ Every engine decides for itself. Callers (arena, `gui`, dumper) only play what t
 The arena now measures each engine as it plays, including ours: our cube is our net's (or search's) own call, not the opponent's evaluation under our formula. `battle-arena/src/rank.ts`, `infallibleCube`, and `pickBestPlayIndex` are removed. `game-engine-fast` gains match code (MET lookup, dead-cube MWC, cube formula) in C++, kept equal to `ts-core/match` by tests on the same MET.
 
 Cube decisions on `game-engine-fast` at `ply >= 1` cost a search of the pre-roll position. Money play still has no engine cube (Jacoby and beavers stay open). Spec: [game-engine.md](../domain/game-engine.md), [game-engine-fast.md](../domain/game-engine-fast.md), [evaluation.md](../domain/evaluation.md), [match-play.md](../domain/match-play.md), [battle-arena.md](../domain/battle-arena.md), [move-dumper.md](../domain/move-dumper.md), [gui.md](../domain/gui.md).
+
+[0034](0034-money-play.md): `/cube` is also available for money (Janowski), and `/evaluate` returns each move's `moverValue`.

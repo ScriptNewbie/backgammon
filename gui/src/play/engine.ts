@@ -1,5 +1,4 @@
-import type { CubeDecision, Position } from "ts-core";
-import type { EngineMove } from "./rules";
+import type { CubeDecision, EngineMoves, Position } from "ts-core";
 
 /** Vite dev server proxies this prefix to the game-engine container (see vite.config.ts). */
 const BASE = "/api/engine";
@@ -29,9 +28,12 @@ async function post<T>(route: "evaluate" | "cube", position: Position): Promise<
   return (await res.json()) as T;
 }
 
-/** Legal plays, best first for the engine at the match score: `moves[0]` is the engine's play. */
-export async function evaluate(position: Position): Promise<EngineMove[]> {
-  return (await post<{ moves: EngineMove[] }>("evaluate", position)).moves;
+/**
+ * Legal plays, best first for the engine at the match score or in money play: `moves[0]` is the
+ * engine's play, and each move's `moverValue` is what it was ranked by (`moverValueKind`).
+ */
+export async function evaluate(position: Position): Promise<EngineMoves> {
+  return post<EngineMoves>("evaluate", position);
 }
 
 /** The engine's cube decision with `position.onRoll` as the doubler (dice null), ADR 0032. */

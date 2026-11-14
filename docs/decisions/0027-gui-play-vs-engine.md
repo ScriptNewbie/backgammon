@@ -21,3 +21,5 @@
 ## Consequences
 
 Play needs `game-engine` running (`docker compose up` in `game-engine/`) with `training-ground/checkpoints/cubeless.onnx`. Spec: [gui.md](../domain/gui.md). The engine picks by cubeful equity, not by match-winning chance as the arena's ranking does; good enough for play. Play results are not written to SGF and are not training data.
+
+[0034](0034-money-play.md) adds a **Money** option (Janowski engine cube, Jacoby off, running points) and makes the review line use the engine's own `moverValue` (MWC in a match, money equity in money play).

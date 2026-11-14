@@ -5,10 +5,11 @@ export function batchStamp(
   now: Date,
   aLabel: string,
   bLabel: string,
+  money = false,
 ): { batchId: string; createdAt: string } {
   const createdAt = now.toISOString().replace(/\.\d{3}Z$/, "Z");
   const compact = createdAt.replace(/:(\d{2}):(\d{2})Z$/, "$1$2Z");
-  return { batchId: `${compact}-${aLabel}-vs-${bLabel}`, createdAt };
+  return { batchId: `${compact}-${aLabel}-vs-${bLabel}${money ? "-money" : ""}`, createdAt };
 }
 
 export async function writeMatchSgf(opts: {

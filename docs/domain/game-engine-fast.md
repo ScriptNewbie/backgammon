@@ -1,6 +1,6 @@
 # game-engine-fast
 
-Locked by [ADR 0028](../decisions/0028-game-engine-fast.md) and [ADR 0032](../decisions/0032-engines-own-decisions.md) (the engine orders its plays for the match and makes its own cube decisions). Status: `ply=0`–`4` work (move filters from 2-ply) and the `battle-arena` driver is wired (`--a game-engine-fast --a-ply N`). Tree expansion runs on all CPU threads; featurizing and the net run on the GPU. Move generation on the GPU and overlapping transfers with compute are not built yet. Bodies: [board-representation.md](board-representation.md), [evaluation.md](evaluation.md). Tensor: [features.md](features.md) (cube block fixed, [ADR 0029](../decisions/0029-fixed-cube-features.md)). Reference engine: [game-engine.md](game-engine.md).
+Locked by [ADR 0028](../decisions/0028-game-engine-fast.md), [ADR 0032](../decisions/0032-engines-own-decisions.md) (the engine orders its plays for the match and makes its own cube decisions), and [ADR 0034](../decisions/0034-money-play.md) (money play, [money-play.md](money-play.md)). Status: `ply=0`–`4` work (move filters from 2-ply) and the `battle-arena` driver is wired (`--a game-engine-fast --a-ply N`). Tree expansion runs on all CPU threads; featurizing and the net run on the GPU. Move generation on the GPU and overlapping transfers with compute are not built yet. Bodies: [board-representation.md](board-representation.md), [evaluation.md](evaluation.md). Tensor: [features.md](features.md) (cube block fixed, [ADR 0029](../decisions/0029-fixed-cube-features.md)). Reference engine: [game-engine.md](game-engine.md).
 
 CUDA C++ ply-search engine on the GPU, used as a `battle-arena` driver. Separate from `game-engine`; both are maintained. Model: `MODEL_PATH` (default `/models/cubeless-fast.onnx`) from `training-ground` (same weights as `cubeless.onnx`, dynamic batch `[N, 206]` → `cubeless` `[N, 5]`). Do not commit weights. Compose port **3001**.
 
@@ -19,8 +19,8 @@ Body and response shape are the same as `game-engine` `POST /evaluate`.
 - `ply=0` and `ply=1`: every legal play, each with the eval of the resulting position (opponent is STM).
 - `ply>=2`: only the plays that pass the root filter, each searched to the full depth, plus any play that ends the game (exact). Filters are engine defaults, not request params.
 - One play per distinct resulting board. When several step orders reach the same board, the engine may report a different (equally legal) order than `game-engine`.
-- Sorted best-first for the mover at the position's match state, as `game-engine`: mover dead-cube MWC of the result when `match` is set, negated `cubefulEquity` for money. Exact ties break by `stepsKey`. `moves[0]` is the engine's play.
-- `eval.source` is `"model"`. `cubefulEquity = cubeless.equity * cube.value`. `cubeAction` is always `null`.
+- Sorted best-first for the mover at the position's match state, as `game-engine`: mover dead-cube MWC of the result when `match` is set, negated `cubefulEquity` (Janowski) for money. Exact ties break by `stepsKey`. `moves[0]` is the engine's play; each move carries `moverValue` and the response `moverValueKind`, as `game-engine`.
+- `eval.source` is `"model"`. `cubefulEquity` is Janowski money equity for STM of the result (`equity * cube.value` when nobody may double), as `game-engine`. `cubeAction` is always `null`.
 - The search ignores the cube (fixed tensor constants) and `position.match`: inner nodes and both move filters maximise cubeless money equity. Only the final order of the returned plays uses the match (MWC).
 - FP32. Determinism is best effort.
 - `400` on invalid JSON / position / dice / `ply`, and when the search would exceed its leaf budget (`{"error": "search too large: more than N leaf positions; use a lower ply"}`, see Limits).
@@ -28,9 +28,9 @@ Body and response shape are the same as `game-engine` `POST /evaluate`.
 
 ## `POST /cube?ply=N`
 
-Same body and response as `game-engine` `POST /cube` (doubler on roll, `dice: null`). The position is searched `ply` plies (the same search as for a result position, the doubler being the side about to roll), and the dead-cube formula turns the doubler's probs into the offer and the taker's answer. `ply` as for `/evaluate` (default 0, cap 4, `400` above it); the leaf budget applies. `available` is false for money, when the player on roll may not double, or at cube 64.
+Same body and response as `game-engine` `POST /cube` (doubler on roll, `dice: null`). The position is searched `ply` plies (the same search as for a result position, the doubler being the side about to roll), and the cube formula (dead-cube MWC in a match, Janowski money otherwise) turns the doubler's probs into the offer and the taker's answer. `ply` as for `/evaluate` (default 0, cap 4, `400` above it); the leaf budget applies. `available` is false when the player on roll may not double or at cube 64.
 
-The match code (`src/match.cpp`: MET lookup, dead-cube MWC, cube formula) mirrors `ts-core/match`; tests check it against `ts-core` reference values. The MET is read once from `MET_PATH` (default `/repo/docs/domain/data/kazaross-xg2-met.json`, the Compose repo mount); the server refuses to start without it.
+The match and money code (`src/match.cpp`: MET lookup, dead-cube MWC, match cube formula, Janowski money equity and cube) mirrors `ts-core/match` and `ts-core/money`; tests check it against `ts-core` reference values. The MET is read once from `MET_PATH` (default `/repo/docs/domain/data/kazaross-xg2-met.json`, the Compose repo mount); the server refuses to start without it.
 
 ## Search
 
