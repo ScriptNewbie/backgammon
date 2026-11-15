@@ -35,10 +35,12 @@ function checkerRecord(
 }
 
 class DumpingTeacher implements MatchPlayer {
+  /** This game's records, committed together when it ends. */
+  readonly records: DumpRecord[] = [];
+
   constructor(
     readonly client: GnubgClient,
     readonly rng: Rng,
-    readonly writer: DumpWriter,
     readonly levels: { p1: Level; p2: Level },
   ) {}
 
@@ -53,7 +55,7 @@ class DumpingTeacher implements MatchPlayer {
     const idx = sampleCheckerIndex(this.levels[pos.onRoll], ranked, this.rng);
     const chosen = idx < 0 ? { steps: [] as Step[], eval: null } : plays[idx]!;
 
-    await this.writer.writeRecord(
+    this.records.push(
       checkerRecord({
         gameId: ctx.gameId,
         ply: ctx.ply,
@@ -85,7 +87,7 @@ export async function playDumpedGame(
   writer: DumpWriter,
   players: { p1: Level; p2: Level },
 ): Promise<{ gameId: string }> {
-  const teacher = new DumpingTeacher(client, rng, writer, players);
+  const teacher = new DumpingTeacher(client, rng, players);
   const gameId = randomUUID();
   // GNU SGF still uses a 1-point MI header; Position.match is null.
   const result = await playGame({
@@ -100,7 +102,7 @@ export async function playDumpedGame(
     allowCube: false,
     money: true,
   });
-  await writer.commitGame();
+  await writer.commitGame(teacher.records);
   await writer.writeSgf(
     gameId,
     renderMatchSgf(
@@ -125,20 +127,42 @@ export async function playDumpedGame(
 
 export { rollOpening } from "ts-core/sim";
 
+/**
+ * Play `gameCount` games, `concurrency` at a time. Game i gets its own RNG, seeded by the i-th
+ * draw from `new Rng(seed)`, so a batch's games depend on `seed` alone and not on how many run at
+ * once (records land in the order games finish). A stop request or a failed game lets the games
+ * in flight finish and starts no new one; the first failure is rethrown.
+ */
 export async function dumpGames(
   client: GnubgClient,
-  rng: Rng,
+  seed: number,
   writer: DumpWriter,
   gameCount: number,
+  concurrency = 1,
   shouldStop?: () => boolean,
 ): Promise<void> {
-  for (let i = 0; i < gameCount; i++) {
-    if (shouldStop?.()) {
-      console.log(`stop after ${i} game(s); committed records=${writer.recordCount}`);
-      return;
+  const seeds = new Rng(seed);
+  let started = 0;
+  let done = 0;
+  let failed = false;
+  const worker = async (): Promise<void> => {
+    while (started < gameCount && !failed && !shouldStop?.()) {
+      started += 1;
+      const rng = new Rng(Math.floor(seeds.next() * 2 ** 32));
+      const players = sampleLevelPair(rng);
+      try {
+        const { gameId } = await playDumpedGame(client, rng, writer, players);
+        done += 1;
+        console.log(`game ${done}/${gameCount} id=${gameId} records=${writer.recordCount}`);
+      } catch (err) {
+        failed = true;
+        throw err;
+      }
     }
-    const players = sampleLevelPair(rng);
-    const { gameId } = await playDumpedGame(client, rng, writer, players);
-    console.log(`game ${i + 1}/${gameCount} id=${gameId} records=${writer.recordCount}`);
-  }
+  };
+  const workers = Array.from({ length: Math.min(concurrency, gameCount) }, worker);
+  const results = await Promise.allSettled(workers);
+  const failure = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
+  if (failure) throw failure.reason;
+  if (done < gameCount) console.log(`stop after ${done} game(s); committed records=${writer.recordCount}`);
 }

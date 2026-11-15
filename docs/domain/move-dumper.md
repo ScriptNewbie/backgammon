@@ -19,13 +19,15 @@ docker compose --profile install-host run --rm install-host
 
 ## Per game
 
-1. Sample an unordered level pair from the weights below; randomly assign `p1` / `p2`.
+1. Sample an unordered level pair from the weights below; randomly assign `p1` / `p2`. Each game has its own RNG for this, its dice, and its plays.
 2. Play one game to bear-off via `playGame({ allowCube: false })`. No match score, no Crawford cycle, no cube offer/take/drop.
-3. Write `replay/<gameId>.sgf`. Records for that game are committed to `records.jsonl.gz` first (one gzip member per game) so a crash keeps finished games readable.
+3. Write `replay/<gameId>.sgf`. Records for that game are committed to `records.jsonl.gz` first, together (one gzip member per game), so a crash keeps finished games readable.
 
-Teacher queries retry on disconnect / 5xx until the sidecar returns. SIGINT/SIGTERM finish after the current game (`gzip.end` + manifest). Do not kill `-9` if you want the last member closed.
+Teacher queries retry on disconnect / 5xx until the sidecar returns. SIGINT/SIGTERM finish the games in progress and start no new one (`gzip.end` + manifest). Do not kill `-9` if you want the last member closed.
 
-Seed the RNG; store `seed` on the batch manifest.
+Seed the RNG; store `seed` on the batch manifest. Game i is seeded by the i-th draw from `seed`, so the games of a batch depend only on `seed`, not on `--concurrency`.
+
+`--concurrency N` (default 1) plays N games at once, each asking the sidecar for its own labels; up to the sidecar's `GNUBG_WORKERS` (one per CPU by default) keeps every gnubg process busy. Games commit in the order they finish, so records of different games are not in game-index order; each game's records stay together. A game that fails stops the batch: the games in flight finish, and the error is reported.
 
 ## Opening a game
 

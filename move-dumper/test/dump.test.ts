@@ -49,9 +49,7 @@ test("commitGame leaves a gunzippable file before finish", async () => {
       version: "GNU Backgammon 1.07.001",
       now: new Date("2026-08-22T12:00:00Z"),
     });
-    await writer.writeRecord(checkerRecord("a"));
-    await writer.writeRecord(checkerRecord("b"));
-    await writer.commitGame();
+    await writer.commitGame([checkerRecord("a"), checkerRecord("b")]);
     const gz = await readFile(path.join(writer.dir, "records.jsonl.gz"));
     const text = gunzipSync(gz).toString("utf8");
     const lines = text.trim().split("\n");
@@ -78,10 +76,8 @@ test("two commits concatenate as one gzip JSONL", async () => {
       version: "GNU Backgammon 1.07.001",
       now: new Date("2026-08-22T12:00:01Z"),
     });
-    await writer.writeRecord(checkerRecord("a"));
-    await writer.commitGame();
-    await writer.writeRecord(checkerRecord("b"));
-    await writer.commitGame();
+    await writer.commitGame([checkerRecord("a")]);
+    await writer.commitGame([checkerRecord("b")]);
     const gz = await readFile(path.join(writer.dir, "records.jsonl.gz"));
     const lines = gunzipSync(gz).toString("utf8").trim().split("\n");
     assert.deepEqual(
@@ -89,6 +85,39 @@ test("two commits concatenate as one gzip JSONL", async () => {
       ["a", "b"],
     );
     await writer.finish();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("games committed at the same time keep their records together", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "dump-"));
+  try {
+    const writer = await DumpWriter.create({
+      dumpsRoot: root,
+      seed: 1,
+      baseUrl: "http://127.0.0.1:8080",
+      ply: 2,
+      labelFilter: "all",
+      version: "GNU Backgammon 1.07.001",
+      now: new Date("2026-08-22T12:00:02Z"),
+    });
+    const game = (g: string, n: number): DumpRecord[] =>
+      Array.from({ length: n }, (_, i) => ({ ...checkerRecord(`${g}${i}`), gameId: g }));
+    // Not awaited one by one: parallel games finishing together.
+    const commits = [writer.commitGame(game("x", 300)), writer.commitGame(game("y", 300)), writer.commitGame(game("z", 1))];
+    const { recordCount } = await writer.finish();
+    await Promise.all(commits);
+    assert.equal(recordCount, 601);
+    const gz = await readFile(path.join(writer.dir, "records.jsonl.gz"));
+    const games = gunzipSync(gz)
+      .toString("utf8")
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l).gameId);
+    assert.deepEqual(games, [...Array(300).fill("x"), ...Array(300).fill("y"), "z"]);
+    const manifest = JSON.parse(await readFile(path.join(writer.dir, "manifest.json"), "utf8"));
+    assert.equal(manifest.recordCount, 601);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

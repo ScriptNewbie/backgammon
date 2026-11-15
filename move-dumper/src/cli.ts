@@ -1,7 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { GNUBG_MAX_PLY, GnubgClient, type GnubgFilter } from "ts-core/gnubg";
-import { Rng } from "ts-core/sim";
 import { DumpWriter } from "./dump";
 import { dumpGames } from "./games";
 
@@ -11,6 +10,7 @@ export type CliArgs = {
   baseUrl: string;
   ply: number;
   labelFilter: GnubgFilter;
+  concurrency: number;
 };
 
 export function parseArgs(argv: string[]): CliArgs {
@@ -20,6 +20,7 @@ export function parseArgs(argv: string[]): CliArgs {
   // GnuBG world class: 2-ply with its own move filter, which is how bgweb-api labelled.
   let ply = 2;
   let labelFilter: string = "gnubg";
+  let concurrency = 1;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!;
     if (arg === "--games") games = Number(argv[++i]);
@@ -29,6 +30,7 @@ export function parseArgs(argv: string[]): CliArgs {
     else if (arg === "--base-url") baseUrl = argv[++i]!;
     else if (arg === "--ply") ply = Number(argv[++i]);
     else if (arg === "--label-filter") labelFilter = argv[++i]!;
+    else if (arg === "--concurrency") concurrency = Number(argv[++i]);
     else if (arg === "--help" || arg === "-h") {
       printHelp();
       process.exit(0);
@@ -46,11 +48,14 @@ export function parseArgs(argv: string[]): CliArgs {
   if (labelFilter !== "gnubg" && labelFilter !== "all") {
     throw new Error(`--label-filter must be gnubg or all (got ${labelFilter})`);
   }
-  return { games, seed, baseUrl, ply, labelFilter: labelFilter as GnubgFilter };
+  if (!Number.isInteger(concurrency) || concurrency < 1) {
+    throw new Error(`--concurrency must be a positive integer (got ${concurrency})`);
+  }
+  return { games, seed, baseUrl, ply, labelFilter: labelFilter as GnubgFilter, concurrency };
 }
 
 function printHelp(): void {
-  console.log(`Usage: docker compose --profile dumper run --rm dumper npm run dump:inner -- [--games N] [--seed N] [--ply N] [--label-filter gnubg|all] [--base-url URL]
+  console.log(`Usage: docker compose --profile dumper run --rm dumper npm run dump:inner -- [--games N] [--seed N] [--ply N] [--label-filter gnubg|all] [--concurrency N] [--base-url URL]
 
 Simulate money games (no cube) and dump checker plays labelled by GNU Backgammon (gnubg sidecar).
 
@@ -59,6 +64,8 @@ Simulate money games (no cube) and dump checker plays labelled by GNU Backgammon
   --ply           GnuBG ply, 0-4 (default 2: GnuBG world class, as bgweb-api labelled)
   --label-filter  gnubg: GnuBG's own move filter, top plays at --ply and the rest shallower
                   (default, as bgweb-api labelled). all: every play searched at --ply.
+  --concurrency   Games played at once (default 1). Up to the sidecar's GNUBG_WORKERS (one per
+                  CPU by default) keeps every gnubg process busy; more just queue.
   --base-url      gnubg sidecar origin (default http://127.0.0.1:8080, or GNUBG_BASE_URL)
 
 From move-dumper/ (see README.md):
@@ -95,13 +102,12 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const requestStop = (): void => {
     if (stop) return;
     stop = true;
-    console.error("stop requested; finishing after the current game");
+    console.error("stop requested; finishing the games in progress");
   };
   process.once("SIGINT", requestStop);
   process.once("SIGTERM", requestStop);
-  const rng = new Rng(args.seed);
   try {
-    await dumpGames(client, rng, writer, args.games, () => stop);
+    await dumpGames(client, args.seed, writer, args.games, args.concurrency, () => stop);
   } finally {
     process.off("SIGINT", requestStop);
     process.off("SIGTERM", requestStop);

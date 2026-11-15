@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { finished } from "node:stream/promises";
-import { createGzip, type Gzip } from "node:zlib";
+import { createGzip } from "node:zlib";
 import { once } from "node:events";
 import type { GnubgFilter } from "ts-core/gnubg";
 import type { DumpRecord, Manifest } from "./types";
@@ -54,9 +54,8 @@ export function buildManifest(opts: {
 }
 
 export class DumpWriter {
-  private gzip: Gzip | null = null;
   private file: ReturnType<typeof createWriteStream>;
-  private pending: string[] = [];
+  private commits: Promise<void> = Promise.resolve();
   private committed = 0;
   private closed = false;
 
@@ -91,25 +90,27 @@ export class DumpWriter {
     return writer;
   }
 
-  async writeRecord(record: DumpRecord): Promise<void> {
-    this.pending.push(`${JSON.stringify(record)}\n`);
+  /**
+   * Append one game's records as its own gzip member, so finished games stay readable if the
+   * process dies. Games played in parallel commit one at a time, in the order they finish.
+   */
+  commitGame(records: readonly DumpRecord[]): Promise<void> {
+    const run = this.commits.then(() => this.writeMember(records));
+    this.commits = run.catch(() => undefined);
+    return run;
   }
 
-  /** Close a gzip member so finished games stay readable if the process dies. */
-  async commitGame(): Promise<void> {
-    if (this.pending.length === 0) return;
+  private async writeMember(records: readonly DumpRecord[]): Promise<void> {
+    if (records.length === 0) return;
     const gzip = createGzip();
     gzip.pipe(this.file, { end: false });
-    this.gzip = gzip;
-    for (const line of this.pending) {
-      const ok = gzip.write(line);
+    for (const record of records) {
+      const ok = gzip.write(`${JSON.stringify(record)}\n`);
       if (!ok) await once(gzip, "drain");
     }
-    this.committed += this.pending.length;
-    this.pending = [];
     gzip.end();
     await finished(gzip);
-    this.gzip = null;
+    this.committed += records.length;
     await this.writeManifest(this.committed);
     if (typeof this.file.fd === "number") await fsync(this.file.fd);
   }
@@ -143,7 +144,7 @@ export class DumpWriter {
   async finish(): Promise<{ dir: string; recordCount: number }> {
     if (this.closed) return { dir: this.dir, recordCount: this.committed };
     this.closed = true;
-    await this.commitGame();
+    await this.commits;
     this.file.end();
     await finished(this.file);
     await this.writeManifest(this.committed);

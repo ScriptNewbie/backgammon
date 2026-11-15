@@ -50,7 +50,7 @@ docker compose --profile install-host run --rm install-host
 
 ## move-dumper
 
-Writes `move-dumper/dumps/<batch>/` (`manifest.json` + gzip JSONL + `replay/*.sgf`). Never commit `dumps/`. SIGINT/SIGTERM finishes after the current game.
+Writes `move-dumper/dumps/<batch>/` (`manifest.json` + gzip JSONL + `replay/*.sgf`). Never commit `dumps/`. SIGINT/SIGTERM (Ctrl+C) finishes the games in progress and starts no new one.
 
 From `move-dumper/`:
 
@@ -64,6 +64,8 @@ docker compose --profile test run --rm test
 docker compose --profile dumper run --rm dumper npm run dump:inner -- --games 1 --seed 1
 # every play searched at 1-ply
 docker compose --profile dumper run --rm dumper npm run dump:inner -- --games 1 --seed 1 --ply 1 --label-filter all
+# 12 games at once (one per gnubg process; the sidecar runs one per CPU)
+docker compose --profile dumper run --rm dumper npm run dump:inner -- --games 100 --seed 1 --concurrency 12
 
 docker compose down
 docker compose --profile install-host run --rm install-host
@@ -77,6 +79,7 @@ Dumper flags (after `--`):
 | `--seed N` | `1` | RNG seed stored on the batch manifest |
 | `--ply N` | `2` | GnuBG ply of the labels, 0–4 |
 | `--label-filter F` | `gnubg` | `gnubg`: GnuBG's own move filter (top plays at `--ply`, the rest shallower; how bgweb-api labelled). `all`: every play at `--ply` |
+| `--concurrency N` | `1` | Games played at once. Up to the sidecar's worker count (`GNUBG_WORKERS`, default one per CPU) keeps every gnubg process busy; more only queue |
 | `--base-url URL` | `GNUBG_BASE_URL` or `http://127.0.0.1:8080` | gnubg sidecar origin (set by Compose) |
 
 There is no `--matches` / `--length`. Help: add `--help` after `--`.

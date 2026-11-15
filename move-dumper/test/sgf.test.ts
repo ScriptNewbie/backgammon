@@ -94,6 +94,7 @@ test("CLI defaults", () => {
     assert.equal(args.baseUrl, "http://127.0.0.1:8080");
     assert.equal(args.ply, 2);
     assert.equal(args.labelFilter, "gnubg");
+    assert.equal(args.concurrency, 1);
   } finally {
     if (prev === undefined) delete process.env.GNUBG_BASE_URL;
     else process.env.GNUBG_BASE_URL = prev;
@@ -121,10 +122,12 @@ test("opening dice are never doubles; higher player is on roll", () => {
   }
 });
 
-test("CLI reads --ply and --label-filter, and rejects unknown flags", () => {
+test("CLI reads --ply, --label-filter and --concurrency, and rejects unknown flags", () => {
   assert.equal(parseArgs(["--ply", "0"]).ply, 0);
   assert.equal(parseArgs(["--label-filter", "all"]).labelFilter, "all");
   assert.throws(() => parseArgs(["--label-filter", "some"]), /gnubg or all/);
   assert.throws(() => parseArgs(["--labelfilter", "all"]), /unknown argument/);
   assert.throws(() => parseArgs(["--ply", "5"]), /--ply must be an integer 0-4/);
+  assert.equal(parseArgs(["--concurrency", "12"]).concurrency, 12);
+  assert.throws(() => parseArgs(["--concurrency", "0"]), /--concurrency must be a positive integer/);
 });
